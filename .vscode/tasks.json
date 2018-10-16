@@ -6,7 +6,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "gcc -g -Wall -O3 hard_spheres_npt.c",
+            "command": "gcc -g -Wall -O3 hard_irrot_cubes.c",
             "group": {
                 "kind": "build",
                 "isDefault": true

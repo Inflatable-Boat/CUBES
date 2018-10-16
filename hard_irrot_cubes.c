@@ -1,4 +1,5 @@
-#include "mt19937.h"
+#include "mt19937.h" // Mersenne Twister (dsmft_genrand();)
+#include "math_3d.h" // https://github.com/arkanis/single-header-file-c-libs/blob/master/math_3d.h
 #include <direct.h> // mkdir
 // #include <iostream> // C++
 #include <stdio.h> // C
@@ -27,17 +28,22 @@ static double Delta = 0.1;  // delta and deltaV are dynamic, i.e. every output_s
 static double DeltaV = 2.0; // they will be nudged a bit to keep the move and volume acceptance in between 0.4 and 0.6.
 static double BetaP = 30;
 char init_filename[] = "sc.txt";
-char output_foldername[] = "datafolder_p=%4.1lf";
+char output_foldername[] = "datafolder_c_p=%4.1lf";
 
-const int mc_steps = 100000;
+const int mc_steps = 20000;
 const int output_steps = 100;
 const double diameter = 1.0;
 
 /* Simulation variables */
-int n_particles = 0;
-double particle_volume;
-double r[N][NDIM];
-double box[NDIM];
+static double r[N][NDIM]; // position of center of cube
+static double m[N][NDIM][NDIM]; // rotation matrix of cube
+static double box[NDIM]; // dimensions of box
+// static double Normal[3][NDIM]; // the normal vector of an unrotated cube. Normal[0] is the normal in the x-dir, etc.
+static vec3_t Normal[3];
+static double Edge_Length = 1; // TODO: make write, and read
+static int n_particles = 0;
+static double ParticleVolume;
+static double Phi = M_PI / 2.; // angle of slanted cube
 
 
 /* Functions */
@@ -76,9 +82,20 @@ double nearimgdist(int i, int j){
     return sqrt(distsq);
 }
 
+/// checks if cube i and cube j overlap using the separating axis theorem
+bool is_overlap(int i, int j)
+{
+    // TODO
+    vec3_t r1 = vec3(r[i][0], r[i][1], r[i][2]);
+    vec3_t r2 = vec3(r[j][0], r[j][1], r[j][2]);
+    
+
+    return false;
+}
+
 /// Special distance function for move_particle().
 /// It returns the distance between particle i and the particle at position trialr[3].
-double nearimgdist_mov(double trialr[3], int i)
+double nearimgdist_mov(double trialr[NDIM], int i)
 {
     double distsq = 0; // distance squared
     for (int dim = 0; dim < NDIM; dim++) {
@@ -100,7 +117,7 @@ double nearimgdist_mov(double trialr[3], int i)
 void nudge_deltas(double mov, double vol)
 {
     if(mov < 0.4) Delta  *= 0.9; // acceptance too low  --> decrease delta
-    if(mov > 0.6) Delta  *= 1.1; // acceptance too high --> increase delta
+    // if(mov > 0.6) Delta  *= 1.1; // acceptance too high --> increase delta
     if(vol < 0.4) DeltaV *= 0.9;
     if(vol > 0.6) DeltaV *= 1.1;
 }
@@ -119,20 +136,8 @@ int change_volume(void)
     // change the configuration
     scale(scale_factor);
 
-    // now we need to check for overlaps, and reject if there are any
-    // code very similar to the one in move_particle
-    // we check every pair by summing over j < i
+    // TODO: now we need to check for overlaps, and reject if there are any
     bool is_collision = false;
-    for (int i = 0; i < n_particles; i++) {
-        for (int j = 0; j < i; j++) {
-
-            if (nearimgdist(i, j) < diameter) {
-                is_collision = true;
-                i = j = n_particles; break; // no need to check for other collisions
-            }
-
-        }
-    }
 
     if (is_collision) { 
         scale(1./scale_factor); // move everything back
@@ -176,15 +181,29 @@ void read_data(void)
         }
     }
 
+    // TODO: make write, and read edge length
+    Edge_Length = 1;
+    
+    // TODO: make write, and read Phi.
+    Phi = M_PI / 2.;
+
+    // TODO: check if this is right
+    Normal[0].x = cos(Phi); // normal on x-dir
+    Normal[0].z = -1. * sin(Phi);
+    Normal[1].y = 1.; // normal on y-dir
+    Normal[2].z = 1.; // normal on z-dir
+
+    // TODO: make proper particle_volume reading
+    ParticleVolume = pow(Edge_Length, 3.);
+
     // Now load all particle positions into r
     double pos;
-    //double garbage;
     for (int i = 0; i < n_particles; i++) {
         for (int dim = 0; dim < NDIM; dim++) {
             fscanf(pFile, "%lf", &pos); // Now pos contains what r[i][dim] should be
             r[i][dim] = pos;
+            m[i][dim][dim] = 1; // TODO: is this the right place and time and way to do this (initialize the rotation matrices)?
         }
-        // fscanf(pFile, "%lf", &garbage); // We don't care about the particle diameter (it's one)
     }
 
     fclose(pFile);
@@ -209,15 +228,8 @@ int move_particle(void)
         trialr[dim] = fmod(r[index][dim] + displacement[dim] + box[dim], box[dim]);
     }
 
-    // now check the distance to every other particle
-    bool is_collision = false;
-    for (int i = index + 1; i < index + n_particles; i++) {
-        // here we sum over all i except i == index with clever use of i % n_particles
-        if (nearimgdist_mov(trialr, i % n_particles) < diameter) { // note this uses the nearimgdist which takes a double[3]
-            is_collision = true;
-            break; // no need to check for other collisions
-        }
-    }
+    // TODO: now check if this move is possible
+    bool is_collision = false; //is_overlap(trialr, index);
 
     if (is_collision) {
         return 0; // unsuccesful move
@@ -229,24 +241,36 @@ int move_particle(void)
     }
 }
 
-void write_data(int step)
+void write_data(int step) // TODO: how many decimal digits are needed? maybe 6 is too much.
 {
     char buffer[128];
     strcpy(buffer, output_foldername);
     
-    strcat(buffer, "/coords_step%07d.txt");
+    strcat(buffer, "/coords_step%07d.poly");
     char output_file[128];
     sprintf(output_file, buffer, step); // replace %07d with step and put in output_file.
 
     FILE* fp = fopen(output_file, "w");
     fprintf(fp, "%d\n", n_particles);
-    for (int d = 0; d < NDIM; ++d) {
-        fprintf(fp, "%lf %lf\n", 0.0, box[d]);
+    fprintf(fp, "0.0\t0.0\t0.0\n"); // TODO: place the format in the readme file
+    for (int d = 0; d < 9; ++d) { // dimensions of box
+        if(d % 4 == 0){
+            fprintf(fp, "%lf\t", box[d / 4]);
+        } else {
+            fprintf(fp, "0.000000\t");
+        }
+        if(d % 3 == 2) fprintf(fp, "\n");
     }
     for (int n = 0; n < n_particles; ++n) {
         for (int d = 0; d < NDIM; ++d)
-            fprintf(fp, "%lf\t", r[n][d]);
-        fprintf(fp, "%lf\n", diameter); // the online visualizer wants this
+            fprintf(fp, "%lf\t", r[n][d]); // the position of the center (TODO: check this: center of edge?)
+        fprintf(fp, "%lf\t", Edge_Length);
+        for (int d1 = 0; d1 < NDIM; d1++) {
+            for (int d2 = 0; d2 < NDIM; d2++) {
+                fprintf(fp, "%lf\t", m[n][d1][d2]);
+            }
+        }
+        fprintf(fp, "10 %lf\n", Phi); // the visualizer wants color, apparently 10 is fine.
     }
     fclose(fp);
 }
@@ -257,7 +281,7 @@ void set_packing_fraction(void)
     for (int d = 0; d < NDIM; ++d)
         volume *= box[d];
 
-    double target_volume = (n_particles * particle_volume) / packing_fraction;
+    double target_volume = (n_particles * ParticleVolume) / packing_fraction;
     double scale_factor = pow(target_volume / volume, 1. / NDIM); // the . of 1. is important, otherwise 1 / NDIM == 1 / 3 == 0
 
     scale(scale_factor);
@@ -290,14 +314,14 @@ int main(int argc, char* argv[])
         return 1;
     } */
 
-    if (NDIM == 3)
+    /* if (NDIM == 3)
         particle_volume = M_PI * pow(diameter, 3.0) / 6.0;
     else if (NDIM == 2)
         particle_volume = M_PI * pow(diameter, 2.0) / 4.0;
     else {
         printf("Number of dimensions NDIM = %d, not supported.", NDIM);
         return 2;
-    }
+    } */
 
     read_data();
 
