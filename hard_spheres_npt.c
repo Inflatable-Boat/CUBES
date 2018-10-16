@@ -1,8 +1,11 @@
 #include "mt19937.h"
-#include <direct.h> // mkdir
+// #include <direct.h> // mkdir on Windows
+#include <sys/types.h> // mkdir on Linux
+#include <sys/stat.h> // mkdir on Linux
+#include <unistd.h>
 // #include <iostream> // C++
 #include <stdio.h> // C
-#include <math.h>
+#include <math.h> // in Linux, make sure to gcc ... -lm, -lm stands for linking math library.
 #include <stdio.h>
 #include <string.h> // This is for C (strcpy, strcat, etc. ). For C++, use #include <string>
 #include <assert.h>
@@ -29,7 +32,7 @@ static double BetaP = 30;
 char init_filename[] = "sc.txt";
 char output_foldername[] = "datafolder_p=%4.1lf";
 
-const int mc_steps = 100000;
+const int mc_steps = 10000;
 const int output_steps = 100;
 const double diameter = 1.0;
 
@@ -307,7 +310,8 @@ int main(int argc, char* argv[])
     }
 
     sprintf(output_foldername, output_foldername, BetaP); // replace %4.1lf with BetaP
-    mkdir(output_foldername); // make the folder to store all the data in, if it already exists do nothing.
+    // mkdir(output_foldername); // make the folder to store all the data in, if it already exists do nothing.
+    mkdir(output_foldername, S_IRWXU | S_IRGRP | S_IROTH); // Linux needs me to set rights, this gives rwx to me and nobody else.
     set_packing_fraction();
 
     dsfmt_seed(1); // given seed for retestability

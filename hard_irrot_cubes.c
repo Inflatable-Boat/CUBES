@@ -1,10 +1,12 @@
 #include "mt19937.h" // Mersenne Twister (dsmft_genrand();)
 #include "math_3d.h" // https://github.com/arkanis/single-header-file-c-libs/blob/master/math_3d.h
-#include <direct.h> // mkdir
+// #include <direct.h> // mkdir on Windows
+#include <sys/types.h> // mkdir on Linux
+#include <sys/stat.h> // mkdir on Linux
+#include <unistd.h>
 // #include <iostream> // C++
 #include <stdio.h> // C
-#include <math.h>
-#include <stdio.h>
+#include <math.h> // in Linux, make sure to gcc ... -lm, -lm stands for linking math library.
 #include <string.h> // This is for C (strcpy, strcat, etc. ). For C++, use #include <string>
 #include <assert.h>
 #include <stdbool.h> // C requires this for (bool, true, false) to work
@@ -35,8 +37,8 @@ const int output_steps = 100;
 const double diameter = 1.0;
 
 /* Simulation variables */
-static double r[N][NDIM]; // position of center of cube
-static double m[N][NDIM][NDIM]; // rotation matrix of cube
+static double r[N][NDIM]; // position of center of cube // TODO: make vec3_t
+static double m[N][NDIM][NDIM]; // rotation matrix of cube // TODO: make vec3_t
 static double box[NDIM]; // dimensions of box
 // static double Normal[3][NDIM]; // the normal vector of an unrotated cube. Normal[0] is the normal in the x-dir, etc.
 static vec3_t Normal[3];
@@ -193,7 +195,7 @@ void read_data(void)
     Normal[1].y = 1.; // normal on y-dir
     Normal[2].z = 1.; // normal on z-dir
 
-    // TODO: make proper particle_volume reading
+    // TODO: make proper particle_volume reading dependent on Phi (I think just this/cos(Phi))
     ParticleVolume = pow(Edge_Length, 3.);
 
     // Now load all particle positions into r
@@ -207,6 +209,19 @@ void read_data(void)
     }
 
     fclose(pFile);
+}
+
+/// This function returns the jth vertex (j = 0, ... , 7) of cube number i
+vec3_t get_vertex(int i, int j){
+    vec3_t result = vec3(r[i][0], r[i][1], r[i][2]); // the center
+    // TODO: make Phi != M_PI/2 compatible
+    vec3_t offset = vec3(-Edge_Length / 2, -Edge_Length / 2, -Edge_Length / 2);
+    if(j & 4) offset.x += Edge_Length;
+    if(j & 2) offset.y += Edge_Length;
+    if(j & 1) offset.z += Edge_Length;
+    result = v3_add(result, offset);
+    // TODO: add rotation
+    return result;
 }
 
 /// This moves a random particle in a cube of volume (2 * delta)^3.
@@ -331,7 +346,8 @@ int main(int argc, char* argv[])
     }
 
     sprintf(output_foldername, output_foldername, BetaP); // replace %4.1lf with BetaP
-    mkdir(output_foldername); // make the folder to store all the data in, if it already exists do nothing.
+    // mkdir(output_foldername); // make the folder to store all the data in, if it already exists do nothing.
+    mkdir(output_foldername, S_IRWXU | S_IRGRP | S_IROTH); // Linux needs me to set rights, this gives rwx to me and nobody else.
     set_packing_fraction();
 
     dsfmt_seed(1); // given seed for retestability
