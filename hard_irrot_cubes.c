@@ -1,5 +1,5 @@
 #include "mt19937.h" // Mersenne Twister (dsmft_genrand();)
-#include "math_3d.h" // https://github.com/arkanis/single-header-file-c-libs/blob/master/math_3d.h
+#include "math_4d.h" // https://github.com/arkanis/single-header-file-c-libs/blob/master/math_3d.h
 // #include <direct.h> // mkdir on Windows
 #include <sys/types.h> // mkdir on Linux
 #include <sys/stat.h> // mkdir on Linux
@@ -38,11 +38,11 @@ const double diameter = 1.0;
 
 /* Simulation variables */
 static double r[N][NDIM]; // position of center of cube // TODO: make vec3_t
-static double m[N][NDIM][NDIM]; // rotation matrix of cube // TODO: make vec3_t
+static mat4_t m[N]; // rotation matrix of cube
 static double box[NDIM]; // dimensions of box
 // static double Normal[3][NDIM]; // the normal vector of an unrotated cube. Normal[0] is the normal in the x-dir, etc.
 static vec3_t Normal[3];
-static double Edge_Length = 1; // TODO: make write, and read
+static double Edge_Length = 1; // TODO: make write, and read. TODO: think about this, maybe just always = 1?
 static int n_particles = 0;
 static double ParticleVolume;
 static double Phi = M_PI / 2.; // angle of slanted cube
@@ -84,15 +84,34 @@ double nearimgdist(int i, int j){
     return sqrt(distsq);
 }
 
+/// checks if there is overlap between cubes along axis, between cubes i, j,
+bool is_collision_along_axis(vec3_t axis, )
+
 /// checks if cube i and cube j overlap using the separating axis theorem
 bool is_overlap(int i, int j)
 {
-    // TODO
     vec3_t r1 = vec3(r[i][0], r[i][1], r[i][2]);
     vec3_t r2 = vec3(r[j][0], r[j][1], r[j][2]);
+    vec3_t r1_r2 = v3_sub(r1, r2); // read as r1 - r2
     
+    // If the cubes are more than their greatsphere apart, they couldn't possibly overlap.
+    // Similarly, if they are less than their inscribed sphere apart, they couldn't possible NOT overlap.
+    // TODO: make Phi-dependent.
+    if(v3_length(r1_r2) > 1.73205080757) return false;
+    if(v3_length(r1_r2) < 1) return true;
 
-    return false;
+    // Now we use the separating axis theorem. Check for separation along all normals
+    // and crossproducts between edges of the cubes. Only if along all these axes
+    // we find no separation, we may conclude there is overlap.
+    vec3_t axes[6 + 9]; // normals of r1, normals of r2, cross products between edges
+    // TODO: ask/think about if there are really 9 axes due to cross products
+
+    bool is_collision = true;
+    for (int i = 0; (i < 6) && is_collision; i++) { // TODO: check for cross products of edges between cubes
+        is_collision = is_collision_along_axis(axes[i], i, j, r1_r2);
+    }
+
+    return is_collision;
 }
 
 /// Special distance function for move_particle().
@@ -204,21 +223,27 @@ void read_data(void)
         for (int dim = 0; dim < NDIM; dim++) {
             fscanf(pFile, "%lf", &pos); // Now pos contains what r[i][dim] should be
             r[i][dim] = pos;
-            m[i][dim][dim] = 1; // TODO: is this the right place and time and way to do this (initialize the rotation matrices)?
+            // m[i][dim][dim] = 1; // TODO: is this the right place and time and way to do this (initialize the rotation matrices)?
         }
     }
 
     fclose(pFile);
 }
 
-/// This function returns the jth vertex (j = 0, ... , 7) of cube number i
+/// This function returns the jth vertex (j = 0, ... , 7) of cube number i:
+/*        3----7
+         /|   /|
+z       1-+--5 |
+| y     | 2--+-6
+|/      |/   |/
+ ----x  0----4 */
 vec3_t get_vertex(int i, int j){
     vec3_t result = vec3(r[i][0], r[i][1], r[i][2]); // the center
     // TODO: make Phi != M_PI/2 compatible
     vec3_t offset = vec3(-Edge_Length / 2, -Edge_Length / 2, -Edge_Length / 2);
-    if(j & 4) offset.x += Edge_Length;
-    if(j & 2) offset.y += Edge_Length;
-    if(j & 1) offset.z += Edge_Length;
+    if(j & 4) offset.x += Edge_Length; // x+ = 4, 5, 6, 7
+    if(j & 2) offset.y += Edge_Length; // y+ = 2, 3, 6, 7
+    if(j & 1) offset.z += Edge_Length; // z+ = 1, 3, 5, 7
     result = v3_add(result, offset);
     // TODO: add rotation
     return result;
@@ -282,7 +307,7 @@ void write_data(int step) // TODO: how many decimal digits are needed? maybe 6 i
         fprintf(fp, "%lf\t", Edge_Length);
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
-                fprintf(fp, "%lf\t", m[n][d1][d2]);
+                fprintf(fp, "%lf\t", m[n].m[d1][d2]); // TODO: maybe the order is the wrong way around?
             }
         }
         fprintf(fp, "10 %lf\n", Phi); // the visualizer wants color, apparently 10 is fine.
@@ -359,9 +384,12 @@ int main(int argc, char* argv[])
     int vol_accepted = 0;
     for (int step = 0; step < mc_steps; ++step) {
         for (int n = 0; n < n_particles; ++n) {
-            move_accepted += move_particle();
+            if(ran(0, n_particles + 1) < n_particles){ // Have to do this for detailed balance
+                move_accepted += move_particle();
+            } else {
+                vol_accepted += change_volume(); // DONE: ask if the order (move->volume) obeys detailed balance. IT DOESN'T!!!
+            }
         }
-        vol_accepted += change_volume(); // TODO: ask if this order (move->volume) obeys detailed balance.
 
         avg_vol += box[0] * box[1] * box[2];
         if (step % output_steps == 0) {
