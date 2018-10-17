@@ -84,31 +84,43 @@ double nearimgdist(int i, int j){
     return sqrt(distsq);
 }
 
-/// checks if there is overlap between cubes along axis, between cubes i, j,
-bool is_collision_along_axis(vec3_t axis, )
+/// checks if there is overlap between cubes along axis, between cubes i, j
+/// Also the difference vector r2-r1 is given as it has already been calculated
+/// and the (primary) direction of the normal is given by k = 0, 1, 2, 3, 4, 5 
+/// to cut down on needed vertices. If axis is the nth normal (x=0, y=1, z=2)
+/// of cube 1, k = n, if axis is the nth normal of cube 2, k = n + 3.
+/// e.g. say k = 0, we only need vertex 0, 4 for cube 1.
+bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1, int k)
+{
+    
+}
 
 /// checks if cube i and cube j overlap using the separating axis theorem
 bool is_overlap(int i, int j)
 {
     vec3_t r1 = vec3(r[i][0], r[i][1], r[i][2]);
     vec3_t r2 = vec3(r[j][0], r[j][1], r[j][2]);
-    vec3_t r1_r2 = v3_sub(r1, r2); // read as r1 - r2
+    vec3_t r2_r1 = v3_sub(r2, r1); // read as r2 - r1
     
     // If the cubes are more than their greatsphere apart, they couldn't possibly overlap.
     // Similarly, if they are less than their inscribed sphere apart, they couldn't possible NOT overlap.
     // TODO: make Phi-dependent.
-    if(v3_length(r1_r2) > 1.73205080757) return false;
-    if(v3_length(r1_r2) < 1) return true;
+    if(v3_length(r2_r1) > 1.73205080757 * Edge_Length) return false;
+    if(v3_length(r2_r1) < Edge_Length) return true;
 
     // Now we use the separating axis theorem. Check for separation along all normals
     // and crossproducts between edges of the cubes. Only if along all these axes
     // we find no separation, we may conclude there is overlap.
     vec3_t axes[6 + 9]; // normals of r1, normals of r2, cross products between edges
     // TODO: ask/think about if there are really 9 axes due to cross products
+    for (int k = 0; k < 3; k++) {
+        axes[k] = m4_mul_pos(m[i], Normal[k]);
+        axes[k + 3] = m4_mul_pos(m[j], Normal[k]);
+    }
 
     bool is_collision = true;
-    for (int i = 0; (i < 6) && is_collision; i++) { // TODO: check for cross products of edges between cubes
-        is_collision = is_collision_along_axis(axes[i], i, j, r1_r2);
+    for (int k = 0; (k < 6) && is_collision; k++) { // TODO: check for cross products of edges between cubes
+        is_collision = is_collision_along_axis(axes[k], i, j, r2_r1, k);
     }
 
     return is_collision;
