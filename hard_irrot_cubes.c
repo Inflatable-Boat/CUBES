@@ -115,21 +115,25 @@ vec3_t get_offset(int i, int j)
 /// to cut down on needed vertices for the first cube.
 /// e.g. say k = 0, we only need vertex 0, 4 for cube 1.
 /// (k=0 -> vx = 4, k=1 -> vx = 2, k=2 -> vx = 1) --> vx = 2^(2-k)
-bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1, int k)
+bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
 {
-    int vx2 = 4; // second vertex, see comment above.
+    double min1, min2, max1, max2, temp;
+/*     int vx2 = 4; // second vertex, see comment above.
     while(k > 0){
         vx2 /= 2;
         k--;
     }
-    double min1, min2, max1, max2, temp;
     min1 = max1 = v3_dot(axis, get_offset(i, 0));
     temp = v3_dot(axis, get_offset(i, vx2));
     min1 = fmin(min1, temp); // can do this together with min2, max2
-    max1 = fmax(max1, temp); // if we are going to ignore this fast check
+    max1 = fmax(max1, temp); // if we are going to ignore this fast check */
     
+    min1 = max1 = v3_dot(axis, get_offset(i, 0));
     min2 = max2 = v3_dot(axis, v3_add(r2_r1, get_offset(j, 0)));
     for (int n = 1; n < 7; n++) {
+        temp = v3_dot(axis, get_offset(i, n));
+        min1 = fmin(min1, temp);
+        max1 = fmax(max1, temp);
         temp = v3_dot(axis, v3_add(r2_r1, get_offset(j, n)));
         min2 = fmin(min2, temp);
         max2 = fmax(max2, temp);
@@ -142,12 +146,22 @@ bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1, int k)
     }
 }
 
-/// checks if cube i and cube j overlap using the separating axis theorem
+/// Checks if cube i and cube j overlap using the separating axis theorem
 bool is_overlap(int i, int j)
 {
     vec3_t r1 = vec3(r[i][0], r[i][1], r[i][2]);
     vec3_t r2 = vec3(r[j][0], r[j][1], r[j][2]);
     vec3_t r2_r1 = v3_sub(r2, r1); // read as r2 - r1
+
+    // We need to apply nearest image convention to r2_r1.
+    // We use pointers to loop over the x, y, z members of the vec3_t type.
+    float *pdist = &(r2_r1.x);
+    for (int k = 0; k < 3; k++) {
+        if (*(pdist + k) > 0.5 * box[k])
+            *(pdist + k) -= box[k];
+        if (*(pdist + k) < -0.5 * box[k])
+            *(pdist + k) += box[k];
+    }
 
     // If the cubes are more than their greatsphere apart, they couldn't possibly overlap.
     // Similarly, if they are less than their inscribed sphere apart, they couldn't possible NOT overlap.
@@ -169,15 +183,10 @@ bool is_overlap(int i, int j)
         // axes[k + 3] = m4_mul_pos(m[j], Normal[k]);
     }
 
-    // TODO: make the following cleaner/easier to read? How much faster vs how much easier to read
     bool is_collision = true;
-    for (int k = 0; (k < 3) && is_collision; k++)
-        is_collision = is_collision_along_axis(axes[k], i, j, r2_r1, k);
-    for (int k = 3; (k < 6) && is_collision; k++)
-        is_collision = is_collision_along_axis(axes[k], j, i, r2_r1, k % 3);
+    for (int k = 0; k < 6; k++)
+        is_collision = is_collision && is_collision_along_axis(axes[k], i, j, r2_r1);
     // TODO: check for cross products of edges between cubes
-    // probably by setting k=-1 and if k=-1 make is_collision_along_axis check all vertices
-    // (in principle we need only 4 points per cube, maybe make separate function?)
 
     return is_collision;
 }
@@ -290,9 +299,13 @@ void read_data(void)
     // TODO: make write, and read Phi.
     Phi = M_PI / 2.;
 
+    // now initialize the normals, put everything to zero first:
+    for (int i = 0; i < 3; i++) {
+        Normal[i].x = Normal[i].y = Normal[i].z = 0;
+    }
     // TODO: check if this is right
-    Normal[0].x = cos(Phi); // normal on x-dir
-    Normal[0].z = -1. * sin(Phi);
+    Normal[0].x = sin(Phi); // normal on x-dir
+    Normal[0].z = -1. * cos(Phi);
     Normal[1].y = 1.; // normal on y-dir
     Normal[2].z = 1.; // normal on z-dir
 
@@ -342,7 +355,7 @@ int move_particle(void)
     // as any collision results in an unsuccesful move.
     bool is_collision = false;
     for (int i = index + 1; i < index + n_particles && (!is_collision); i++) {
-        if(is_overlap(index, i)){
+        if(is_overlap(index, i % n_particles)){
             is_collision = true;
             break;
         }
