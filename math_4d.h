@@ -74,8 +74,8 @@ v1.0  2016-02-15  Initial release
 #ifndef MATH_3D_HEADER
 #define MATH_3D_HEADER
 
-// #include <math.h>
-// #include <stdio.h>
+#include <math.h>
+#include <stdio.h>
 
 
 // Define PI directly because we would need to define the _BSD_SOURCE or

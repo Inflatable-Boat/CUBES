@@ -6,9 +6,9 @@
 #include <unistd.h>
 // #include <iostream> // C++
 #include <assert.h>
-#include <math.h> // in Linux, make sure to gcc ... -lm, -lm stands for linking math library.
+// #include <math.h> // in Linux, make sure to gcc ... -lm, -lm stands for linking math library.
 #include <stdbool.h> // C requires this for (bool, true, false) to work
-#include <stdio.h> // C
+// #include <stdio.h> // C
 #include <string.h> // This is for C (strcpy, strcat, etc. ). For C++, use #include <string>
 
 #ifndef M_PI
@@ -83,13 +83,61 @@ void scale(double scale_factor)
     return sqrt(distsq);
 } */
 
+/// This function returns the jth vertex (j = 0, ... , 7) of cube number i:
+/*        3----7
+         /|   /|
+z       1-+--5 |
+| y     | 2--+-6
+|/      |/   |/
+ ----x  0----4  */
+vec3_t get_vertex(int i, int j)
+{
+    vec3_t result = vec3(r[i][0], r[i][1], r[i][2]); // the center
+    // TODO: make Phi != M_PI/2 compatible
+    vec3_t offset = vec3(-Edge_Length / 2, -Edge_Length / 2, -Edge_Length / 2);
+    if (j & 4)
+        offset.x += Edge_Length; // x+ = 4, 5, 6, 7
+    if (j & 2)
+        offset.y += Edge_Length; // y+ = 2, 3, 6, 7
+    if (j & 1)
+        offset.z += Edge_Length; // z+ = 1, 3, 5, 7
+    result = v3_add(result, offset);
+
+    // TODO: add rotation
+    return result;
+}
+
 /// checks if there is overlap between cubes along axis, between cubes i, j
 /// Also the difference vector r2-r1 is given as it has already been calculated
 /// and the (primary) direction of the normal is given by k = 0, 1, 2 (x=0, y=1, z=2)
 /// to cut down on needed vertices for the first cube.
 /// e.g. say k = 0, we only need vertex 0, 4 for cube 1.
+/// (k=0 -> vx = 4, k=1 -> vx = 2, k=2 -> vx = 1) --> vx = 2^(2-k)
 bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1, int k)
 {
+    int vx2 = 4; // second vertex, see comment above.
+    while(k > 0){
+        vx2 /= 2;
+        k--;
+    }
+    double min1, min2, max1, max2, temp;
+    min1 = max1 = v3_dot(axis, get_vertex(i, 0));
+    temp = v3_dot(axis, get_vertex(i, vx2));
+    min1 = fmin(min1, temp); // can do this together with min2, max2
+    max1 = fmax(max1, temp); // if we are going to ignore this fast check
+    
+    min2 = max2 = v3_dot(axis, get_vertex(j, 0));
+    for (int n = 1; n < 7; n++) {
+        temp = v3_dot(axis, get_vertex(j, n));
+        min2 = fmin(min2, temp);
+        max2 = fmax(max2, temp);
+    }
+
+    if(max1 < min2 || max2 < min1) {
+        return false; // separation
+    } else {
+        return true; // collision
+    }
 }
 
 /// checks if cube i and cube j overlap using the separating axis theorem
@@ -155,7 +203,8 @@ void nudge_deltas(double mov, double vol)
 {
     if (mov < 0.4)
         Delta *= 0.9; // acceptance too low  --> decrease delta
-    // if(mov > 0.6) Delta  *= 1.1; // acceptance too high --> increase delta
+    if (mov > 0.6)
+        Delta *= 1.1; // acceptance too high --> increase delta
     if (vol < 0.4)
         DeltaV *= 0.9;
     if (vol > 0.6)
@@ -221,7 +270,7 @@ void read_data(void)
         }
     }
 
-    // TODO: make write, and read edge length
+    // TODO: make write, and read edge length / decide if it should be always 1
     Edge_Length = 1;
 
     // TODO: make write, and read Phi.
@@ -247,29 +296,6 @@ void read_data(void)
     }
 
     fclose(pFile);
-}
-
-/// This function returns the jth vertex (j = 0, ... , 7) of cube number i:
-/*        3----7
-         /|   /|
-z       1-+--5 |
-| y     | 2--+-6
-|/      |/   |/
- ----x  0----4  */
-vec3_t get_vertex(int i, int j)
-{
-    vec3_t result = vec3(r[i][0], r[i][1], r[i][2]); // the center
-    // TODO: make Phi != M_PI/2 compatible
-    vec3_t offset = vec3(-Edge_Length / 2, -Edge_Length / 2, -Edge_Length / 2);
-    if (j & 4)
-        offset.x += Edge_Length; // x+ = 4, 5, 6, 7
-    if (j & 2)
-        offset.y += Edge_Length; // y+ = 2, 3, 6, 7
-    if (j & 1)
-        offset.z += Edge_Length; // z+ = 1, 3, 5, 7
-    result = v3_add(result, offset);
-    // TODO: add rotation
-    return result;
 }
 
 /// This moves a random particle in a cube of volume (2 * delta)^3.
@@ -315,7 +341,7 @@ void write_data(int step) // TODO: how many decimal digits are needed? maybe 6 i
 
     FILE* fp = fopen(output_file, "w");
     fprintf(fp, "%d\n", n_particles);
-    fprintf(fp, "0.0\t0.0\t0.0\n"); // TODO: place the format in the readme file
+    fprintf(fp, "0.0\t0.0\t0.0\n");
     for (int d = 0; d < 9; ++d) { // dimensions of box
         if (d % 4 == 0) {
             fprintf(fp, "%lf\t", box[d / 4]);
@@ -405,6 +431,7 @@ int main(int argc, char* argv[])
     int vol_accepted = 0;
     for (int step = 0; step < mc_steps; ++step) {
         for (int n = 0; n < n_particles; ++n) {
+            // TODO: add rotation moves
             if (ran(0, n_particles + 1) < n_particles) { // Have to do this for detailed balance
                 move_accepted += move_particle();
             } else {
