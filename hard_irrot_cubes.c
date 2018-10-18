@@ -25,7 +25,7 @@
 /* Initialization variables */
 // many have been made not constant, so that one can enter into the command line:
 // modsim5.exe initial_packing_fraction Delta DeltaV BetaP initial_configuration output_folder
-double packing_fraction = 0.5;
+double packing_fraction = 0.4;
 static double Delta = 0.1; // delta, deltaV, deltaTheta are dynamic, i.e. every output_steps steps,
 static double DeltaV = 2.0; // they will be nudged a bit to keep the move and volume acceptance in between 0.4 and 0.6.
 static double DeltaTheta = 0.1;
