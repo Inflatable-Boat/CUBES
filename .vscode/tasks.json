@@ -6,7 +6,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "gcc -g -Wall -O3 hard_irrot_cubes.c -lm -o a.exe",
+            "command": "gcc -g -Wall -O3 hard_cubes.c -lm -o a.exe",
             "group": {
                 "kind": "build",
                 "isDefault": true

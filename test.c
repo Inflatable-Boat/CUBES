@@ -12,5 +12,8 @@ int main()
         printf("%3.3lf\n", *(noot + i));
     }
 
+    vec3_t mies = aap;
+    printf("%.3lf %.3lf %.3lf\n", mies.x, mies.y, mies.z);
+
     return 0;
 }
