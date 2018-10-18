@@ -1,15 +1,15 @@
-#include "mt19937.h" // Mersenne Twister (dsmft_genrand();)
 #include "math_4d.h" // https://github.com/arkanis/single-header-file-c-libs/blob/master/math_3d.h
+#include "mt19937.h" // Mersenne Twister (dsmft_genrand();)
 // #include <direct.h> // mkdir on Windows
-#include <sys/types.h> // mkdir on Linux
 #include <sys/stat.h> // mkdir on Linux
+#include <sys/types.h> // mkdir on Linux
 #include <unistd.h>
 // #include <iostream> // C++
-#include <stdio.h> // C
-#include <math.h> // in Linux, make sure to gcc ... -lm, -lm stands for linking math library.
-#include <string.h> // This is for C (strcpy, strcat, etc. ). For C++, use #include <string>
 #include <assert.h>
+#include <math.h> // in Linux, make sure to gcc ... -lm, -lm stands for linking math library.
 #include <stdbool.h> // C requires this for (bool, true, false) to work
+#include <stdio.h> // C
+#include <string.h> // This is for C (strcpy, strcat, etc. ). For C++, use #include <string>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -21,12 +21,11 @@
 #define NDIM 3
 #define N 1000
 
-
 /* Initialization variables */
 // many have been made not constant, so that one can enter into the command line:
 // modsim5.exe initial_packing_fraction Delta DeltaV BetaP initial_configuration output_folder
 double packing_fraction = 0.5;
-static double Delta = 0.1;  // delta and deltaV are dynamic, i.e. every output_steps steps,
+static double Delta = 0.1; // delta and deltaV are dynamic, i.e. every output_steps steps,
 static double DeltaV = 2.0; // they will be nudged a bit to keep the move and volume acceptance in between 0.4 and 0.6.
 static double BetaP = 30;
 char init_filename[] = "sc.txt";
@@ -47,7 +46,6 @@ static int n_particles = 0;
 static double ParticleVolume;
 static double Phi = M_PI / 2.; // angle of slanted cube
 
-
 /* Functions */
 /// Returns a random number between low and high (including exactly low, but not exactly high).
 double ran(double low, double high)
@@ -56,7 +54,8 @@ double ran(double low, double high)
 }
 
 /// Scales the system with the scale factor
-void scale(double scale_factor){
+void scale(double scale_factor)
+{
     for (int n = 0; n < n_particles; ++n) {
         for (int d = 0; d < NDIM; ++d)
             r[n][d] *= scale_factor;
@@ -68,7 +67,7 @@ void scale(double scale_factor){
 /// Returns the distance between the nearest image of particle i and j.
 /// We need to take into account the periodic boundary conditions,
 /// we use the nearest image convention
-double nearimgdist(int i, int j){
+/* double nearimgdist(int i, int j){
     double distsq = 0; // distance squared
     for (int dim = 0; dim < NDIM; dim++) {
         double tempdist; // we run over the dimensions and need a temporary variable to check nearest image
@@ -82,17 +81,15 @@ double nearimgdist(int i, int j){
         distsq += pow(tempdist, 2.); // add the contribution of the nearest image to the squared distance
     }
     return sqrt(distsq);
-}
+} */
 
 /// checks if there is overlap between cubes along axis, between cubes i, j
 /// Also the difference vector r2-r1 is given as it has already been calculated
-/// and the (primary) direction of the normal is given by k = 0, 1, 2, 3, 4, 5 
-/// to cut down on needed vertices. If axis is the nth normal (x=0, y=1, z=2)
-/// of cube 1, k = n, if axis is the nth normal of cube 2, k = n + 3.
+/// and the (primary) direction of the normal is given by k = 0, 1, 2 (x=0, y=1, z=2)
+/// to cut down on needed vertices for the first cube.
 /// e.g. say k = 0, we only need vertex 0, 4 for cube 1.
 bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1, int k)
 {
-    
 }
 
 /// checks if cube i and cube j overlap using the separating axis theorem
@@ -101,12 +98,14 @@ bool is_overlap(int i, int j)
     vec3_t r1 = vec3(r[i][0], r[i][1], r[i][2]);
     vec3_t r2 = vec3(r[j][0], r[j][1], r[j][2]);
     vec3_t r2_r1 = v3_sub(r2, r1); // read as r2 - r1
-    
+
     // If the cubes are more than their greatsphere apart, they couldn't possibly overlap.
     // Similarly, if they are less than their inscribed sphere apart, they couldn't possible NOT overlap.
     // TODO: make Phi-dependent.
-    if(v3_length(r2_r1) > 1.73205080757 * Edge_Length) return false;
-    if(v3_length(r2_r1) < Edge_Length) return true;
+    if (v3_length(r2_r1) > 1.73205080757 * Edge_Length)
+        return false;
+    if (v3_length(r2_r1) < Edge_Length)
+        return true;
 
     // Now we use the separating axis theorem. Check for separation along all normals
     // and crossproducts between edges of the cubes. Only if along all these axes
@@ -118,17 +117,22 @@ bool is_overlap(int i, int j)
         axes[k + 3] = m4_mul_pos(m[j], Normal[k]);
     }
 
+    // TODO: make the following cleaner/easier to read? How much faster vs how much easier to read
     bool is_collision = true;
-    for (int k = 0; (k < 6) && is_collision; k++) { // TODO: check for cross products of edges between cubes
+    for (int k = 0; (k < 3) && is_collision; k++)
         is_collision = is_collision_along_axis(axes[k], i, j, r2_r1, k);
-    }
+    for (int k = 3; (k < 6) && is_collision; k++)
+        is_collision = is_collision_along_axis(axes[k], j, i, r2_r1, k % 3);
+    // TODO: check for cross products of edges between cubes
+    // probably by setting k=-1 and if k=-1 make is_collision_along_axis check all vertices
+    // (in principle we need only 4 points per cube, maybe make separate function?)
 
     return is_collision;
 }
 
 /// Special distance function for move_particle().
 /// It returns the distance between particle i and the particle at position trialr[3].
-double nearimgdist_mov(double trialr[NDIM], int i)
+/* double nearimgdist_mov(double trialr[NDIM], int i)
 {
     double distsq = 0; // distance squared
     for (int dim = 0; dim < NDIM; dim++) {
@@ -143,16 +147,19 @@ double nearimgdist_mov(double trialr[NDIM], int i)
         distsq += pow(tempdist, 2.); // add the contribution of the nearest image to the squared distance
     }
     return sqrt(distsq); //TODO: can check against distsq later, if sqrt is slow.
-}
+} */
 
 /// This function checks if the move- and volume-acceptances are too high or low,
 /// and adjusts delta and deltaV accordingly.
 void nudge_deltas(double mov, double vol)
 {
-    if(mov < 0.4) Delta  *= 0.9; // acceptance too low  --> decrease delta
+    if (mov < 0.4)
+        Delta *= 0.9; // acceptance too low  --> decrease delta
     // if(mov > 0.6) Delta  *= 1.1; // acceptance too high --> increase delta
-    if(vol < 0.4) DeltaV *= 0.9;
-    if(vol > 0.6) DeltaV *= 1.1;
+    if (vol < 0.4)
+        DeltaV *= 0.9;
+    if (vol > 0.6)
+        DeltaV *= 1.1;
 }
 
 /// This function attempts to change the volume, returning 1 if succesful and 0 if not.
@@ -172,18 +179,18 @@ int change_volume(void)
     // TODO: now we need to check for overlaps, and reject if there are any
     bool is_collision = false;
 
-    if (is_collision) { 
-        scale(1./scale_factor); // move everything back
+    if (is_collision) {
+        scale(1. / scale_factor); // move everything back
         return 0; // unsuccesful change
     }
-    
+
     // Now that there are no collisions, we need to accept the change at a rate like the boltzmann factor.
     // Effectively the above code simulates a hard sphere potential (U = \infty if r < d, U = 0 else)
     double boltzmann = pow(M_E, -BetaP * dV) * pow(newvol / oldvol, n_particles);
-    if(ran(0,1) < boltzmann) { // if the boltzmann factor > 1, the energy change is negative, and this move will always be accepted.
+    if (ran(0, 1) < boltzmann) { // if the boltzmann factor > 1, the energy change is negative, and this move will always be accepted.
         return 1; // succesful change
     } else {
-        scale(1./scale_factor); // move everything back
+        scale(1. / scale_factor); // move everything back
         return 0; // unsuccesful change
     }
 }
@@ -207,7 +214,7 @@ void read_data(void)
     for (int i = 0; i < NDIM; i++) {
         fscanf(pFile, "%lf %lf", &templeft, &tempright);
         box[i] = tempright - templeft;
-        if(box[i] < 0) {
+        if (box[i] < 0) {
             printf("Error: box dimension negative\n");
             n_particles = 0; // Gives a proper warning in the next line in main()
             return;
@@ -216,7 +223,7 @@ void read_data(void)
 
     // TODO: make write, and read edge length
     Edge_Length = 1;
-    
+
     // TODO: make write, and read Phi.
     Phi = M_PI / 2.;
 
@@ -248,14 +255,18 @@ void read_data(void)
 z       1-+--5 |
 | y     | 2--+-6
 |/      |/   |/
- ----x  0----4 */
-vec3_t get_vertex(int i, int j){
+ ----x  0----4  */
+vec3_t get_vertex(int i, int j)
+{
     vec3_t result = vec3(r[i][0], r[i][1], r[i][2]); // the center
     // TODO: make Phi != M_PI/2 compatible
     vec3_t offset = vec3(-Edge_Length / 2, -Edge_Length / 2, -Edge_Length / 2);
-    if(j & 4) offset.x += Edge_Length; // x+ = 4, 5, 6, 7
-    if(j & 2) offset.y += Edge_Length; // y+ = 2, 3, 6, 7
-    if(j & 1) offset.z += Edge_Length; // z+ = 1, 3, 5, 7
+    if (j & 4)
+        offset.x += Edge_Length; // x+ = 4, 5, 6, 7
+    if (j & 2)
+        offset.y += Edge_Length; // y+ = 2, 3, 6, 7
+    if (j & 1)
+        offset.z += Edge_Length; // z+ = 1, 3, 5, 7
     result = v3_add(result, offset);
     // TODO: add rotation
     return result;
@@ -267,7 +278,7 @@ vec3_t get_vertex(int i, int j){
 int move_particle(void)
 {
     // first choose the particle
-    int index = (int) ran(0., n_particles); // goes from 0 to n_particles - 1
+    int index = (int)ran(0., n_particles); // goes from 0 to n_particles - 1
 
     // then choose the displacement from a cube with sides 2 * delta and store the attempted move in trialr
     double displacement[NDIM];
@@ -297,7 +308,7 @@ void write_data(int step) // TODO: how many decimal digits are needed? maybe 6 i
 {
     char buffer[128];
     strcpy(buffer, output_foldername);
-    
+
     strcat(buffer, "/coords_step%07d.poly");
     char output_file[128];
     sprintf(output_file, buffer, step); // replace %07d with step and put in output_file.
@@ -306,12 +317,13 @@ void write_data(int step) // TODO: how many decimal digits are needed? maybe 6 i
     fprintf(fp, "%d\n", n_particles);
     fprintf(fp, "0.0\t0.0\t0.0\n"); // TODO: place the format in the readme file
     for (int d = 0; d < 9; ++d) { // dimensions of box
-        if(d % 4 == 0){
+        if (d % 4 == 0) {
             fprintf(fp, "%lf\t", box[d / 4]);
         } else {
             fprintf(fp, "0.000000\t");
         }
-        if(d % 3 == 2) fprintf(fp, "\n");
+        if (d % 3 == 2)
+            fprintf(fp, "\n");
     }
     for (int n = 0; n < n_particles; ++n) {
         for (int d = 0; d < NDIM; ++d)
@@ -338,9 +350,6 @@ void set_packing_fraction(void)
 
     scale(scale_factor);
 }
-
-
-
 
 int main(int argc, char* argv[])
 {
@@ -388,7 +397,7 @@ int main(int argc, char* argv[])
     set_packing_fraction();
 
     dsfmt_seed(1); // given seed for retestability
-    
+
     printf("#Step \t Volume \t Move-acceptnce\t Volume-acceptance \n");
 
     double avg_vol = 0;
@@ -396,7 +405,7 @@ int main(int argc, char* argv[])
     int vol_accepted = 0;
     for (int step = 0; step < mc_steps; ++step) {
         for (int n = 0; n < n_particles; ++n) {
-            if(ran(0, n_particles + 1) < n_particles){ // Have to do this for detailed balance
+            if (ran(0, n_particles + 1) < n_particles) { // Have to do this for detailed balance
                 move_accepted += move_particle();
             } else {
                 vol_accepted += change_volume(); // DONE: ask if the order (move->volume) obeys detailed balance. IT DOESN'T!!!
@@ -413,7 +422,7 @@ int main(int argc, char* argv[])
                 move_acceptance,
                 volume_acceptance,
                 Delta, DeltaV);
-            
+
             // Here is where delta and deltaV might get changed if necessary
             nudge_deltas(move_acceptance, volume_acceptance);
             // And reset for the next loop
