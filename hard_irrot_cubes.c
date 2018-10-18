@@ -6,10 +6,11 @@
 #include <unistd.h>
 // #include <iostream> // C++
 #include <assert.h>
-// #include <math.h> // in Linux, make sure to gcc ... -lm, -lm stands for linking math library.
 #include <stdbool.h> // C requires this for (bool, true, false) to work
-// #include <stdio.h> // C
 #include <string.h> // This is for C (strcpy, strcat, etc. ). For C++, use #include <string>
+// #include <math.h> // in "math_4d.h" // in Linux, make sure to gcc ... -lm, -lm stands for linking math library.
+// #include <stdio.h> // in "math_4d.h" // C
+#include <time.h> // time(NULL)
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -25,10 +26,11 @@
 // many have been made not constant, so that one can enter into the command line:
 // modsim5.exe initial_packing_fraction Delta DeltaV BetaP initial_configuration output_folder
 double packing_fraction = 0.5;
-static double Delta = 0.1; // delta and deltaV are dynamic, i.e. every output_steps steps,
+static double Delta = 0.1; // delta, deltaV, deltaTheta are dynamic, i.e. every output_steps steps,
 static double DeltaV = 2.0; // they will be nudged a bit to keep the move and volume acceptance in between 0.4 and 0.6.
+static double DeltaTheta = 0.1;
 static double BetaP = 30;
-char init_filename[] = "sc.txt";
+char init_filename[] = "sc7.txt";
 char output_foldername[] = "datafolder_c_p=%4.1lf";
 
 const int mc_steps = 20000;
@@ -83,16 +85,16 @@ void scale(double scale_factor)
     return sqrt(distsq);
 } */
 
-/// This function returns the jth vertex (j = 0, ... , 7) of cube number i:
-/*        3----7
-         /|   /|
-z       1-+--5 |
-| y     | 2--+-6
-|/      |/   |/
- ----x  0----4  */
-vec3_t get_vertex(int i, int j)
+/// This function returns the offset of the jth vertex (j = 0, ... , 7)
+/// of cube number i:     3----7
+///                      /|   /|
+///     z               1-+--5 |
+///     | y             | 2--+-6
+///     |/              |/   |/
+///     0----x          0----4 
+vec3_t get_offset(int i, int j)
 {
-    vec3_t result = vec3(r[i][0], r[i][1], r[i][2]); // the center
+    // vec3_t result = vec3(r[i][0], r[i][1], r[i][2]); // the center
     // TODO: make Phi != M_PI/2 compatible
     vec3_t offset = vec3(-Edge_Length / 2, -Edge_Length / 2, -Edge_Length / 2);
     if (j & 4)
@@ -101,10 +103,10 @@ vec3_t get_vertex(int i, int j)
         offset.y += Edge_Length; // y+ = 2, 3, 6, 7
     if (j & 1)
         offset.z += Edge_Length; // z+ = 1, 3, 5, 7
-    result = v3_add(result, offset);
+    // result = v3_add(result, offset);
 
     // TODO: add rotation
-    return result;
+    return offset;
 }
 
 /// checks if there is overlap between cubes along axis, between cubes i, j
@@ -121,20 +123,20 @@ bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1, int k)
         k--;
     }
     double min1, min2, max1, max2, temp;
-    min1 = max1 = v3_dot(axis, get_vertex(i, 0));
-    temp = v3_dot(axis, get_vertex(i, vx2));
+    min1 = max1 = v3_dot(axis, get_offset(i, 0));
+    temp = v3_dot(axis, get_offset(i, vx2));
     min1 = fmin(min1, temp); // can do this together with min2, max2
     max1 = fmax(max1, temp); // if we are going to ignore this fast check
     
-    min2 = max2 = v3_dot(axis, get_vertex(j, 0));
+    min2 = max2 = v3_dot(axis, v3_add(r2_r1, get_offset(j, 0)));
     for (int n = 1; n < 7; n++) {
-        temp = v3_dot(axis, get_vertex(j, n));
+        temp = v3_dot(axis, v3_add(r2_r1, get_offset(j, n)));
         min2 = fmin(min2, temp);
         max2 = fmax(max2, temp);
     }
 
     if(max1 < min2 || max2 < min1) {
-        return false; // separation
+        return false; // separation!
     } else {
         return true; // collision
     }
@@ -161,8 +163,10 @@ bool is_overlap(int i, int j)
     vec3_t axes[6 + 9]; // normals of r1, normals of r2, cross products between edges
     // TODO: ask/think about if there are really 9 axes due to cross products
     for (int k = 0; k < 3; k++) {
-        axes[k] = m4_mul_pos(m[i], Normal[k]);
-        axes[k + 3] = m4_mul_pos(m[j], Normal[k]);
+        axes[k] = axes[k + 3] = Normal[k];
+        // TODO: rotation: it's just this
+        // axes[k] = m4_mul_pos(m[i], Normal[k]);
+        // axes[k + 3] = m4_mul_pos(m[j], Normal[k]);
     }
 
     // TODO: make the following cleaner/easier to read? How much faster vs how much easier to read
@@ -225,8 +229,18 @@ int change_volume(void)
     // change the configuration
     scale(scale_factor);
 
-    // TODO: now we need to check for overlaps, and reject if there are any
+    // now we need to check for overlaps (only if scale_factor < 1), and reject if there are any
     bool is_collision = false;
+    if(scale_factor < 1){
+        for (int i = 0; i < n_particles; i++) {
+            for (int j = i + 1; j < n_particles; j++) {
+                if(is_overlap(i, j)){
+                    is_collision = true;
+                    i = j = n_particles; // i.e. break out of both loops
+                }
+            }
+        }
+    }
 
     if (is_collision) {
         scale(1. / scale_factor); // move everything back
@@ -288,10 +302,12 @@ void read_data(void)
     // Now load all particle positions into r
     double pos;
     for (int i = 0; i < n_particles; i++) {
+        for (int temp = 0; temp < 16; temp++)
+            m[i].m[temp % 4][temp / 4] = 0; // TODO: is this right place/time/way?
         for (int dim = 0; dim < NDIM; dim++) {
             fscanf(pFile, "%lf", &pos); // Now pos contains what r[i][dim] should be
             r[i][dim] = pos;
-            // m[i][dim][dim] = 1; // TODO: is this the right place and time and way to do this (initialize the rotation matrices)?
+            m[i].m[dim][dim] = 1; // TODO: is this the right place and time and way to do this (initialize the rotation matrices)?
         }
     }
 
@@ -301,6 +317,7 @@ void read_data(void)
 /// This moves a random particle in a cube of volume (2 * delta)^3.
 /// Note this gives particles a tendency to move to one of the 8 corners of the cube,
 /// however it obeys detailed balance.^{[citation needed]}
+/// returns 1 on succesful move, 0 on unsuccesful move.
 int move_particle(void)
 {
     // first choose the particle
@@ -308,26 +325,44 @@ int move_particle(void)
 
     // then choose the displacement from a cube with sides 2 * delta and store the attempted move in trialr
     double displacement[NDIM];
-    double trialr[NDIM];
+    double memory[NDIM];
     for (int dim = 0; dim < NDIM; dim++) {
+        // first remember the position in case we need to move back
+        memory[dim] = r[index][dim];
+        
         displacement[dim] = ran(-Delta, Delta);
 
         // periodic boundary conditions happen here, fmod = floating point modulo. Since delta < box[dim],
         // the following expression will always return a positive number.
-        trialr[dim] = fmod(r[index][dim] + displacement[dim] + box[dim], box[dim]);
+        r[index][dim] = fmod(r[index][dim] + displacement[dim] + box[dim], box[dim]);
     }
 
-    // TODO: now check if this move is possible
-    bool is_collision = false; //is_overlap(trialr, index);
+    // TODO: make cell structure in box so we don't need as many checks
+    // if is_overlap(index, any other one) == true, it stops the loop,
+    // as any collision results in an unsuccesful move.
+    bool is_collision = false;
+    for (int i = index + 1; i < index + n_particles && (!is_collision); i++) {
+        if(is_overlap(index, i)){
+            is_collision = true;
+            break;
+        }
+    }
 
     if (is_collision) {
+        for (int dim = 0; dim < NDIM; dim++)
+            r[index][dim] = memory[dim];
         return 0; // unsuccesful move
-    } else { // move, i.e. store trialmove in r
-        for (int dim = 0; dim < NDIM; dim++) {
-            r[index][dim] = trialr[dim];
-        }
+    } else {
         return 1; // succesful move
     }
+}
+
+/// This rotates a random particle around a random axis
+/// by a random angle \in [-DeltaTheta, DeltaTheta]
+/// returns 1 on succesful rotation, 0 on unsuccesful rotation.
+int rotate_particle(void) 
+{ // TODO: rotation, and figure out how to get a point randomly distributed around a sphere
+    return 0;
 }
 
 void write_data(int step) // TODO: how many decimal digits are needed? maybe 6 is too much.
@@ -422,7 +457,7 @@ int main(int argc, char* argv[])
     mkdir(output_foldername, S_IRWXU | S_IRGRP | S_IROTH); // Linux needs me to set rights, this gives rwx to me and nobody else.
     set_packing_fraction();
 
-    dsfmt_seed(1); // given seed for retestability
+    dsfmt_seed(time(NULL));
 
     printf("#Step \t Volume \t Move-acceptnce\t Volume-acceptance \n");
 
