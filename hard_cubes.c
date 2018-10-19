@@ -26,10 +26,10 @@
 // many have been made not constant, so that one can enter into the command line:
 // modsim5.exe initial_packing_fraction Delta DeltaV BetaP initial_configuration output_folder
 double packing_fraction = 0.4;
-static double Delta = 0.1; // delta, deltaV, deltaR are dynamic, i.e. every output_steps steps,
-static double DeltaR = 0.1; // they will be nudged a bit to keep 
+static double Delta = 0.05; // delta, deltaV, deltaR are dynamic, i.e. every output_steps steps,
+static double DeltaR = 0.05; // they will be nudged a bit to keep
 static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
-static double BetaP = 30;
+static double BetaP = 60;
 char init_filename[] = "sc7.txt";
 char output_foldername[] = "datafolder_c_p=%4.1lf";
 
@@ -83,9 +83,9 @@ vec3_t get_offset(int i, int j)
         offset.y += Edge_Length; // y+ = 2, 3, 6, 7
     if (j & 1)
         offset.z += Edge_Length; // z+ = 1, 3, 5, 7
-    // result = v3_add(result, offset);
 
-    // TODO: add rotation
+    offset = m4_mul_pos(m[i], offset);
+
     return offset;
 }
 
@@ -138,21 +138,31 @@ bool is_overlap(int i, int j)
     // Now we use the separating axis theorem. Check for separation along all normals
     // and crossproducts between edges of the cubes. Only if along all these axes
     // we find no separation, we may conclude there is overlap.
-    vec3_t axes[6 + 9]; // normals of r1, normals of r2, cross products between edges
-    // TODO: ask/think about if there are really 9 axes due to cross products
+    vec3_t axes[6 + 9]; // 6 normals of r1 and r2, 9 cross products between edges
     for (int k = 0; k < 3; k++) {
-        axes[k] = axes[k + 3] = Normal[k];
-        // TODO: rotation: it's just this
-        // axes[k] = m4_mul_pos(m[i], Normal[k]);
-        // axes[k + 3] = m4_mul_pos(m[j], Normal[k]);
+        axes[k] = m4_mul_pos(m[i], Normal[k]);
+        axes[k + 3] = m4_mul_pos(m[j], Normal[k]);
     }
 
-    bool is_collision = true;
-    for (int k = 0; k < 6; k++)
-        is_collision = is_collision && is_collision_along_axis(axes[k], i, j, r2_r1);
-    // TODO: check for cross products of edges between cubes
+    // Now load the cross products between edges
+    vec3_t edges1[3], edges2[3]; // TODO: do this nicely in a for loop or sth.
+    edges1[0] = v3_sub(get_offset(i, 0), get_offset(i, 1));
+    edges1[0] = v3_sub(get_offset(i, 0), get_offset(i, 2));
+    edges1[0] = v3_sub(get_offset(i, 0), get_offset(i, 4));
+    edges2[0] = v3_sub(get_offset(j, 0), get_offset(j, 1));
+    edges2[0] = v3_sub(get_offset(j, 0), get_offset(j, 2));
+    edges2[0] = v3_sub(get_offset(j, 0), get_offset(j, 4));
 
-    return is_collision;
+    for (int k = 0; k < 9; k++) {
+        axes[k + 6] = v3_cross(edges1[k / 3], edges2[k % 3]);
+    }
+
+    for (int k = 0; k < 15; k++)
+        if (!is_collision_along_axis(axes[k], i, j, r2_r1))
+            return false;
+    // TODO: make smarter i.e. check only 2 points from first cube
+
+    return true;
 }
 
 /// This function checks if the move- and volume-acceptances are too high or low,
@@ -161,7 +171,7 @@ void nudge_deltas(double mov, double vol, double rot)
 {
     if (mov < 0.4)
         Delta *= 0.9; // acceptance too low  --> decrease delta
-    if (mov > 0.6)
+    if (mov > 0.6 && Delta < Edge_Length / 2.)
         Delta *= 1.1; // acceptance too high --> increase delta
     if (vol < 0.4)
         DeltaV *= 0.9;
@@ -169,7 +179,7 @@ void nudge_deltas(double mov, double vol, double rot)
         DeltaV *= 1.1;
     if (rot < 0.4)
         DeltaR *= 0.9;
-    if (rot > 0.6)
+    if (rot > 0.6 && DeltaR < M_PI / 4)
         DeltaR *= 1.1;
 }
 
@@ -288,18 +298,18 @@ int move_particle(void)
     vec3_t memory = r[index];
 
     float* pgarbage = &(r[index].x);
-    for (int d = 0; d < NDIM; d++){
+    for (int d = 0; d < NDIM; d++) {
         *(pgarbage + d) += ran(-Delta, Delta);
         // periodic boundary conditions happen here, fmod = floating point modulo. Since delta < box[dim],
         // the following expression will always return a positive number.
         *(pgarbage + d) = fmodf(*(pgarbage + d) + box[d], box[d]);
-        }
+    }
 
     // TODO: make cell structure in box so we don't need as many checks
     // if is_overlap(index, any other one) == true, it stops the loop,
     // as any collision results in an unsuccesful move.
-    bool is_collision = false;
-    for (int i = index + 1; i < index + n_particles && (!is_collision); i++) {
+    bool is_collision = false; // TODO: i < index + n_particles && (!is_collision) necessary?
+    for (int i = index + 1; i < index + n_particles; i++) {
         if (is_overlap(index, i % n_particles)) {
             is_collision = true;
             break;
@@ -318,8 +328,33 @@ int move_particle(void)
 /// by a random angle \in [-DeltaR, DeltaR]
 /// returns 1 on succesful rotation, 0 on unsuccesful rotation.
 int rotate_particle(void)
-{ // TODO: rotation, and figure out how to get a point randomly distributed around a sphere
-    return ran(0, 2);
+{
+    // first choose a random particle and remember its position
+    int index = (int)ran(0., n_particles);
+
+    // then choose a random axis (by picking points randomly in a ball)
+    double x[3], dist;
+    do {
+        for (int i = 0; i < 3; i++)
+            x[i] = ran(-1, 1);
+        dist = x[0] * x[0] + x[1] * x[1] + x[2] * x[2];
+    } while (dist > 1); // TODO: dist = 0 problematic? can this happen at all?
+    vec3_t rot_axis = vec3(x[0], x[1], x[2]); // the axis doesn't need to be normalized
+    mat4_t rot_mx = m4_rotation(ran(-DeltaR, DeltaR), rot_axis);
+
+    // rotate the particle
+    m[index] = m4_mul(rot_mx, m[index]);
+    // and check for collisions
+    // TODO: make cell structure
+    for (int i = index + 1; i < index + n_particles; i++) {
+        if (is_overlap(index, i % n_particles)) {
+            // rotate back
+            m[index] = m4_mul(m4_invert_affine(rot_mx), m[index]);
+            return 0; // unsuccesful rotation
+        }
+    }
+    // if we arrive here, there is no overlap and the rotation is accepted!
+    return 1;
 }
 
 void write_data(int step) // TODO: how many decimal digits are needed? maybe 6 is too much.
@@ -421,7 +456,7 @@ int main(int argc, char* argv[])
 
     double avg_vol = 0;
     int move_accepted = 0, vol_accepted = 0, rot_accepted = 0;
-    int move_attempted = 0, vol_attempted = 0, rot_attempted = 0;    
+    int move_attempted = 0, vol_attempted = 0, rot_attempted = 0;
     for (int step = 0; step < mc_steps; ++step) {
         for (int n = 0; n < 2 * n_particles + 1; ++n) {
             // Have to randomize order of moves for detailed balance
