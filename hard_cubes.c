@@ -31,7 +31,7 @@ static double DeltaR = 0.05; // they will be nudged a bit to keep
 static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
 static double BetaP = 60;
 char init_filename[] = "sc7.txt";
-char output_foldername[] = "datafolder_c_p=%4.1lf";
+char output_foldername[] = "datafolder_dir2=%4.1lf";
 
 const int mc_steps = 20000;
 const int output_steps = 100;
@@ -84,7 +84,7 @@ vec3_t get_offset(int i, int j)
     if (j & 1)
         offset.z += Edge_Length; // z+ = 1, 3, 5, 7
 
-    offset = m4_mul_pos(m[i], offset);
+    offset = m4_mul_dir(m[i], offset);
 
     return offset;
 }
@@ -93,6 +93,9 @@ vec3_t get_offset(int i, int j)
 /// Also the difference vector r2-r1 is given as it has already been calculated
 bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
 {
+    // TODO: I think the axis needs to be normalized:
+    axis = v3_norm(axis);
+
     double min1, min2, max1, max2, temp;
     min1 = max1 = v3_dot(axis, get_offset(i, 0));
     min2 = max2 = v3_dot(axis, v3_add(r2_r1, get_offset(j, 0)));
@@ -127,7 +130,7 @@ bool is_overlap(int i, int j)
             *(pdist + d) += box[d];
     }
 
-    // If the cubes are more than their greatsphere apart, they couldn't possibly overlap.
+    // If the cubes are more than their circumscribed sphere apart, they couldn't possibly overlap.
     // Similarly, if they are less than their inscribed sphere apart, they couldn't possible NOT overlap.
     // TODO: make Phi-dependent.
     if (v3_length(r2_r1) > 1.73205080757 * Edge_Length)
@@ -140,18 +143,18 @@ bool is_overlap(int i, int j)
     // we find no separation, we may conclude there is overlap.
     vec3_t axes[6 + 9]; // 6 normals of r1 and r2, 9 cross products between edges
     for (int k = 0; k < 3; k++) {
-        axes[k] = m4_mul_pos(m[i], Normal[k]);
-        axes[k + 3] = m4_mul_pos(m[j], Normal[k]);
+        axes[k] = m4_mul_dir(m[i], Normal[k]);
+        axes[k + 3] = m4_mul_dir(m[j], Normal[k]);
     }
 
     // Now load the cross products between edges
     vec3_t edges1[3], edges2[3]; // TODO: do this nicely in a for loop or sth.
     edges1[0] = v3_sub(get_offset(i, 0), get_offset(i, 1));
-    edges1[0] = v3_sub(get_offset(i, 0), get_offset(i, 2));
-    edges1[0] = v3_sub(get_offset(i, 0), get_offset(i, 4));
+    edges1[1] = v3_sub(get_offset(i, 0), get_offset(i, 2));
+    edges1[2] = v3_sub(get_offset(i, 0), get_offset(i, 4));
     edges2[0] = v3_sub(get_offset(j, 0), get_offset(j, 1));
-    edges2[0] = v3_sub(get_offset(j, 0), get_offset(j, 2));
-    edges2[0] = v3_sub(get_offset(j, 0), get_offset(j, 4));
+    edges2[1] = v3_sub(get_offset(j, 0), get_offset(j, 2));
+    edges2[2] = v3_sub(get_offset(j, 0), get_offset(j, 4));
 
     for (int k = 0; k < 9; k++) {
         axes[k + 6] = v3_cross(edges1[k / 3], edges2[k % 3]);
@@ -282,6 +285,7 @@ void read_data(void)
             *(pgarbage + d) = pos;
             m[i].m[d][d] = 1; // TODO: is this the right place and time and way to do this (initialize the rotation matrices)?
         }
+        m[i].m[3][3] = 1; // TODO: Is this necessary?
     }
 
     fclose(pFile);
@@ -339,6 +343,8 @@ int rotate_particle(void)
             x[i] = ran(-1, 1);
         dist = x[0] * x[0] + x[1] * x[1] + x[2] * x[2];
     } while (dist > 1); // TODO: dist = 0 problematic? can this happen at all?
+    if(dist == 0) // TODO: remove this baby
+        printf("\nholy shit the random number generator is exactly zero!\n");
     vec3_t rot_axis = vec3(x[0], x[1], x[2]); // the axis doesn't need to be normalized
     mat4_t rot_mx = m4_rotation(ran(-DeltaR, DeltaR), rot_axis);
 
@@ -450,7 +456,7 @@ int main(int argc, char* argv[])
     mkdir(output_foldername, S_IRWXU | S_IRGRP | S_IROTH); // Linux needs me to set rights, this gives rwx to me and nobody else.
     set_packing_fraction();
 
-    dsfmt_seed(time(NULL));
+    dsfmt_seed(1234);
 
     printf("#Step\tVolume\t acceptances\t\t\t deltas\n");
 
