@@ -29,9 +29,9 @@ double packing_fraction = 0.4;
 static double Delta = 0.05; // delta, deltaV, deltaR are dynamic, i.e. every output_steps steps,
 static double DeltaR = 0.05; // they will be nudged a bit to keep
 static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
-static double BetaP = 60;
+static double BetaP = 10;
 char init_filename[] = "sc7.txt";
-char output_foldername[] = "datafolder_dir2=%4.1lf";
+char output_foldername[] = "datafolder_c_p=%4.1lf";
 
 const int mc_steps = 20000;
 const int output_steps = 100;
@@ -93,13 +93,13 @@ vec3_t get_offset(int i, int j)
 /// Also the difference vector r2-r1 is given as it has already been calculated
 bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
 {
-    // TODO: I think the axis needs to be normalized:
-    axis = v3_norm(axis);
+    // TODO: I think the axis doesn't need to be normalized (https://gamedevelopment.tutsplus.com/tutorials/collision-detection-using-the-separating-axis-theorem--gamedev-169)
+    // axis = v3_norm(axis);
 
-    double min1, min2, max1, max2, temp;
+    float min1, min2, max1, max2, temp;
     min1 = max1 = v3_dot(axis, get_offset(i, 0));
     min2 = max2 = v3_dot(axis, v3_add(r2_r1, get_offset(j, 0)));
-    for (int n = 1; n < 7; n++) {
+    for (int n = 1; n < 8; n++) {
         temp = v3_dot(axis, get_offset(i, n));
         min1 = fmin(min1, temp);
         max1 = fmax(max1, temp);
@@ -285,7 +285,7 @@ void read_data(void)
             *(pgarbage + d) = pos;
             m[i].m[d][d] = 1; // TODO: is this the right place and time and way to do this (initialize the rotation matrices)?
         }
-        m[i].m[3][3] = 1; // TODO: Is this necessary?
+        // m[i].m[3][3] = 1; // TODO: Is this necessary?
     }
 
     fclose(pFile);
