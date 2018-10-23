@@ -26,30 +26,32 @@
 // many have been made not constant, so that one can enter into the command line:
 // modsim5.exe initial_packing_fraction Delta DeltaV BetaP initial_configuration output_folder
 double packing_fraction = 0.4;
+static double BetaP = 10;
 static double Delta = 0.05; // delta, deltaV, deltaR are dynamic, i.e. every output_steps steps,
 static double DeltaR = 0.05; // they will be nudged a bit to keep
 static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
-static double BetaP = 10;
+const static double Edge_Length = 1;
 char init_filename[] = "sc7.txt";
-char output_foldername[] = "datafolder_c_p=%4.1lf";
+char output_foldername[] = "datafolder_c_p=%4.1lfa=%4.1lf";
 
-const int mc_steps = 20000;
+const int mc_steps = 50000;
 const int output_steps = 100;
-const double diameter = 1.0;
 
 /* Simulation variables */
-static vec3_t r[N]; // position of center of cube // TODO: make vec3_t
+// TODO: use malloc and pointers instead of global variables?
+static vec3_t r[N]; // position of center of cube
 static mat4_t m[N]; // rotation matrix of cube
 static double box[NDIM]; // dimensions of box
 static vec3_t Normal[3]; // the normal vector of an unrotated cube. Normal[0] is the normal in the x-dir, etc.
-static double Edge_Length = 1; // TODO: make write, and read. TODO: think about this, maybe just always = 1?
 static int n_particles = 0;
 static double ParticleVolume;
-static double Phi = M_PI / 2.; // angle of slanted cube
+static double Phi = 0.8 * M_PI / 2.; // angle of slanted cube
+static double CosPhi; // cos and sin of Phi appear a lot, and are expensive to calculate.
+static double SinPhi; // Since Phi doesn't change, it's faster to calculate only once.
 
 /* Functions */
 /// Returns a random number between low and high (including exactly low, but not exactly high).
-double ran(double low, double high)
+inline static double ran(double low, double high)
 {
     return (high - low) * dsfmt_genrand() + low;
 }
@@ -67,22 +69,24 @@ void scale(double scale_factor)
 }
 
 /// This function returns the offset of the jth vertex (j = 0, ... , 7)
-/// of cube number i:     3----7
-///                      /|   /|
-///     z               1-+--5 |
-///     | y             | 2--+-6
-///     |/              |/   |/
-///     0----x          0----4
+/// from the center of cube number i:     3----7
+///                                      /|   /|
+///     z                               1-+--5 |
+///     | y                             | 2--+-6
+///     |/                              |/   |/
+///     0----x                          0----4
+/// The angle Phi is the angle ∠104 in the picture above, i.e. the angle of
+/// "the z-axis of the cube" with "the x-axis of the cube"
 vec3_t get_offset(int i, int j)
 {
-    // TODO: make Phi != M_PI/2 compatible
-    vec3_t offset = vec3(-Edge_Length / 2, -Edge_Length / 2, -Edge_Length / 2);
+    vec3_t offset = vec3(-0.5 * (1 + CosPhi), -0.5, -0.5 * SinPhi);
     if (j & 4)
-        offset.x += Edge_Length; // x+ = 4, 5, 6, 7
+        offset.x += (1 + CosPhi); // x+ = 4, 5, 6, 7
     if (j & 2)
-        offset.y += Edge_Length; // y+ = 2, 3, 6, 7
+        offset.y += 1; // y+ = 2, 3, 6, 7
     if (j & 1)
-        offset.z += Edge_Length; // z+ = 1, 3, 5, 7
+        offset.z += SinPhi; // z+ = 1, 3, 5, 7
+    offset = v3_muls(offset, Edge_Length);
 
     offset = m4_mul_dir(m[i], offset);
 
@@ -93,7 +97,8 @@ vec3_t get_offset(int i, int j)
 /// Also the difference vector r2-r1 is given as it has already been calculated
 bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
 {
-    // TODO: I think the axis doesn't need to be normalized (https://gamedevelopment.tutsplus.com/tutorials/collision-detection-using-the-separating-axis-theorem--gamedev-169)
+    // The axis doesn't need to be normalized, source:
+    // https://gamedevelopment.tutsplus.com/tutorials/collision-detection-using-the-separating-axis-theorem--gamedev-169)
     // axis = v3_norm(axis);
 
     float min1, min2, max1, max2, temp;
@@ -132,10 +137,10 @@ bool is_overlap(int i, int j)
 
     // If the cubes are more than their circumscribed sphere apart, they couldn't possibly overlap.
     // Similarly, if they are less than their inscribed sphere apart, they couldn't possible NOT overlap.
-    // TODO: make Phi-dependent.
-    if (v3_length(r2_r1) > 1.73205080757 * Edge_Length)
+    float len2 = v3_dot(r2_r1, r2_r1); // sqrtf is slow so test length^2
+    if (len2 > (3 + 2 * CosPhi) * Edge_Length * Edge_Length)
         return false;
-    if (v3_length(r2_r1) < Edge_Length)
+    if (len2 < SinPhi * Edge_Length * Edge_Length)
         return true;
 
     // Now we use the separating axis theorem. Check for separation along all normals
@@ -160,10 +165,11 @@ bool is_overlap(int i, int j)
         axes[k + 6] = v3_cross(edges1[k / 3], edges2[k % 3]);
     }
 
+    // TODO: parallelize?
     for (int k = 0; k < 15; k++)
         if (!is_collision_along_axis(axes[k], i, j, r2_r1))
             return false;
-    // TODO: make smarter i.e. check only 2 points from first cube
+    // TODO: make smarter e.g. check only 2 points from first cube
 
     return true;
 }
@@ -255,24 +261,23 @@ void read_data(void)
         }
     }
 
-    // TODO: make write, and read edge length / decide if it should be always 1
-    Edge_Length = 1;
-
-    // TODO: make write, and read Phi.
-    Phi = M_PI / 2.;
+    // TODO: make write, and read Phi?
+    // Phi = M_PI / 2.;
+    SinPhi = sin(Phi);
+    CosPhi = cos(Phi);
 
     // now initialize the normals, put everything to zero first:
     for (int i = 0; i < 3; i++) {
         Normal[i].x = Normal[i].y = Normal[i].z = 0;
     }
     // TODO: check if this is right
-    Normal[0].x = sin(Phi); // normal on x-dir
-    Normal[0].z = -1. * cos(Phi);
+    Normal[0].x = SinPhi; // normal on x-dir
+    Normal[0].z = -CosPhi;
     Normal[1].y = 1.; // normal on y-dir
     Normal[2].z = 1.; // normal on z-dir
 
-    // TODO: make proper particle_volume reading dependent on Phi (I think just this/cos(Phi))
-    ParticleVolume = pow(Edge_Length, 3.);
+    // TODO: make proper particle_volume reading dependent on Phi (I think just this * cos(Phi))
+    ParticleVolume = pow(Edge_Length, 3.) * SinPhi;
 
     // Now load all particle positions into r
     double pos;
@@ -312,6 +317,7 @@ int move_particle(void)
     // TODO: make cell structure in box so we don't need as many checks
     // if is_overlap(index, any other one) == true, it stops the loop,
     // as any collision results in an unsuccesful move.
+    // TODO: parallelize?
     bool is_collision = false; // TODO: i < index + n_particles && (!is_collision) necessary?
     for (int i = index + 1; i < index + n_particles; i++) {
         if (is_overlap(index, i % n_particles)) {
@@ -343,7 +349,7 @@ int rotate_particle(void)
             x[i] = ran(-1, 1);
         dist = x[0] * x[0] + x[1] * x[1] + x[2] * x[2];
     } while (dist > 1); // TODO: dist = 0 problematic? can this happen at all?
-    if(dist == 0) // TODO: remove this baby
+    if (dist == 0) // TODO: remove this baby
         printf("\nholy shit the random number generator is exactly zero!\n");
     vec3_t rot_axis = vec3(x[0], x[1], x[2]); // the axis doesn't need to be normalized
     mat4_t rot_mx = m4_rotation(ran(-DeltaR, DeltaR), rot_axis);
@@ -351,7 +357,7 @@ int rotate_particle(void)
     // rotate the particle
     m[index] = m4_mul(rot_mx, m[index]);
     // and check for collisions
-    // TODO: make cell structure
+    // TODO: make cell structure // TODO: and/or parallelize
     for (int i = index + 1; i < index + n_particles; i++) {
         if (is_overlap(index, i % n_particles)) {
             // rotate back
@@ -387,7 +393,7 @@ void write_data(int step) // TODO: how many decimal digits are needed? maybe 6 i
     for (int n = 0; n < n_particles; ++n) {
         float* pgarbage = &(r[n].x);
         for (int d = 0; d < NDIM; ++d)
-            fprintf(fp, "%lf\t", *(pgarbage + d)); // the position of the center (TODO: check this: center of edge?)
+            fprintf(fp, "%lf\t", *(pgarbage + d)); // the position of the center of cube
         fprintf(fp, "%lf\t", Edge_Length);
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
@@ -435,25 +441,17 @@ int main(int argc, char* argv[])
         return 1;
     } */
 
-    /* if (NDIM == 3)
-        particle_volume = M_PI * pow(diameter, 3.0) / 6.0;
-    else if (NDIM == 2)
-        particle_volume = M_PI * pow(diameter, 2.0) / 4.0;
-    else {
-        printf("Number of dimensions NDIM = %d, not supported.", NDIM);
-        return 2;
-    } */
-
     read_data();
 
     if (n_particles == 0) {
         printf("Error: box dimensions, or n_particles = 0, or n_particles > %d\n", N);
         return 3;
     }
-
-    sprintf(output_foldername, output_foldername, BetaP); // replace %4.1lf with BetaP
+    // replace %4.1lf with BetaP and Phi
+    sprintf(output_foldername, output_foldername, BetaP, Phi);
     // mkdir(output_foldername); // make the folder to store all the data in, if it already exists do nothing.
-    mkdir(output_foldername, S_IRWXU | S_IRGRP | S_IROTH); // Linux needs me to set rights, this gives rwx to me and nobody else.
+    // Linux needs me to set rights, this gives rwx to me and just r to all others.
+    mkdir(output_foldername, S_IRWXU | S_IRGRP | S_IROTH);
     set_packing_fraction();
 
     dsfmt_seed(1234);
@@ -461,28 +459,27 @@ int main(int argc, char* argv[])
     printf("#Step\tVolume\t acceptances\t\t\t deltas\n");
 
     double avg_vol = 0;
-    int move_accepted = 0, vol_accepted = 0, rot_accepted = 0;
-    int move_attempted = 0, vol_attempted = 0, rot_attempted = 0;
+    int mov_accepted = 0, vol_accepted = 0, rot_accepted = 0;
+    int mov_attempted = 0, vol_attempted = 0, rot_attempted = 0;
     for (int step = 0; step < mc_steps; ++step) {
         for (int n = 0; n < 2 * n_particles + 1; ++n) {
-            // Have to randomize order of moves for detailed balance
-            if (ran(0, 2 * n_particles + 1) < 2 * n_particles) {
-                if (ran(0, 1) < 0.5) {
-                    move_attempted++;
-                    move_accepted += move_particle();
-                } else {
-                    rot_attempted++;
-                    rot_accepted += rotate_particle();
-                }
+            // Have to randomize order of moves to obey detailed balance
+            int temp_ran = (int) ran(0, 2 * n_particles + 2);
+            if (temp_ran < n_particles) {
+                mov_attempted++;
+                mov_accepted += move_particle();
+            } else if (temp_ran < 2 * n_particles) {
+                rot_attempted++;
+                rot_accepted += rotate_particle();
             } else {
                 vol_attempted++;
-                vol_accepted += change_volume(); // DONE: ask if the order (move->volume) obeys detailed balance. IT DOESN'T!!!
+                vol_accepted += change_volume();
             }
         }
 
         avg_vol += box[0] * box[1] * box[2];
         if (step % output_steps == 0) {
-            double move_acceptance = (double)move_accepted / move_attempted;
+            double move_acceptance = (double)mov_accepted / mov_attempted;
             double rotation_acceptance = (double)rot_accepted / rot_attempted;
             double volume_acceptance = (double)vol_accepted / vol_attempted;
             printf("%d\t%.3lf\t %.3lf\t%.3lf\t%.3lf\t %.3lf\t%.3lf\t%.3lf\n",
@@ -495,8 +492,8 @@ int main(int argc, char* argv[])
             // Here is where delta, deltaR, deltaV might get changed if necessary
             nudge_deltas(move_acceptance, volume_acceptance, rotation_acceptance);
             // And reset for the next loop
-            move_attempted = rot_attempted = vol_attempted = 0;
-            move_accepted = rot_accepted = vol_accepted = 0;
+            mov_attempted = rot_attempted = vol_attempted = 0;
+            mov_accepted = rot_accepted = vol_accepted = 0;
             write_data(step);
         }
     }
