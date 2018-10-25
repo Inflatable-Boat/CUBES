@@ -4,7 +4,7 @@
 #include <stdlib.h> // malloc(), free
 
 
-int main()
+int main(int argc, char* argv[])
 {
     /* vec3_t aap = vec3(2, 3, 4);
     float *noot = &aap.x;
@@ -40,7 +40,7 @@ int main()
 
     float* pv3;
     for (int i = 0; i < 10; i++) {
-        pv3 = &(aap + i)->x;
+        pv3 = &(aap + i)->x; // == &((aap + i)->x);
         for (int d = 0; d < 3; d++) {
             printf("%f ", *(pv3 + d));
         }
@@ -51,9 +51,9 @@ int main()
     printf("aap     = %ld\naap + 1 = %ld\n", aap, aap + 1);
 
     free(aap); */
-    double aap = 3;
-    printf("%lf\n", -aap);
-
+    double aap;
+    sscanf(argv[1], "%lf", &aap);
+    printf("%lf\n", aap);
 
     return 0;
 }

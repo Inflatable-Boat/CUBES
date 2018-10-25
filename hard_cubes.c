@@ -24,17 +24,17 @@
 
 /* Initialization variables */
 // many have been made not constant, so that one can enter into the command line:
-// modsim5.exe initial_packing_fraction Delta DeltaV BetaP initial_configuration output_folder
-double packing_fraction = 0.4;
+// a.exe packing_fraction BetaP Phi
+static double packing_fraction;// = 0.4;
 static double BetaP = 10;
 static double Delta = 0.05; // delta, deltaV, deltaR are dynamic, i.e. every output_steps steps,
 static double DeltaR = 0.05; // they will be nudged a bit to keep
 static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
 const static double Edge_Length = 1;
 char init_filename[] = "sc7.txt";
-char output_foldername[] = "datafolder_c_p=%4.1lfa=%4.1lf";
+char output_foldername[] = "datafolder6pf%04.2lfp%04.1lfa%04.2lf";
 
-const int mc_steps = 50000;
+const int mc_steps = 100000;
 const int output_steps = 100;
 
 /* Simulation variables */
@@ -45,7 +45,7 @@ static double box[NDIM]; // dimensions of box
 static vec3_t Normal[3]; // the normal vector of an unrotated cube. Normal[0] is the normal in the x-dir, etc.
 static int n_particles = 0;
 static double ParticleVolume;
-static double Phi = 0.8 * M_PI / 2.; // angle of slanted cube
+static double Phi; // angle of slanted cube
 static double CosPhi; // cos and sin of Phi appear a lot, and are expensive to calculate.
 static double SinPhi; // Since Phi doesn't change, it's faster to calculate only once.
 
@@ -140,8 +140,8 @@ bool is_overlap(int i, int j)
     float len2 = v3_dot(r2_r1, r2_r1); // sqrtf is slow so test length^2
     if (len2 > (3 + 2 * CosPhi) * Edge_Length * Edge_Length)
         return false;
-    if (len2 < SinPhi * Edge_Length * Edge_Length)
-        return true;
+    /* if (len2 < SinPhi * Edge_Length * Edge_Length)
+        return true; */ // this doesn't happen all that often anyway
 
     // Now we use the separating axis theorem. Check for separation along all normals
     // and crossproducts between edges of the cubes. Only if along all these axes
@@ -208,7 +208,7 @@ int change_volume(void)
 
     // now we need to check for overlaps (only if scale_factor < 1), and reject if there are any
     bool is_collision = false;
-    if (scale_factor < 1) {
+    if (scale_factor < 1.0) {
         for (int i = 0; i < n_particles; i++) {
             for (int j = i + 1; j < n_particles; j++) {
                 if (is_overlap(i, j)) {
@@ -261,8 +261,6 @@ void read_data(void)
         }
     }
 
-    // TODO: make write, and read Phi?
-    // Phi = M_PI / 2.;
     SinPhi = sin(Phi);
     CosPhi = cos(Phi);
 
@@ -270,13 +268,11 @@ void read_data(void)
     for (int i = 0; i < 3; i++) {
         Normal[i].x = Normal[i].y = Normal[i].z = 0;
     }
-    // TODO: check if this is right
     Normal[0].x = SinPhi; // normal on x-dir
     Normal[0].z = -CosPhi;
     Normal[1].y = 1.; // normal on y-dir
     Normal[2].z = 1.; // normal on z-dir
 
-    // TODO: make proper particle_volume reading dependent on Phi (I think just this * cos(Phi))
     ParticleVolume = pow(Edge_Length, 3.) * SinPhi;
 
     // Now load all particle positions into r
@@ -290,7 +286,6 @@ void read_data(void)
             *(pgarbage + d) = pos;
             m[i].m[d][d] = 1; // TODO: is this the right place and time and way to do this (initialize the rotation matrices)?
         }
-        // m[i].m[3][3] = 1; // TODO: Is this necessary?
     }
 
     fclose(pFile);
@@ -318,7 +313,7 @@ int move_particle(void)
     // if is_overlap(index, any other one) == true, it stops the loop,
     // as any collision results in an unsuccesful move.
     // TODO: parallelize?
-    bool is_collision = false; // TODO: i < index + n_particles && (!is_collision) necessary?
+    bool is_collision = false;
     for (int i = index + 1; i < index + n_particles; i++) {
         if (is_overlap(index, i % n_particles)) {
             is_collision = true;
@@ -397,7 +392,7 @@ void write_data(int step) // TODO: how many decimal digits are needed? maybe 6 i
         fprintf(fp, "%lf\t", Edge_Length);
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
-                fprintf(fp, "%lf\t", m[n].m[d1][d2]); // TODO: maybe the order is the wrong way around?
+                fprintf(fp, "%lf\t", m[n].m[d1][d2]);
             }
         }
         fprintf(fp, "10 %lf\n", Phi); // the visualizer wants color, apparently 10 is fine.
@@ -420,6 +415,22 @@ void set_packing_fraction(void)
 int main(int argc, char* argv[])
 {
     // this first bit is for parsing the command line arguments
+    if(EOF == sscanf(argv[1], "%lf", &packing_fraction)){
+        printf("reading packing fraction has failed\n");
+        return 1;
+    };
+    if(EOF == sscanf(argv[2], "%lf", &BetaP)){
+        printf("reading betap has failed\n");
+        return 1;
+    };
+    if(EOF == sscanf(argv[3], "%lf", &Phi)){
+        printf("reading phi has failed\n");
+        return 1;
+    }; 
+    printf("%lf\n", packing_fraction);
+    printf("%lf\n", BetaP);
+    printf("%lf\n", Phi);
+
     /* if(argc == 7) {
         try {
             packing_fraction = std::stod(argv[1]);
@@ -447,8 +458,8 @@ int main(int argc, char* argv[])
         printf("Error: box dimensions, or n_particles = 0, or n_particles > %d\n", N);
         return 3;
     }
-    // replace %4.1lf with BetaP and Phi
-    sprintf(output_foldername, output_foldername, BetaP, Phi);
+    // replace %4.1lf with packing_fraction and BetaP and Phi
+    sprintf(output_foldername, output_foldername, packing_fraction, BetaP, Phi);
     // mkdir(output_foldername); // make the folder to store all the data in, if it already exists do nothing.
     // Linux needs me to set rights, this gives rwx to me and just r to all others.
     mkdir(output_foldername, S_IRWXU | S_IRGRP | S_IROTH);
