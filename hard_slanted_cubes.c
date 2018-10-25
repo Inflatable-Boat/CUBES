@@ -45,9 +45,9 @@ static double box[NDIM]; // dimensions of box
 static vec3_t Normal[3]; // the normal vector of an unrotated cube. Normal[0] is the normal in the x-dir, etc.
 static int n_particles = 0;
 static double ParticleVolume;
-// static double Phi; // angle of slanted cube
-// static double CosPhi; // cos and sin of Phi appear a lot, and are expensive to calculate.
-// static double SinPhi; // Since Phi doesn't change, it's faster to calculate only once.
+static double Phi; // angle of slanted cube
+static double CosPhi; // cos and sin of Phi appear a lot, and are expensive to calculate.
+static double SinPhi; // Since Phi doesn't change, it's faster to calculate only once.
 
 /* Functions */
 /// Returns a random number between low and high (including exactly low, but not exactly high).
@@ -79,14 +79,13 @@ void scale(double scale_factor)
 /// "the z-axis of the cube" with "the x-axis of the cube"
 vec3_t get_offset(int i, int j)
 {
-    vec3_t offset = vec3(-0.5, -0.5, -0.5);
-    // vec3_t offset = vec3(-0.5 * (1 + CosPhi), -0.5, -0.5 * SinPhi);
+    vec3_t offset = vec3(-0.5 * (1 + CosPhi), -0.5, -0.5 * SinPhi);
     if (j & 4)
-        offset.x += 1; // x+ = 4, 5, 6, 7
+        offset.x += 1 + CosPhi; // x+ = 4, 5, 6, 7
     if (j & 2)
         offset.y += 1; // y+ = 2, 3, 6, 7
     if (j & 1)
-        offset.z += 1; // z+ = 1, 3, 5, 7
+        offset.z += SinPhi; // z+ = 1, 3, 5, 7
     offset = v3_muls(offset, Edge_Length);
 
     offset = m4_mul_dir(m[i], offset);
@@ -139,7 +138,7 @@ bool is_overlap(int i, int j)
     // If the cubes are more than their circumscribed sphere apart, they couldn't possibly overlap.
     // Similarly, if they are less than their inscribed sphere apart, they couldn't possible NOT overlap.
     float len2 = v3_dot(r2_r1, r2_r1); // sqrtf is slow so test length^2
-    if (len2 > 3 * Edge_Length * Edge_Length)
+    if (len2 > (3 + 2 * CosPhi) * Edge_Length * Edge_Length)
         return false;
     /* if (len2 < SinPhi * Edge_Length * Edge_Length)
         return true; */ // this doesn't happen all that often anyway
@@ -262,19 +261,19 @@ void read_data(void)
         }
     }
 
-    // SinPhi = sin(Phi);
-    // CosPhi = cos(Phi);
+    SinPhi = sin(Phi);
+    CosPhi = cos(Phi);
 
     // now initialize the normals, put everything to zero first:
     for (int i = 0; i < 3; i++) {
         Normal[i].x = Normal[i].y = Normal[i].z = 0;
     }
-    Normal[0].x = 1; // normal on x-dir
-    // Normal[0].z = -CosPhi;
+    Normal[0].x = SinPhi; // normal on x-dir
+    Normal[0].z = -CosPhi;
     Normal[1].y = 1.; // normal on y-dir
     Normal[2].z = 1.; // normal on z-dir
 
-    ParticleVolume = pow(Edge_Length, 3.);
+    ParticleVolume = pow(Edge_Length, 3.) * SinPhi;
 
     // Now load all particle positions into r
     double pos;
@@ -396,7 +395,7 @@ void write_data(int step) // TODO: how many decimal digits are needed? maybe 6 i
                 fprintf(fp, "%lf\t", m[n].m[d1][d2]);
             }
         }
-        fprintf(fp, "10 %lf\n", 1.57079632679); // the visualizer wants color, apparently 10 is fine.
+        fprintf(fp, "10 %lf\n", Phi); // the visualizer wants color, apparently 10 is fine.
     }
     fclose(fp);
 }
@@ -424,13 +423,13 @@ int main(int argc, char* argv[])
         printf("reading betap has failed\n");
         return 1;
     };
-/*     if(EOF == sscanf(argv[3], "%lf", &Phi)){
+    if(EOF == sscanf(argv[3], "%lf", &Phi)){
         printf("reading phi has failed\n");
         return 1;
-    };  */
+    }; 
     printf("%lf\n", packing_fraction);
     printf("%lf\n", BetaP);
-    /* printf("%lf\n", Phi); */
+    printf("%lf\n", Phi);
 
     /* if(argc == 7) {
         try {
@@ -460,7 +459,7 @@ int main(int argc, char* argv[])
         return 3;
     }
     // replace %4.1lf with packing_fraction and BetaP and Phi
-    sprintf(output_foldername, output_foldername, packing_fraction, BetaP);//, Phi);
+    sprintf(output_foldername, output_foldername, packing_fraction, BetaP, Phi);
     // mkdir(output_foldername); // make the folder to store all the data in, if it already exists do nothing.
     // Linux needs me to set rights, this gives rwx to me and just r to all others.
     mkdir(output_foldername, S_IRWXU | S_IRGRP | S_IROTH);
