@@ -21,6 +21,7 @@
 
 #define NDIM 3
 #define N 1000
+#define Edge_Length 1 // TODO: decide to definitely remove this option
 
 /* Initialization variables */
 // many have been made not constant, so that one can enter into the command line:
@@ -30,9 +31,8 @@ static double BetaP = 10;
 static double Delta = 0.05; // delta, deltaV, deltaR are dynamic, i.e. every output_steps steps,
 static double DeltaR = 0.05; // they will be nudged a bit to keep
 static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
-const static double Edge_Length = 1;
 char init_filename[] = "sc7.txt";
-char output_foldername[] = "datafolder6pf%04.2lfp%04.1lfa%04.2lf";
+char output_foldername[] = "datafolder_sl_7pf%04.2lfp%04.1lfa%04.2lf";
 
 const int mc_steps = 100000;
 const int output_steps = 100;
@@ -102,13 +102,13 @@ bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
     // axis = v3_norm(axis);
 
     float min1, min2, max1, max2, temp;
-    min1 = max1 = v3_dot(axis, get_offset(i, 0));
-    min2 = max2 = v3_dot(axis, v3_add(r2_r1, get_offset(j, 0)));
+    min1 = max1 = v3_dot(axis, v3_add(r2_r1, get_offset(i, 0)));
+    min2 = max2 = v3_dot(axis, get_offset(j, 0));
     for (int n = 1; n < 8; n++) {
-        temp = v3_dot(axis, get_offset(i, n));
+        temp = v3_dot(axis, v3_add(r2_r1, get_offset(i, n)));
         min1 = fmin(min1, temp);
         max1 = fmax(max1, temp);
-        temp = v3_dot(axis, v3_add(r2_r1, get_offset(j, n)));
+        temp = v3_dot(axis, get_offset(j, n));
         min2 = fmin(min2, temp);
         max2 = fmax(max2, temp);
     }
@@ -389,13 +389,13 @@ void write_data(int step) // TODO: how many decimal digits are needed? maybe 6 i
         float* pgarbage = &(r[n].x);
         for (int d = 0; d < NDIM; ++d)
             fprintf(fp, "%lf\t", *(pgarbage + d)); // the position of the center of cube
-        fprintf(fp, "%lf\t", Edge_Length);
+        fprintf(fp, "%d\t", Edge_Length);
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
-                fprintf(fp, "%lf\t", m[n].m[d1][d2]);
+                fprintf(fp, "%f\t", m[n].m[d1][d2]);
             }
         }
-        fprintf(fp, "10 %lf\n", Phi); // the visualizer wants color, apparently 10 is fine.
+        fprintf(fp, "10 %lf\n", Phi); // 10 is for slanted cubes.
     }
     fclose(fp);
 }

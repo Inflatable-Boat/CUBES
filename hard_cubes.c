@@ -25,16 +25,17 @@
 /* Initialization variables */
 // many have been made not constant, so that one can enter into the command line:
 // a.exe packing_fraction BetaP Phi
-static double packing_fraction;// = 0.4;
+// static double packing_fraction;// = 0.4;
 static double BetaP = 10;
 static double Delta = 0.05; // delta, deltaV, deltaR are dynamic, i.e. every output_steps steps,
 static double DeltaR = 0.05; // they will be nudged a bit to keep
 static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
 const static double Edge_Length = 1;
 char init_filename[] = "sc7.txt";
-char output_foldername[] = "datafolder6pf%04.2lfp%04.1lfa%04.2lf";
+char output_foldername[] = "datafolder_cube_p%04.1lf/";
+char output_filename[] = "cube_vols_p%04.1lf";
 
-const int mc_steps = 100000;
+int mc_steps = 100001;
 const int output_steps = 100;
 
 /* Simulation variables */
@@ -147,14 +148,14 @@ bool is_overlap(int i, int j)
     // Now we use the separating axis theorem. Check for separation along all normals
     // and crossproducts between edges of the cubes. Only if along all these axes
     // we find no separation, we may conclude there is overlap.
-    vec3_t axes[6 + 9]; // 6 normals of r1 and r2, 9 cross products between edges
+    vec3_t axes[6]; // 6 normals of r1 and r2, 9 cross products between edges
     for (int k = 0; k < 3; k++) {
         axes[k] = m4_mul_dir(m[i], Normal[k]);
         axes[k + 3] = m4_mul_dir(m[j], Normal[k]);
     }
 
     // Now load the cross products between edges
-    vec3_t edges1[3], edges2[3]; // TODO: do this nicely in a for loop or sth.
+    /* vec3_t edges1[3], edges2[3]; // TODO: do this nicely in a for loop or sth.
     edges1[0] = v3_sub(get_offset(i, 0), get_offset(i, 1));
     edges1[1] = v3_sub(get_offset(i, 0), get_offset(i, 2));
     edges1[2] = v3_sub(get_offset(i, 0), get_offset(i, 4));
@@ -164,10 +165,10 @@ bool is_overlap(int i, int j)
 
     for (int k = 0; k < 9; k++) {
         axes[k + 6] = v3_cross(edges1[k / 3], edges2[k % 3]);
-    }
+    }*/
 
     // TODO: parallelize?
-    for (int k = 0; k < 15; k++)
+    for (int k = 0; k < 6; k++)
         if (!is_collision_along_axis(axes[k], i, j, r2_r1))
             return false;
     // TODO: make smarter e.g. check only 2 points from first cube
@@ -370,7 +371,7 @@ void write_data(int step) // TODO: how many decimal digits are needed? maybe 6 i
     char buffer[128];
     strcpy(buffer, output_foldername);
 
-    strcat(buffer, "/coords_step%07d.poly");
+    strcat(buffer, "coords_step%07d.poly");
     char output_file[128];
     sprintf(output_file, buffer, step); // replace %07d with step and put in output_file.
 
@@ -407,7 +408,7 @@ void set_packing_fraction(void)
     for (int d = 0; d < NDIM; ++d)
         volume *= box[d];
 
-    double target_volume = (n_particles * ParticleVolume) / packing_fraction;
+    double target_volume = (n_particles * ParticleVolume);
     double scale_factor = pow(target_volume / volume, 1. / NDIM); // the . of 1. is important, otherwise 1 / NDIM == 1 / 3 == 0
 
     scale(scale_factor);
@@ -416,7 +417,7 @@ void set_packing_fraction(void)
 int main(int argc, char* argv[])
 {
     // this first bit is for parsing the command line arguments
-    if(EOF == sscanf(argv[1], "%lf", &packing_fraction)){
+    if(EOF == sscanf(argv[1], "%d", &mc_steps)){
         printf("reading packing fraction has failed\n");
         return 1;
     };
@@ -428,8 +429,8 @@ int main(int argc, char* argv[])
         printf("reading phi has failed\n");
         return 1;
     };  */
-    printf("%lf\n", packing_fraction);
-    printf("%lf\n", BetaP);
+    /* printf("%lf\n", packing_fraction); */
+    /* printf("%lf\n", BetaP); */
     /* printf("%lf\n", Phi); */
 
     /* if(argc == 7) {
@@ -459,8 +460,8 @@ int main(int argc, char* argv[])
         printf("Error: box dimensions, or n_particles = 0, or n_particles > %d\n", N);
         return 3;
     }
-    // replace %4.1lf with packing_fraction and BetaP and Phi
-    sprintf(output_foldername, output_foldername, packing_fraction, BetaP);//, Phi);
+    // replace %4.1lf with BetaP
+    sprintf(output_foldername, output_foldername, BetaP);//, Phi);
     // mkdir(output_foldername); // make the folder to store all the data in, if it already exists do nothing.
     // Linux needs me to set rights, this gives rwx to me and just r to all others.
     mkdir(output_foldername, S_IRWXU | S_IRGRP | S_IROTH);
@@ -473,6 +474,13 @@ int main(int argc, char* argv[])
     double avg_vol = 0;
     int mov_accepted = 0, vol_accepted = 0, rot_accepted = 0;
     int mov_attempted = 0, vol_attempted = 0, rot_attempted = 0;
+
+    char buffer[128], buffer2[128];
+    strcpy(buffer, output_foldername);
+    strcat(buffer, output_filename); // "datafolder.../cube_vols_%lf"
+    sprintf(buffer2, buffer, BetaP); // "datafolder.../cube_vols_betap"
+    FILE* fp_vol = fopen(buffer2, "w");
+    
     for (int step = 0; step < mc_steps; ++step) {
         for (int n = 0; n < 2 * n_particles + 1; ++n) {
             // Have to randomize order of moves to obey detailed balance
@@ -507,12 +515,13 @@ int main(int argc, char* argv[])
             mov_attempted = rot_attempted = vol_attempted = 0;
             mov_accepted = rot_accepted = vol_accepted = 0;
             write_data(step);
+            fprintf(fp_vol, "%lf\n", box[0] * box[1] * box[2]);
         }
     }
-
+    fclose(fp_vol);
     // At the very end, print the average volume to the console.
-    avg_vol /= mc_steps;
-    printf("Average volume: %lf\n", avg_vol);
+    // avg_vol /= mc_steps;
+    // printf("Average volume: %lf\n", avg_vol);
 
     return 0;
 }
