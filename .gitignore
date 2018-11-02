@@ -2,3 +2,7 @@ datafolder*
 *.exe
 *.out
 screenshot*
+cube_vols*
+volumes
+sc*.txt
+*.nb

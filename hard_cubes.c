@@ -32,8 +32,8 @@ static double DeltaR = 0.05; // they will be nudged a bit to keep
 static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
 const static double Edge_Length = 1;
 char init_filename[] = "sc7.txt";
-char output_foldername[] = "datafolder_cube_p%04.1lf/";
-char output_filename[] = "cube_vols_p%04.1lf";
+char output_foldername[] = "datafolder_cube_lowpf_p%04.1lf/";
+char output_filename[] = "cube_vols_lowpf_p%04.1lf";
 
 int mc_steps = 100001;
 const int output_steps = 100;
@@ -408,7 +408,7 @@ void set_packing_fraction(void)
     for (int d = 0; d < NDIM; ++d)
         volume *= box[d];
 
-    double target_volume = (n_particles * ParticleVolume);
+    double target_volume = 3 * (n_particles * ParticleVolume);
     double scale_factor = pow(target_volume / volume, 1. / NDIM); // the . of 1. is important, otherwise 1 / NDIM == 1 / 3 == 0
 
     scale(scale_factor);
@@ -467,7 +467,7 @@ int main(int argc, char* argv[])
     mkdir(output_foldername, S_IRWXU | S_IRGRP | S_IROTH);
     set_packing_fraction();
 
-    dsfmt_seed(1234);
+    dsfmt_seed(time(NULL));
 
     printf("#Step\tVolume\t acceptances\t\t\t deltas\n");
 
@@ -476,7 +476,7 @@ int main(int argc, char* argv[])
     int mov_attempted = 0, vol_attempted = 0, rot_attempted = 0;
 
     char buffer[128], buffer2[128];
-    strcpy(buffer, output_foldername);
+    strcpy(buffer, "");
     strcat(buffer, output_filename); // "datafolder.../cube_vols_%lf"
     sprintf(buffer2, buffer, BetaP); // "datafolder.../cube_vols_betap"
     FILE* fp_vol = fopen(buffer2, "w");

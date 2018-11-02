@@ -25,16 +25,17 @@
 
 /* Initialization variables */
 // many have been made not constant, so that one can enter into the command line:
-// a.exe packing_fraction BetaP Phi
-static double packing_fraction;// = 0.4;
+// a.exe mc_steps packing_fraction BetaP Phi
+static double packing_fraction = 1; // = 0.4;
 static double BetaP = 10;
 static double Delta = 0.05; // delta, deltaV, deltaR are dynamic, i.e. every output_steps steps,
 static double DeltaR = 0.05; // they will be nudged a bit to keep
 static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
 char init_filename[] = "sc7.txt";
-char output_foldername[] = "datafolder_sl_7pf%04.2lfp%04.1lfa%04.2lf";
+char output_foldername[] = "datafolder_sl_pf%04.2lfp%04.1lfa%04.2lf";
+char output_filename[] = "volumes/sl_pf%04.2lfp%04.1lfa%04.2lf";
 
-const int mc_steps = 100000;
+int mc_steps = 100000;
 const int output_steps = 100;
 
 /* Simulation variables */
@@ -80,12 +81,14 @@ void scale(double scale_factor)
 vec3_t get_offset(int i, int j)
 {
     vec3_t offset = vec3(-0.5 * (1 + CosPhi), -0.5, -0.5 * SinPhi);
-    if (j & 4)
-        offset.x += 1 + CosPhi; // x+ = 4, 5, 6, 7
-    if (j & 2)
-        offset.y += 1; // y+ = 2, 3, 6, 7
-    if (j & 1)
-        offset.z += SinPhi; // z+ = 1, 3, 5, 7
+    if (j & 4) //   x+ = 4, 5, 6, 7
+        offset.x += 1;
+    if (j & 2) //   y+ = 2, 3, 6, 7
+        offset.y += 1;
+    if (j & 1) { // z+ = 1, 3, 5, 7
+        offset.z += SinPhi;
+        offset.x += CosPhi;
+    }
     offset = v3_muls(offset, Edge_Length);
 
     offset = m4_mul_dir(m[i], offset);
@@ -141,7 +144,8 @@ bool is_overlap(int i, int j)
     if (len2 > (3 + 2 * CosPhi) * Edge_Length * Edge_Length)
         return false;
     /* if (len2 < SinPhi * Edge_Length * Edge_Length)
-        return true; */ // this doesn't happen all that often anyway
+        return true; */
+    // this doesn't happen all that often anyway
 
     // Now we use the separating axis theorem. Check for separation along all normals
     // and crossproducts between edges of the cubes. Only if along all these axes
@@ -299,7 +303,7 @@ int move_particle(void)
 {
     // first choose the particle and remember its position
     int index = (int)ran(0., n_particles); // goes from 0 to n_particles - 1
-    vec3_t memory = r[index];
+    vec3_t r_old = r[index];
 
     float* pgarbage = &(r[index].x);
     for (int d = 0; d < NDIM; d++) {
@@ -322,7 +326,7 @@ int move_particle(void)
     }
 
     if (is_collision) {
-        r[index] = memory; // move back
+        r[index] = r_old; // move back
         return 0; // unsuccesful move
     } else {
         return 1; // succesful move
@@ -364,8 +368,10 @@ int rotate_particle(void)
     return 1;
 }
 
-void write_data(int step) // TODO: how many decimal digits are needed? maybe 6 is too much.
+void write_data(int step, FILE* fp_vol) // TODO: how many decimal digits are needed? maybe 6 is too much.
 {
+    fprintf(fp_vol, "%lf\n", box[0] * box[1] * box[2]);
+
     char buffer[128];
     strcpy(buffer, output_foldername);
 
@@ -412,70 +418,83 @@ void set_packing_fraction(void)
     scale(scale_factor);
 }
 
+// Put parsing the commandline in a function.
+// If something goes wrong, return != 0
+int parse_commandline(int argc, char* argv[])
+{
+    if (argc != 5) {
+        printf("need 4 arguments:\n");
+        return 3;
+    }
+    if (EOF == sscanf(argv[1], "%d", &mc_steps)) {
+        printf("reading mc_steps has failed\n");
+        return 1;
+    };
+    if (EOF == sscanf(argv[2], "%lf", &packing_fraction)) {
+        printf("reading packing_fraction has failed\n");
+        return 1;
+    };
+    if (EOF == sscanf(argv[3], "%lf", &BetaP)) {
+        printf("reading BetaP has failed\n");
+        return 1;
+    };
+    if (EOF == sscanf(argv[4], "%lf", &Phi)) {
+        printf("reading Phi has failed\n");
+        return 1;
+    };
+    if (mc_steps <= 100 || packing_fraction > 1) {
+        printf("mc_steps > 100\n");
+        return 2;
+    }
+    if (packing_fraction <= 0 || packing_fraction > 1) {
+        printf("0 < packing_fraction <= 1\n");
+        return 2;
+    }
+    if (BetaP <= 0) {
+        printf("BetaP > 0\n");
+        return 2;
+    }
+    if (Phi <= 0 || Phi > M_PI / 2) {
+        printf("0 < Phi < 1.57079632679\n");
+        return 2;
+    }
+    return 0; // no exceptions, run the program
+}
+
 int main(int argc, char* argv[])
 {
-    // this first bit is for parsing the command line arguments
-    if(EOF == sscanf(argv[1], "%lf", &packing_fraction)){
-        printf("reading packing fraction has failed\n");
+    if (parse_commandline(argc, argv)) { // if ... parsing fails
+        printf("usage: program.exe mc_steps packing_fraction BetaP Phi\n");
         return 1;
     };
-    if(EOF == sscanf(argv[2], "%lf", &BetaP)){
-        printf("reading betap has failed\n");
-        return 1;
-    };
-    if(EOF == sscanf(argv[3], "%lf", &Phi)){
-        printf("reading phi has failed\n");
-        return 1;
-    }; 
-    printf("%lf\n", packing_fraction);
-    printf("%lf\n", BetaP);
-    printf("%lf\n", Phi);
-
-    /* if(argc == 7) {
-        try {
-            packing_fraction = std::stod(argv[1]);
-            assert(packing_fraction < 1 && packing_fraction > 0);
-            delta = std::stod(argv[2]);
-            deltaV = std::stod(argv[3]);
-            assert(delta > 0 && deltaV > 0);
-            BetaP = std::stod(argv[4]);
-            init_filename = argv[5];
-            output_foldername = argv[6];
-        } catch (int error) {
-            printf("error %i: invalid parameters, \nusage: modsim5.exe PF delta deltaV BetaP initial_config_file output_folder\n", error);
-            return 1;
-        }
-    } else {        
-        // if the wrong # of arguments are given, display how to use the program
-        printf("usage: modsim5.exe PF delta deltaV BetaP initial_config_file output_folder\n");
-        printf("standard: %lf, %lf, %lf, %lf, %s, %s\n", packing_fraction, delta, deltaV, BetaP, init_filename.c_str(), output_foldername.c_str());
-        return 1;
-    } */
 
     read_data();
+    set_packing_fraction();
 
     if (n_particles == 0) {
         printf("Error: box dimensions, or n_particles = 0, or n_particles > %d\n", N);
-        return 3;
+        return 2;
     }
     // replace %4.1lf with packing_fraction and BetaP and Phi
     sprintf(output_foldername, output_foldername, packing_fraction, BetaP, Phi);
     // mkdir(output_foldername); // make the folder to store all the data in, if it already exists do nothing.
     // Linux needs me to set rights, this gives rwx to me and just r to all others.
     mkdir(output_foldername, S_IRWXU | S_IRGRP | S_IROTH);
-    set_packing_fraction();
+    mkdir("volumes", S_IRWXU | S_IRGRP | S_IROTH);
+    
+    char output_file[128] = "";
+    sprintf(output_file, output_filename, packing_fraction, BetaP, Phi);
+    FILE* fp_vol = fopen(output_file, "w");
 
     dsfmt_seed(1234);
-
-    printf("#Step\tVolume\t acceptances\t\t\t deltas\n");
-
-    double avg_vol = 0;
     int mov_accepted = 0, vol_accepted = 0, rot_accepted = 0;
     int mov_attempted = 0, vol_attempted = 0, rot_attempted = 0;
-    for (int step = 0; step < mc_steps; ++step) {
+
+    printf("#Step\tVolume\t acceptances\t\t\t deltas\n");
+    for (int step = 1; step <= mc_steps; ++step) {
         for (int n = 0; n < 2 * n_particles + 1; ++n) {
             // Have to randomize order of moves to obey detailed balance
-            int temp_ran = (int) ran(0, 2 * n_particles + 2);
+            int temp_ran = (int)ran(0, 2 * n_particles + 2);
             if (temp_ran < n_particles) {
                 mov_attempted++;
                 mov_accepted += move_particle();
@@ -488,7 +507,6 @@ int main(int argc, char* argv[])
             }
         }
 
-        avg_vol += box[0] * box[1] * box[2];
         if (step % output_steps == 0) {
             double move_acceptance = (double)mov_accepted / mov_attempted;
             double rotation_acceptance = (double)rot_accepted / rot_attempted;
@@ -505,13 +523,11 @@ int main(int argc, char* argv[])
             // And reset for the next loop
             mov_attempted = rot_attempted = vol_attempted = 0;
             mov_accepted = rot_accepted = vol_accepted = 0;
-            write_data(step);
+            write_data(step, fp_vol);
         }
     }
 
-    // At the very end, print the average volume to the console.
-    avg_vol /= mc_steps;
-    printf("Average volume: %lf\n", avg_vol);
+    fclose(fp_vol); // volumes/sl...
 
     return 0;
 }
