@@ -31,9 +31,9 @@ static double BetaP = 10;
 static double Delta = 0.05; // delta, deltaV, deltaR are dynamic, i.e. every output_steps steps,
 static double DeltaR = 0.05; // they will be nudged a bit to keep
 static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
-char init_filename[] = "sc25.txt"; // TODO: read from cmdline
-char output_foldername[] = "datafolder_sl25_pf%04.2lfp%04.1lfa%04.2lf";
-char output_filename[] = "volumes/sl25_pf%04.2lfp%04.1lfa%04.2lf";
+char init_filename[] = "sc20.txt"; // TODO: read from cmdline
+char output_foldername[] = "datafolder/sl20_pf%04.2lfp%04.1lfa%04.2lf";
+char output_filename[] = "volumes/sl20_pf%04.2lfp%04.1lfa%04.2lf";
 
 int mc_steps = 100000;
 const int output_steps = 100;
@@ -418,6 +418,25 @@ void set_packing_fraction(void)
     scale(scale_factor);
 }
 
+void set_random_orientation(void)
+{
+    for (int i = 0; i < n_particles; i++) {
+        for (int j = 0; j < 12; j++) { // TODO: is this random enough? legit?
+            vec3_t axis;
+            int random = ran(0, 6);
+            if(random < 2)
+                axis = vec3(0, 0, 1);
+            if(random < 4)
+                axis = vec3(0, 1, 0);
+            if(random < 6)
+                axis = vec3(1, 0, 0);
+            if(random & 1)
+                axis = v3_muls(axis, -1);
+            m[i] = m4_mul(m4_rotation(M_PI / 2, axis), m[i]);
+        }
+    }
+}
+
 // Put parsing the commandline in a function.
 // If something goes wrong, return != 0
 int parse_commandline(int argc, char* argv[])
@@ -470,6 +489,7 @@ int main(int argc, char* argv[])
 
     read_data();
     set_packing_fraction();
+    set_random_orientation(); // to stop pushing to rhombic phase
 
     if (n_particles == 0) {
         printf("Error: box dimensions, or n_particles = 0, or n_particles > %d\n", N);
@@ -480,9 +500,12 @@ int main(int argc, char* argv[])
     
     // make the folder to store all the data in, if it already exists do nothing.
     #ifdef _WIN32
+    mkdir("datafolder");
     mkdir(output_foldername);
+    mkdir("volumes");
     #elif __linux__
     // Linux needs me to set rights, this gives rwx to me and just r to all others.
+    mkdir("datafolder", S_IRWXU | S_IRGRP | S_IROTH);
     mkdir(output_foldername, S_IRWXU | S_IRGRP | S_IROTH);
     mkdir("volumes", S_IRWXU | S_IRGRP | S_IROTH);
     #endif
@@ -491,12 +514,12 @@ int main(int argc, char* argv[])
     sprintf(output_file, output_filename, packing_fraction, BetaP, Phi);
     FILE* fp_vol = fopen(output_file, "w");
 
-    dsfmt_seed(1234);
+    dsfmt_seed(time(NULL));
     int mov_accepted = 0, vol_accepted = 0, rot_accepted = 0;
     int mov_attempted = 0, vol_attempted = 0, rot_attempted = 0;
 
     printf("#Step\tVolume\t acceptances\t\t\t deltas\n");
-    for (int step = 1; step <= mc_steps; ++step) {
+    for (int step = 0; step <= mc_steps; ++step) {
         for (int n = 0; n < 2 * n_particles + 1; ++n) {
             // Have to randomize order of moves to obey detailed balance
             int temp_ran = (int)ran(0, 2 * n_particles + 2);
