@@ -31,9 +31,9 @@ static double BetaP = 10;
 static double Delta = 0.05; // delta, deltaV, deltaR are dynamic, i.e. every output_steps steps,
 static double DeltaR = 0.05; // they will be nudged a bit to keep
 static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
-char init_filename[] = "sc7.txt";
-char output_foldername[] = "datafolder_sl_pf%04.2lfp%04.1lfa%04.2lf";
-char output_filename[] = "volumes/sl_pf%04.2lfp%04.1lfa%04.2lf";
+char init_filename[] = "sc25.txt"; // TODO: read from cmdline
+char output_foldername[] = "datafolder_sl25_pf%04.2lfp%04.1lfa%04.2lf";
+char output_filename[] = "volumes/sl25_pf%04.2lfp%04.1lfa%04.2lf";
 
 int mc_steps = 100000;
 const int output_steps = 100;
