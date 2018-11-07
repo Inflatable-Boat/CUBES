@@ -477,10 +477,15 @@ int main(int argc, char* argv[])
     }
     // replace %4.1lf with packing_fraction and BetaP and Phi
     sprintf(output_foldername, output_foldername, packing_fraction, BetaP, Phi);
-    // mkdir(output_foldername); // make the folder to store all the data in, if it already exists do nothing.
+    
+    // make the folder to store all the data in, if it already exists do nothing.
+    #ifdef _WIN32
+    mkdir(output_foldername);
+    #elif __linux__
     // Linux needs me to set rights, this gives rwx to me and just r to all others.
     mkdir(output_foldername, S_IRWXU | S_IRGRP | S_IROTH);
     mkdir("volumes", S_IRWXU | S_IRGRP | S_IROTH);
+    #endif
     
     char output_file[128] = "";
     sprintf(output_file, output_filename, packing_fraction, BetaP, Phi);
