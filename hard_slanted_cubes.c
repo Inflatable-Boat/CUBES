@@ -31,9 +31,9 @@ static double BetaP = 10;
 static double Delta = 0.05; // delta, deltaV, deltaR are dynamic, i.e. every output_steps steps,
 static double DeltaR = 0.05; // they will be nudged a bit to keep
 static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
-char init_filename[] = "sc20.txt"; // TODO: read from cmdline
-char output_foldername[] = "datafolder/sl20_pf%04.2lfp%04.1lfa%04.2lf";
-char output_filename[] = "volumes/sl20_pf%04.2lfp%04.1lfa%04.2lf";
+char init_filename[] = "sc10.txt"; // TODO: read from cmdline
+char output_foldername[] = "datafolder/sl10_pf%04.2lfp%04.1lfa%04.2lf";
+char output_filename[] = "volumes/sl10_pf%04.2lfp%04.1lfa%04.2lf";
 
 int mc_steps = 100000;
 const int output_steps = 100;
@@ -418,20 +418,25 @@ void set_packing_fraction(void)
     scale(scale_factor);
 }
 
+// After putting the (slanted) cubes at the right position,
+// rotate each cube 90 degrees around a random axis-aligned axis a few times
+// this may cause overlap if we start at too high packing fraction
 void set_random_orientation(void)
 {
     for (int i = 0; i < n_particles; i++) {
         for (int j = 0; j < 12; j++) { // TODO: is this random enough? legit?
-            vec3_t axis;
-            int random = ran(0, 6);
-            if(random < 2)
+            vec3_t axis = vec3(1, 0, 0);
+            int random = (int)ran(0, 6);
+            if (random < 2) {
                 axis = vec3(0, 0, 1);
-            if(random < 4)
+            } else if (random < 4) {
                 axis = vec3(0, 1, 0);
-            if(random < 6)
+            } else {
                 axis = vec3(1, 0, 0);
-            if(random & 1)
+            }
+            if (random & 1){
                 axis = v3_muls(axis, -1);
+            }
             m[i] = m4_mul(m4_rotation(M_PI / 2, axis), m[i]);
         }
     }
@@ -486,6 +491,8 @@ int main(int argc, char* argv[])
         printf("usage: program.exe mc_steps packing_fraction BetaP Phi\n");
         return 1;
     };
+    
+    dsfmt_seed(time(NULL));
 
     read_data();
     set_packing_fraction();
@@ -497,24 +504,23 @@ int main(int argc, char* argv[])
     }
     // replace %4.1lf with packing_fraction and BetaP and Phi
     sprintf(output_foldername, output_foldername, packing_fraction, BetaP, Phi);
-    
-    // make the folder to store all the data in, if it already exists do nothing.
-    #ifdef _WIN32
+
+// make the folder to store all the data in, if it already exists do nothing.
+#ifdef _WIN32
     mkdir("datafolder");
     mkdir(output_foldername);
     mkdir("volumes");
-    #elif __linux__
+#elif __linux__
     // Linux needs me to set rights, this gives rwx to me and just r to all others.
     mkdir("datafolder", S_IRWXU | S_IRGRP | S_IROTH);
     mkdir(output_foldername, S_IRWXU | S_IRGRP | S_IROTH);
     mkdir("volumes", S_IRWXU | S_IRGRP | S_IROTH);
-    #endif
-    
+#endif
+
     char output_file[128] = "";
     sprintf(output_file, output_filename, packing_fraction, BetaP, Phi);
     FILE* fp_vol = fopen(output_file, "w");
 
-    dsfmt_seed(time(NULL));
     int mov_accepted = 0, vol_accepted = 0, rot_accepted = 0;
     int mov_attempted = 0, vol_attempted = 0, rot_attempted = 0;
 
