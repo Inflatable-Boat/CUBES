@@ -1,0 +1,20 @@
+#!/bin/sh
+./sl_read10.exe 100001 0.70 1 1.26610367 > /dev/null &
+./sl_read10.exe 100001 0.70 1.5 1.26610367 > /dev/null &
+./sl_read10.exe 100001 0.70 2 1.26610367 > /dev/null &
+./sl_read10.exe 100001 0.70 2.5 1.26610367 > /dev/null &
+./sl_read10.exe 100001 0.70 3 1.26610367 > /dev/null &
+./sl_read10.exe 100001 0.70 3.5 1.26610367 > /dev/null &
+./sl_read10.exe 100001 0.70 4 1.26610367 > /dev/null &
+./sl_read10.exe 100001 0.70 4.5 1.26610367 > /dev/null &
+./sl_read10.exe 100001 0.70 5 1.26610367 > /dev/null &
+./sl_read10.exe 100001 0.70 5.5 1.26610367 > /dev/null &
+./sl_read10.exe 100001 0.70 6.0 1.26610367 > /dev/null &
+./sl_read10.exe 100001 0.70 6.5 1.26610367 > /dev/null &
+./sl_read10.exe 100001 0.70 7 1.26610367 > /dev/null &
+./sl_read10.exe 100001 0.70 7.5 1.26610367 > /dev/null &
+./sl_read10.exe 100001 0.70 8 1.26610367 > /dev/null &
+./sl_read10.exe 100001 0.70 8.5 1.26610367 > /dev/null &
+./sl_read10.exe 100001 0.70 9 1.26610367 > /dev/null &
+./sl_read10.exe 100001 0.70 9.5 1.26610367 > /dev/null &
+./sl_read10.exe 100001 0.70 10 1.26610367 > /dev/null &

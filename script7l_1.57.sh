@@ -28,6 +28,10 @@
 ./sl_read7.exe 400001 0.30 6.8 1.57079632 > /dev/null &
 ./sl_read7.exe 400001 0.30 6.9 1.57079632 > /dev/null &
 ./sl_read7.exe 400001 0.30 7 1.57079632 > /dev/null &
+./sl_read7.exe 400001 0.30 7.1 1.57079632 > /dev/null &
+./sl_read7.exe 400001 0.30 7.2 1.57079632 > /dev/null &
+./sl_read7.exe 400001 0.30 7.3 1.57079632 > /dev/null &
+./sl_read7.exe 400001 0.30 7.4 1.57079632 > /dev/null &
 ./sl_read7.exe 400001 0.30 7.5 1.57079632 > /dev/null &
 ./sl_read7.exe 400001 0.30 8 1.57079632 > /dev/null &
 ./sl_read7.exe 400001 0.30 8.5 1.57079632 > /dev/null &

@@ -1,8 +1,6 @@
-datafolder*
+datafolder
+volumes
 *.exe
 *.out
-screenshot*
-cube_vols*
-volumes
 sc*.txt
 *.nb
