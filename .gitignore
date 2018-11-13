@@ -4,3 +4,4 @@ volumes
 *.out
 sc*.txt
 *.nb
+screenshot*

@@ -27,31 +27,33 @@
 /* Initialization variables */
 // many have been made not constant, so that one can enter into the command line:
 // a.exe mc_steps packing_fraction BetaP Phi
+int mc_steps = 100000;
 static double packing_fraction = 1; // = 0.4;
 static double BetaP = 10;
-static double Delta = 0.05; // delta, deltaV, deltaR are dynamic, i.e. every output_steps steps,
-static double DeltaR = 0.05; // they will be nudged a bit to keep
-static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
+static double Phi; // angle of slanted cube
+
 char init_filename[] = "sc10.txt"; // TODO: read from cmdline
 char output_foldername[] = "datafolder/sl10_pf%04.2lfp%04.1lfa%04.2lf";
 char output_filename[] = "volumes/sl10_pf%04.2lfp%04.1lfa%04.2lf";
 
-int mc_steps = 100000;
 const int output_steps = 100;
 
 /* Simulation variables */
 // TODO: use malloc and pointers instead of global variables?
+static double Delta = 0.05; // delta, deltaV, deltaR are dynamic, i.e. every output_steps steps,
+static double DeltaR = 0.05; // they will be nudged a bit to keep
+static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
+
 static vec3_t r[N]; // position of center of cube
 static mat4_t m[N]; // rotation matrix of cube
 static double CellLength; // The length of a cell
 static int NumCellsPerDim; // number of cells per dimension
-static int NumCubesInCell[NC * NC * NC]; // how many cubes in each cell
-static int WhichCubesInCell[NC * NC * NC]; // which many cubes in each cell]
+static int NumCubesInCell[NC][NC][NC]; // how many cubes in each cell
+static int WhichCubesInCell[100]; // which cubes in each cell]
 static double box[NDIM]; // dimensions of box
 static vec3_t Normal[3]; // the normal vector of an unrotated cube. Normal[0] is the normal in the x-dir, etc.
 static int n_particles = 0;
 static double ParticleVolume;
-static double Phi; // angle of slanted cube
 static double CosPhi; // cos and sin of Phi appear a lot, and are expensive to calculate.
 static double SinPhi; // Since Phi doesn't change, it's faster to calculate only once.
 
@@ -65,6 +67,7 @@ int parse_commandline(int argc, char* argv[]);
 void read_data(void);
 void set_packing_fraction(void);
 void set_random_orientation(void);
+void remove_overlap(void);
 
 // mc steps
 int move_particle(void);
@@ -83,7 +86,7 @@ vec3_t get_offset(int i, int j);
 int main(int argc, char* argv[])
 {
     dsfmt_seed(time(NULL));
-    
+
     if (parse_commandline(argc, argv)) { // if ... parsing fails
         printf("usage: program.exe mc_steps packing_fraction BetaP Phi\n");
         return 1;
@@ -92,6 +95,7 @@ int main(int argc, char* argv[])
     read_data();
     set_packing_fraction();
     set_random_orientation(); // to stop pushing to rhombic phase
+    remove_overlap(); // due to too high a packing fraction or rotation
     initialize_cell_list();
 
     if (n_particles == 0) {
@@ -345,6 +349,7 @@ int change_volume(void)
     // Effectively the above code simulates a hard sphere potential (U = \infty if r < d, U = 0 else)
     double boltzmann = pow(M_E, -BetaP * dV) * pow(newvol / oldvol, n_particles);
     if (ran(0, 1) < boltzmann) { // if the boltzmann factor > 1, the energy change is negative, and this move will always be accepted.
+        update_CellLength();
         return 1; // succesful change
     } else {
         scale(1. / scale_factor); // move everything back
@@ -358,7 +363,7 @@ int change_volume(void)
 void read_data(void)
 {
     FILE* pFile = fopen(init_filename, "r");
-    if(!fscanf(pFile, "%i", &n_particles))
+    if (!fscanf(pFile, "%i", &n_particles))
         exit(1);
 
     // Gives a proper warning in the next line in main()
@@ -371,7 +376,7 @@ void read_data(void)
     double templeft;
     double tempright;
     for (int i = 0; i < NDIM; i++) {
-        if(!fscanf(pFile, "%lf %lf", &templeft, &tempright))
+        if (!fscanf(pFile, "%lf %lf", &templeft, &tempright))
             exit(1);
         box[i] = tempright - templeft;
         if (box[i] < 0) {
@@ -410,7 +415,7 @@ void read_data(void)
     for (int i = 0; i < n_particles; i++) {
         float* pgarbage = &(r[i].x);
         for (int d = 0; d < NDIM; d++) {
-            if(!fscanf(pFile, "%lf", &pos))
+            if (!fscanf(pFile, "%lf", &pos))
                 exit(1); // Now pos contains what r[i][dim] should be
             *(pgarbage + d) = pos;
         }
@@ -419,22 +424,54 @@ void read_data(void)
     fclose(pFile);
 }
 
-/// Initializes the cell list
 void initialize_cell_list(void)
 {
+    // first initialize the lists to zero
+    for (int i = 0; i < NC; i++)
+        for (int j = 0; j < NC; j++)
+            for (int k = 0; k < NC; k++)
+                NumCubesInCell[i][j][k] = 0;
+    for (int i = 0; i < 100; i++) {
+        WhichCubesInCell[i] = 0;
+    }
+   
     double min_cell_length = sqrt(3 + 2 * CosPhi);
-    double num_of_particles_per_dim = pow(n_particles, 1./3.);
-    NumCellsPerDim = (int) (num_of_particles_per_dim / min_cell_length);
-    
+    double num_of_particles_per_dim = pow(n_particles, 1. / 3.);
+    NumCellsPerDim = (int)(num_of_particles_per_dim / min_cell_length);
+
+    // TODO: maybe must be done every ~100 mc steps?
     update_CellLength();
     // Update CellLength every volume change, so that
     // all particles stay in the same cell when the system is scaled
-    // TODO: maybe must be done every ~100 mc steps? 
 
-    
-
+    // now assign each cube to the cell they are in,
+    // and count how many cubes are in each cell.
+    for (int x = 0; x < NumCellsPerDim; x++) {
+        for (int y = 0; y < NumCellsPerDim; y++) {
+            for (int z = 0; z < NumCellsPerDim; z++) {
+                // now check for every particle if its x, y, z values lie within
+                // x*CellLength and (x+1)*CellLength, ...y..., ...z...
+                // while this is very inefficient, it is only initialization
+                double xx, yy, zz;
+                xx = x * CellLength;
+                yy = y * CellLength;
+                zz = z * CellLength;
+                for (int i = 0; i < n_particles; i++) {
+                    if (xx < r[i].x && r[i].x < xx + CellLength &&
+                    yy < r[i].y && r[i].y < yy + CellLength &&
+                    zz < r[i].z && r[i].z < zz + CellLength) {
+                        // add particle i to WhichCubesInCell at the end of the list
+                        WhichCubesInCell[NumCubesInCell[x][y][z]] = i;
+                        // and add one to the counter of this cell
+                        NumCubesInCell[x][y][z]++;
+                    }
+                }
+            }
+        }
+    }
 }
 
+/// Must be called every succesful volume change, and during initialization
 void update_CellLength(void)
 {
     CellLength = box[0] / NumCellsPerDim;
@@ -564,11 +601,11 @@ void set_packing_fraction(void)
     scale(scale_factor);
 }
 
-// After putting the (slanted) cubes at the right position,
-// rotate each cube 90 degrees around a random axis-aligned axis a few times
-// this may cause overlap if we start at too high packing fraction
+/// After putting the (slanted) cubes at the right position,
+/// rotate each cube 90 degrees around a random axis-aligned axis a few times
 void set_random_orientation(void)
 {
+    // first rotate every particle a number of times along one of the box' axes
     for (int i = 0; i < n_particles; i++) {
         for (int j = 0; j < 12; j++) { // TODO: is this random enough? legit?
             vec3_t axis = vec3(1, 0, 0);
@@ -580,7 +617,7 @@ void set_random_orientation(void)
             } else {
                 axis = vec3(1, 0, 0);
             }
-            if (random & 1){
+            if (random & 1) {
                 axis = v3_muls(axis, -1);
             }
             m[i] = m4_mul(m4_rotation(M_PI / 2, axis), m[i]);
@@ -588,8 +625,30 @@ void set_random_orientation(void)
     }
 }
 
-// Put parsing the commandline in a function.
-// If something goes wrong, return != 0
+/// reduces initial packing fraction if there is overlap
+void remove_overlap(void)
+{
+    bool is_collision = false;
+    do {
+        is_collision = false;
+        for (int i = 0; i < n_particles; i++) {
+            for (int j = i + 1; j < n_particles; j++) {
+                if (is_overlap(i, j)) {
+                    is_collision = true;
+                    i = j = n_particles; // i.e. break out of both loops
+                }
+            }
+        }
+        if (is_collision) {
+            scale(1.05); // make the system bigger and check for collisions again
+            printf("packing fraction adjusted to %lf\n",
+                n_particles * ParticleVolume / (box[0] * box[1] * box[2]));
+        }
+    } while (is_collision);
+}
+
+/// Put parsing the commandline in a function.
+/// If something goes wrong, return != 0
 int parse_commandline(int argc, char* argv[])
 {
     if (argc != 5) {
