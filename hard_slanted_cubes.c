@@ -31,9 +31,9 @@ static double BetaP = 10;
 static double Delta = 0.05; // delta, deltaV, deltaR are dynamic, i.e. every output_steps steps,
 static double DeltaR = 0.05; // they will be nudged a bit to keep
 static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
-char init_filename[] = "sc10.txt"; // TODO: read from cmdline
-char output_foldername[] = "datafolder/sl10_pf%04.2lfp%04.1lfa%04.2lf";
-char output_filename[] = "volumes/sl10_pf%04.2lfp%04.1lfa%04.2lf";
+char init_filename[] = "sc7.txt"; // TODO: read from cmdline
+char output_foldername[] = "datafolder/sl7_pf%04.2lfp%04.1lfa%04.2lf";
+char output_filename[] = "volumes/sl7_pf%04.2lfp%04.1lfa%04.2lf";
 
 int mc_steps = 100000;
 const int output_steps = 100;
@@ -371,6 +371,7 @@ int rotate_particle(void)
 void write_data(int step, FILE* fp_vol) // TODO: how many decimal digits are needed? maybe 6 is too much.
 {
     fprintf(fp_vol, "%lf\n", box[0] * box[1] * box[2]);
+    fflush(fp_vol); // write the volumes everytime we have one, otherwise it waits for ~400 lines
 
     char buffer[128];
     strcpy(buffer, output_foldername);
@@ -420,9 +421,10 @@ void set_packing_fraction(void)
 
 // After putting the (slanted) cubes at the right position,
 // rotate each cube 90 degrees around a random axis-aligned axis a few times
-// this may cause overlap if we start at too high packing fraction
+// reduces initial packing fraction if there is overlap
 void set_random_orientation(void)
 {
+    // first rotate every particle a number of times along one of the box' axes
     for (int i = 0; i < n_particles; i++) {
         for (int j = 0; j < 12; j++) { // TODO: is this random enough? legit?
             vec3_t axis = vec3(1, 0, 0);
@@ -434,12 +436,31 @@ void set_random_orientation(void)
             } else {
                 axis = vec3(1, 0, 0);
             }
-            if (random & 1){
+            if (random & 1) {
                 axis = v3_muls(axis, -1);
             }
             m[i] = m4_mul(m4_rotation(M_PI / 2, axis), m[i]);
         }
     }
+    
+    // then check for 
+    bool is_collision = false;
+    do {
+        is_collision = false;
+        for (int i = 0; i < n_particles; i++) {
+            for (int j = i + 1; j < n_particles; j++) {
+                if (is_overlap(i, j)) {
+                    is_collision = true;
+                    i = j = n_particles; // i.e. break out of both loops
+                }
+            }
+        }
+        if(is_collision){
+            scale(1.05); // make the system bigger and check for collisions again
+            printf("packing fraction adjusted to %lf\n",
+                n_particles * ParticleVolume / (box[0] * box[1] * box[2]));
+        }
+    } while (is_collision);
 }
 
 // Put parsing the commandline in a function.
@@ -491,7 +512,7 @@ int main(int argc, char* argv[])
         printf("usage: program.exe mc_steps packing_fraction BetaP Phi\n");
         return 1;
     };
-    
+
     dsfmt_seed(time(NULL));
 
     read_data();
