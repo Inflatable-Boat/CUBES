@@ -537,7 +537,10 @@ bool is_overlap_from(int index)
         for (int j = -1; j < 2; j++) {
             for (int k = -1; k < 2; k++) {
                 // now loop over all cubes in this cell
-                for (int cube = 0; cube < NumCubesInCell[x + i][y + j][z + k]; cube++) {
+                int loop_x = (x + i + CellsPerDim) % CellsPerDim;
+                int loop_y = (y + i + CellsPerDim) % CellsPerDim;
+                int loop_z = (z + i + CellsPerDim) % CellsPerDim;
+                for (int cube = 0; cube < NumCubesInCell[loop_x][loop_y][loop_z]; cube++) {
                     int index2 = WhichCubesInCell[cube];
                     // if checking your own cell, do not check overlap with yourself
                     if(index == index2) continue; // TODO: is this efficient enough?
@@ -592,9 +595,13 @@ int move_particle_cell_list(void)
 void update_cell_list(int index, vec3_t r_old)
 {
     vec3_t r_new = r[index];
-    bool x_ok = fmodf(r_new.x, CellLength) == fmodf(r_old.x, CellLength);
-    bool y_ok = fmodf(r_new.y, CellLength) == fmodf(r_old.y, CellLength);
-    bool z_ok = fmodf(r_new.z, CellLength) == fmodf(r_old.z, CellLength);
+    int x_old = r_new.x / CellLength; // TODO: clean up
+    bool x_ok = (int) (r_new.x / CellLength);
+    bool y_ok = fmodf(r_new.y, CellLength) - r_new.y == fmodf(r_old.y, CellLength) - r_old.y;
+    bool z_ok = fmodf(r_new.z, CellLength) - r_new.z == fmodf(r_old.z, CellLength) - r_old.z;
+    if (x_ok && y_ok && z_ok)
+        return; // still in same box, don't have to change anything
+    
 }
 
 /// This rotates a random particle around a random axis

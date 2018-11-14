@@ -75,6 +75,9 @@ int main(int argc, char* argv[])
         printf("ja");
     if(aap == noot == mies - 1)
         printf("nee"); // doesn't print because ((2 == 2) == true) != 2?? */
+    for (int i = -3; i < 3; i++) {
+        printf("%d\n", ((i + 3) % 3));
+    }
 
     return 0;
 }
