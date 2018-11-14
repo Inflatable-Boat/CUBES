@@ -67,15 +67,14 @@ int main(int argc, char* argv[])
         if(random & 1)
             printf("%d\n", random); //1 3 5*/
 
-    int aap[3][3][3];
-    aap[2][1][0] = 2;
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            for (int k = 0; k < 3; k++) {
-                printf("%d\n", aap[i][j][k]);
-            }
-        }
-    }
+    /* int aap = 2;
+    int noot = 2;
+    int mies = 3;
+
+    if(aap == noot == mies)
+        printf("ja");
+    if(aap == noot == mies - 1)
+        printf("nee"); // doesn't print because ((2 == 2) == true) != 2?? */
 
     return 0;
 }

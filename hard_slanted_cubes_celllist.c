@@ -47,9 +47,10 @@ static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and
 static vec3_t r[N]; // position of center of cube
 static mat4_t m[N]; // rotation matrix of cube
 static double CellLength; // The length of a cell
-static int NumCellsPerDim; // number of cells per dimension
+static int CellsPerDim; // number of cells per dimension
 static int NumCubesInCell[NC][NC][NC]; // how many cubes in each cell
-static int WhichCubesInCell[100]; // which cubes in each cell]
+static int WhichCubesInCell[100]; // which cubes in each cell
+static int InWhichCellIsThisCube[N]; // (a,b,c) == NC*NC*a + NC*b + c
 static double box[NDIM]; // dimensions of box
 static vec3_t Normal[3]; // the normal vector of an unrotated cube. Normal[0] is the normal in the x-dir, etc.
 static int n_particles = 0;
@@ -77,9 +78,11 @@ void nudge_deltas(double mov, double vol, double rot);
 void write_data(int step, FILE* fp_vol);
 
 // collision detection
-bool is_overlap(int i, int j);
+bool is_overlap_between(int i, int j);
 bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1);
 vec3_t get_offset(int i, int j);
+bool is_overlap_from(int index);
+void update_cell_list(int index, vec3_t r_old);
 
 /* Main */
 
@@ -241,7 +244,7 @@ bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
 }
 
 /// Checks if cube i and cube j overlap using the separating axis theorem
-bool is_overlap(int i, int j)
+bool is_overlap_between(int i, int j)
 {
     vec3_t r2_r1 = v3_sub(r[i], r[j]); // read as r2 - r1
 
@@ -332,7 +335,7 @@ int change_volume(void)
     if (scale_factor < 1.0) {
         for (int i = 0; i < n_particles; i++) {
             for (int j = i + 1; j < n_particles; j++) {
-                if (is_overlap(i, j)) {
+                if (is_overlap_between(i, j)) {
                     is_collision = true;
                     i = j = n_particles; // i.e. break out of both loops
                 }
@@ -424,6 +427,8 @@ void read_data(void)
     fclose(pFile);
 }
 
+/// Initializes CellsPerDim, CellLength, 
+/// NumCubesInCell[][][], WhichCubesInCell[] and InWhichCellIsThisCube
 void initialize_cell_list(void)
 {
     // first initialize the lists to zero
@@ -437,7 +442,7 @@ void initialize_cell_list(void)
    
     double min_cell_length = sqrt(3 + 2 * CosPhi);
     double num_of_particles_per_dim = pow(n_particles, 1. / 3.);
-    NumCellsPerDim = (int)(num_of_particles_per_dim / min_cell_length);
+    CellsPerDim = (int)(num_of_particles_per_dim / min_cell_length);
 
     // TODO: maybe must be done every ~100 mc steps?
     update_CellLength();
@@ -446,9 +451,9 @@ void initialize_cell_list(void)
 
     // now assign each cube to the cell they are in,
     // and count how many cubes are in each cell.
-    for (int x = 0; x < NumCellsPerDim; x++) {
-        for (int y = 0; y < NumCellsPerDim; y++) {
-            for (int z = 0; z < NumCellsPerDim; z++) {
+    for (int x = 0; x < CellsPerDim; x++) {
+        for (int y = 0; y < CellsPerDim; y++) {
+            for (int z = 0; z < CellsPerDim; z++) {
                 // now check for every particle if its x, y, z values lie within
                 // x*CellLength and (x+1)*CellLength, ...y..., ...z...
                 // while this is very inefficient, it is only initialization
@@ -457,13 +462,16 @@ void initialize_cell_list(void)
                 yy = y * CellLength;
                 zz = z * CellLength;
                 for (int i = 0; i < n_particles; i++) {
-                    if (xx < r[i].x && r[i].x < xx + CellLength &&
-                    yy < r[i].y && r[i].y < yy + CellLength &&
-                    zz < r[i].z && r[i].z < zz + CellLength) {
+                    bool is_in_x_range = (xx <= r[i].x) && (r[i].x < xx + CellLength);
+                    bool is_in_y_range = (yy <= r[i].y) && (r[i].y < yy + CellLength);
+                    bool is_in_z_range = (zz <= r[i].z) && (r[i].z < zz + CellLength);
+                    if (is_in_x_range && is_in_y_range && is_in_z_range) {
                         // add particle i to WhichCubesInCell at the end of the list
                         WhichCubesInCell[NumCubesInCell[x][y][z]] = i;
-                        // and add one to the counter of this cell
+                        // add one to the counter of cubes of this cell
                         NumCubesInCell[x][y][z]++;
+                        // and keep track of in which cell this cube is
+                        InWhichCellIsThisCube[i] = NC*NC*x + NC*y + z;
                     }
                 }
             }
@@ -474,7 +482,7 @@ void initialize_cell_list(void)
 /// Must be called every succesful volume change, and during initialization
 void update_CellLength(void)
 {
-    CellLength = box[0] / NumCellsPerDim;
+    CellLength = box[0] / CellsPerDim;
 }
 
 /// This moves a random particle in a cube of volume (2 * delta)^3.
@@ -496,12 +504,12 @@ int move_particle(void)
     }
 
     // TODO: make cell structure in box so we don't need as many checks
-    // if is_overlap(index, any other one) == true, it stops the loop,
+    // if is_overlap_between(index, any other one) == true, it stops the loop,
     // as any collision results in an unsuccesful move.
     // TODO: parallelize?
     bool is_collision = false;
     for (int i = index + 1; i < index + n_particles; i++) {
-        if (is_overlap(index, i % n_particles)) {
+        if (is_overlap_between(index, i % n_particles)) {
             is_collision = true;
             break;
         }
@@ -513,6 +521,80 @@ int move_particle(void)
     } else {
         return 1; // succesful move
     }
+}
+
+/// This function returns if cube number index overlaps, using cell lists
+bool is_overlap_from(int index)
+{
+    bool is_collision = false;
+    int cell = InWhichCellIsThisCube[index];
+    // convert cell number to x, y, z coordinates
+    int x = cell / (NC * NC);
+    int y = (cell / NC) % NC;
+    int z = cell % NC;
+    // loop over all neighbouring cells
+    for (int i = -1; i < 2; i++) {
+        for (int j = -1; j < 2; j++) {
+            for (int k = -1; k < 2; k++) {
+                // now loop over all cubes in this cell
+                for (int cube = 0; cube < NumCubesInCell[x + i][y + j][z + k]; cube++) {
+                    int index2 = WhichCubesInCell[cube];
+                    // if checking your own cell, do not check overlap with yourself
+                    if(index == index2) continue; // TODO: is this efficient enough?
+                    
+                    if (is_overlap_between(index, index2)) {
+                        is_collision = true;
+                        // and break out of all loops
+                        cube = NumCubesInCell[x + i][y + j][z + k];
+                        i = j = k = 2;
+                    }
+                }
+            }
+        }
+    }
+    return is_collision;
+}
+
+/// This moves a random particle in a cube of volume (2 * delta)^3.
+/// Note this gives particles a tendency to move to one of the 8 corners of the cube,
+/// however it obeys detailed balance.^{[citation needed]}
+/// It checks for overlap using the cell lists.
+/// returns 1 on succesful move, 0 on unsuccesful move.
+int move_particle_cell_list(void)
+{
+    // first choose the cube and remember its position
+    int index = (int)ran(0., n_particles); // goes from 0 to n_particles - 1
+    vec3_t r_old = r[index];
+
+    // move the cube
+    float* pgarbage = &(r[index].x);
+    for (int d = 0; d < NDIM; d++) {
+        *(pgarbage + d) += ran(-Delta, Delta);
+        // periodic boundary conditions happen here, fmod = floating point modulo. Since delta < box[dim],
+        // the following expression will always return a positive number.
+        *(pgarbage + d) = fmodf(*(pgarbage + d) + box[d], box[d]);
+    }
+
+    // and check for overlaps
+    if (is_overlap_from(index)) {
+        r[index] = r_old; // move back
+        return 0; // unsuccesful move
+    } else {
+        // remember to update (Num/Which)CubesInCell and InWhichCellIsThisCube
+        update_cell_list(index, r_old);
+        return 1; // succesful move
+    }
+}
+
+/// This function updates the cell list. At this point, r[index] contains the new
+/// (accepted) position, and we need to check if is in the same cell as before.
+/// If not, update (Num/Which)CubesInCell and InWhichCellIsThisCube.
+void update_cell_list(int index, vec3_t r_old)
+{
+    vec3_t r_new = r[index];
+    bool x_ok = fmodf(r_new.x, CellLength) == fmodf(r_old.x, CellLength);
+    bool y_ok = fmodf(r_new.y, CellLength) == fmodf(r_old.y, CellLength);
+    bool z_ok = fmodf(r_new.z, CellLength) == fmodf(r_old.z, CellLength);
 }
 
 /// This rotates a random particle around a random axis
@@ -537,17 +619,17 @@ int rotate_particle(void)
 
     // rotate the particle
     m[index] = m4_mul(rot_mx, m[index]);
-    // and check for collisions
-    // TODO: make cell structure // TODO: and/or parallelize
-    for (int i = index + 1; i < index + n_particles; i++) {
-        if (is_overlap(index, i % n_particles)) {
-            // rotate back
-            m[index] = m4_mul(m4_invert_affine(rot_mx), m[index]);
-            return 0; // unsuccesful rotation
-        }
+
+    // and check for overlaps
+    if (is_overlap_from(index)) {
+        // overlap, rotate back
+        m[index] = m4_mul(m4_invert_affine(rot_mx), m[index]);
+        return 0; // unsuccesful rotation
+    } else {
+        // no overlap, rotation is accepted!
+        // since the cube didn't move, there is no need to update the cell lists
+        return 1;  // succesful rotation      
     }
-    // if we arrive here, there is no overlap and the rotation is accepted!
-    return 1;
 }
 
 void write_data(int step, FILE* fp_vol) // TODO: how many decimal digits are needed? maybe 6 is too much.
@@ -633,7 +715,7 @@ void remove_overlap(void)
         is_collision = false;
         for (int i = 0; i < n_particles; i++) {
             for (int j = i + 1; j < n_particles; j++) {
-                if (is_overlap(i, j)) {
+                if (is_overlap_between(i, j)) {
                     is_collision = true;
                     i = j = n_particles; // i.e. break out of both loops
                 }
