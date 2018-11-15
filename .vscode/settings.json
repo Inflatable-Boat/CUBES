@@ -3,6 +3,7 @@
     "files.associations": {
         "math_4d.h": "c",
         "types.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "stat.h": "c"
     } // so that custom snippet suggestions are on top
 }

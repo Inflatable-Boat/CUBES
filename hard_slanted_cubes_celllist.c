@@ -76,7 +76,8 @@ void remove_overlap(void);
 void initialize_cell_list(void);
 
 // mc steps
-int move_particle(void);
+// int move_particle(void);
+int move_particle_cell_list(void);
 int rotate_particle(void);
 int change_volume(void);
 void nudge_deltas(double mov, double vol, double rot);
@@ -89,7 +90,6 @@ vec3_t get_offset(int i, int j);
 bool is_overlap_from(int index);
 void update_cell_list(int index, vec3_t r_old);
 void update_CellLength(void);
-int move_particle_cell_list(void);
 
 /* Main */
 
@@ -546,8 +546,8 @@ bool is_overlap_from(int index)
             for (int k = -1; k < 2; k++) {
                 // now loop over all cubes in this cell, remember periodic boundary conditions
                 int loop_x = (x + i + CellsPerDim) % CellsPerDim;
-                int loop_y = (y + i + CellsPerDim) % CellsPerDim;
-                int loop_z = (z + i + CellsPerDim) % CellsPerDim;
+                int loop_y = (y + j + CellsPerDim) % CellsPerDim;
+                int loop_z = (z + k + CellsPerDim) % CellsPerDim;
                 for (int cube = 0; cube < NumCubesInCell[loop_x][loop_y][loop_z]; cube++) {
                     int index2 = WhichCubesInCell[loop_x][loop_y][loop_z][cube];
                     // if checking your own cell, do not check overlap with yourself
@@ -560,7 +560,7 @@ bool is_overlap_from(int index)
                     if (is_overlap_between(index, index2)) {
                         is_collision = true;
                         // and break out of all loops
-                        cube = NumCubesInCell[x + i][y + j][z + k];
+                        cube = N;
                         i = j = k = 2;
                     }
                 }
@@ -619,9 +619,9 @@ void update_cell_list(int index, vec3_t r_old)
         // update in which cell this cube is
         InWhichCellIsThisCube[index] = NC * NC * x_new + NC * y_new + z_new;
         // update WhichCubesInCell, first check at what index the moved cube was
-        int i, cube_index = 0;
+        int i;
         for (i = 0; i < NumCubesInCell[x_old][y_old][z_old]; i++) {
-            cube_index = WhichCubesInCell[x_old][y_old][z_old][i];
+            int cube_index = WhichCubesInCell[x_old][y_old][z_old][i];
             if (cube_index == index)
                 break; // now i contains the relevant index.
         }
@@ -631,9 +631,6 @@ void update_cell_list(int index, vec3_t r_old)
         // with the one at the end of the list,
         // and lowering the counter (hence the --)
         WhichCubesInCell[x_old][y_old][z_old][i] = WhichCubesInCell[x_old][y_old][z_old][NumCubesInCell[x_old][y_old][z_old]--];
-
-        // update the number of cubes in each cell
-        NumCubesInCell[x_old][y_old][z_old]--;
         return;
     }
 }
