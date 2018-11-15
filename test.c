@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h> // malloc(), free
 #include <time.h> // time()
+#include <stdbool.h>
 
 inline static double ran(double low, double high)
 {
@@ -75,9 +76,32 @@ int main(int argc, char* argv[])
         printf("ja");
     if(aap == noot == mies - 1)
         printf("nee"); // doesn't print because ((2 == 2) == true) != 2?? */
-    for (int i = -3; i < 3; i++) {
+    /* for (int i = -3; i < 3; i++) {
         printf("%d\n", ((i + 3) % 3));
+    } */
+
+    /* const int N = 38;
+    int aap[N][N][N][N]; // N = 38 is the max for which it works, 38^4 < 2^21
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            for (int k = 0; k < N; k++) {
+                for (int l = 0; l < N; l++) {
+                    aap[i][j][k][l] = i * N * N * N + j * N * N + k * N + l;
+                }
+            }
+        }
     }
+    for (int i = 0; i < N * N; i++) {
+        printf("%d ", aap[0][0][i/N][i%N]);
+        if((i + 1 % N) != 0)
+            printf("\n");
+    } */
+
+    /* while(true)
+    { // geen fucking warning ech nie????
+        printf("ech nie\n");
+    } */
+    
 
     return 0;
 }

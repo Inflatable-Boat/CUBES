@@ -1,6 +1,8 @@
 {
     "editor.snippetSuggestions": "top",
     "files.associations": {
-        "math_4d.h": "c"
+        "math_4d.h": "c",
+        "types.h": "c",
+        "string.h": "c"
     } // so that custom snippet suggestions are on top
 }

@@ -1,11 +1,13 @@
 #include "math_4d.h" // https://github.com/arkanis/single-header-file-c-libs/blob/master/math_3d.h
 #include "mt19937.h" // Mersenne Twister (dsmft_genrand();)
-// #include <direct.h> // mkdir on Windows
+#ifdef _WIN32
+#include <direct.h> // mkdir on Windows
+#elif __linux__
 #include <sys/stat.h> // mkdir on Linux
 #include <sys/types.h> // mkdir on Linux
-#include <unistd.h>
+#endif
+#include <unistd.h> // I forgot what this was for
 // #include <iostream> // C++
-#include <assert.h>
 #include <stdbool.h> // C requires this for (bool, true, false) to work
 #include <string.h> // This is for C (strcpy, strcat, etc. ). For C++, use #include <string>
 // #include <math.h> // in "math_4d.h" // in Linux, make sure to gcc ... -lm, -lm stands for linking math library.
@@ -20,8 +22,10 @@
 #endif
 
 #define NDIM 3
-#define N 1000
-#define NC 12 // max number of cells per direction
+#define N 8000 // 20^3 should be plenty for now
+#define NC 16 // max number of cells per direction
+// WARNING!, don't make NC much larger than 32, because
+// WhichCubesInCell is an array of size NC^4, this is already a million at NC == 32.
 #define Edge_Length 1 // TODO: decide to definitely remove this option
 
 /* Initialization variables */
@@ -49,7 +53,7 @@ static mat4_t m[N]; // rotation matrix of cube
 static double CellLength; // The length of a cell
 static int CellsPerDim; // number of cells per dimension
 static int NumCubesInCell[NC][NC][NC]; // how many cubes in each cell
-static int WhichCubesInCell[100]; // which cubes in each cell
+static int WhichCubesInCell[NC][NC][NC][NC]; // which cubes in each cell, NC is an arbitrary maximum
 static int InWhichCellIsThisCube[N]; // (a,b,c) == NC*NC*a + NC*b + c
 static double box[NDIM]; // dimensions of box
 static vec3_t Normal[3]; // the normal vector of an unrotated cube. Normal[0] is the normal in the x-dir, etc.
@@ -69,6 +73,7 @@ void read_data(void);
 void set_packing_fraction(void);
 void set_random_orientation(void);
 void remove_overlap(void);
+void initialize_cell_list(void);
 
 // mc steps
 int move_particle(void);
@@ -83,6 +88,8 @@ bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1);
 vec3_t get_offset(int i, int j);
 bool is_overlap_from(int index);
 void update_cell_list(int index, vec3_t r_old);
+void update_CellLength(void);
+int move_particle_cell_list(void);
 
 /* Main */
 
@@ -134,7 +141,7 @@ int main(int argc, char* argv[])
             int temp_ran = (int)ran(0, 2 * n_particles + 2);
             if (temp_ran < n_particles) {
                 mov_attempted++;
-                mov_accepted += move_particle();
+                mov_accepted += move_particle_cell_list();
             } else if (temp_ran < 2 * n_particles) {
                 rot_attempted++;
                 rot_accepted += rotate_particle();
@@ -405,7 +412,6 @@ void read_data(void)
     for (int i = 0; i < n_particles; i++) {
         for (int temp = 0; temp < 16; temp++)
             m[i].m[temp % 4][temp / 4] = 0; // everything zero first
-        float* pgarbage = &(r[i].x);
         for (int d = 0; d < NDIM; d++) {
             m[i].m[d][d] = 1; // 1 on the diagonal
         }
@@ -427,21 +433,24 @@ void read_data(void)
     fclose(pFile);
 }
 
-/// Initializes CellsPerDim, CellLength, 
-/// NumCubesInCell[][][], WhichCubesInCell[] and InWhichCellIsThisCube
+/// Initializes CellsPerDim, CellLength,
+/// NumCubesInCell[][][], WhichCubesInCell[][][][] and InWhichCellIsThisCube[]
 void initialize_cell_list(void)
 {
     // first initialize the lists to zero
     for (int i = 0; i < NC; i++)
         for (int j = 0; j < NC; j++)
-            for (int k = 0; k < NC; k++)
+            for (int k = 0; k < NC; k++) {
                 NumCubesInCell[i][j][k] = 0;
-    for (int i = 0; i < 100; i++) {
-        WhichCubesInCell[i] = 0;
-    }
-   
+                for (int l = 0; l < NC; l++) {
+                    WhichCubesInCell[i][j][k][l] = 0;
+                }
+            }
+
     double min_cell_length = sqrt(3 + 2 * CosPhi);
     double num_of_particles_per_dim = pow(n_particles, 1. / 3.);
+    // CellsPerDim must not be too large, so that CellLength >= min_cell_length
+    // therefore, rounding CellsPerDim down is okay.
     CellsPerDim = (int)(num_of_particles_per_dim / min_cell_length);
 
     // TODO: maybe must be done every ~100 mc steps?
@@ -467,11 +476,10 @@ void initialize_cell_list(void)
                     bool is_in_z_range = (zz <= r[i].z) && (r[i].z < zz + CellLength);
                     if (is_in_x_range && is_in_y_range && is_in_z_range) {
                         // add particle i to WhichCubesInCell at the end of the list
-                        WhichCubesInCell[NumCubesInCell[x][y][z]] = i;
-                        // add one to the counter of cubes of this cell
-                        NumCubesInCell[x][y][z]++;
+                        // and add one to the counter of cubes of this cell (hence the ++)
+                        WhichCubesInCell[x][y][z][NumCubesInCell[x][y][z]++] = i;
                         // and keep track of in which cell this cube is
-                        InWhichCellIsThisCube[i] = NC*NC*x + NC*y + z;
+                        InWhichCellIsThisCube[i] = NC * NC * x + NC * y + z;
                     }
                 }
             }
@@ -489,7 +497,7 @@ void update_CellLength(void)
 /// Note this gives particles a tendency to move to one of the 8 corners of the cube,
 /// however it obeys detailed balance.^{[citation needed]}
 /// returns 1 on succesful move, 0 on unsuccesful move.
-int move_particle(void)
+/* int move_particle(void)
 {
     // first choose the particle and remember its position
     int index = (int)ran(0., n_particles); // goes from 0 to n_particles - 1
@@ -521,7 +529,7 @@ int move_particle(void)
     } else {
         return 1; // succesful move
     }
-}
+} */
 
 /// This function returns if cube number index overlaps, using cell lists
 bool is_overlap_from(int index)
@@ -536,15 +544,19 @@ bool is_overlap_from(int index)
     for (int i = -1; i < 2; i++) {
         for (int j = -1; j < 2; j++) {
             for (int k = -1; k < 2; k++) {
-                // now loop over all cubes in this cell
+                // now loop over all cubes in this cell, remember periodic boundary conditions
                 int loop_x = (x + i + CellsPerDim) % CellsPerDim;
                 int loop_y = (y + i + CellsPerDim) % CellsPerDim;
                 int loop_z = (z + i + CellsPerDim) % CellsPerDim;
                 for (int cube = 0; cube < NumCubesInCell[loop_x][loop_y][loop_z]; cube++) {
-                    int index2 = WhichCubesInCell[cube];
+                    int index2 = WhichCubesInCell[loop_x][loop_y][loop_z][cube];
                     // if checking your own cell, do not check overlap with yourself
-                    if(index == index2) continue; // TODO: is this efficient enough?
-                    
+                    if (0 == i && i == j && j == k) {
+                        if (index == index2) {
+                            continue; // TODO: is this efficient enough?
+                        }
+                    }
+
                     if (is_overlap_between(index, index2)) {
                         is_collision = true;
                         // and break out of all loops
@@ -595,13 +607,35 @@ int move_particle_cell_list(void)
 void update_cell_list(int index, vec3_t r_old)
 {
     vec3_t r_new = r[index];
-    int x_old = r_new.x / CellLength; // TODO: clean up
-    bool x_ok = (int) (r_new.x / CellLength);
-    bool y_ok = fmodf(r_new.y, CellLength) - r_new.y == fmodf(r_old.y, CellLength) - r_old.y;
-    bool z_ok = fmodf(r_new.z, CellLength) - r_new.z == fmodf(r_old.z, CellLength) - r_old.z;
-    if (x_ok && y_ok && z_ok)
+    int x_old = InWhichCellIsThisCube[index] / (NC * NC);
+    int y_old = (InWhichCellIsThisCube[index] / NC) % NC;
+    int z_old = InWhichCellIsThisCube[index] % NC;
+    int x_new = r_new.x / CellLength;
+    int y_new = r_new.y / CellLength;
+    int z_new = r_new.z / CellLength;
+    if (x_old == x_new && y_old == y_new && z_old == z_new) {
         return; // still in same box, don't have to change anything
-    
+    } else {
+        // update in which cell this cube is
+        InWhichCellIsThisCube[index] = NC * NC * x_new + NC * y_new + z_new;
+        // update WhichCubesInCell, first check at what index the moved cube was
+        int i, cube_index = 0;
+        for (i = 0; i < NumCubesInCell[x_old][y_old][z_old]; i++) {
+            cube_index = WhichCubesInCell[x_old][y_old][z_old][i];
+            if (cube_index == index)
+                break; // now i contains the relevant index.
+        }
+        // add cube to the new cell and add one to the counter (hence the ++)
+        WhichCubesInCell[x_new][y_new][z_new][NumCubesInCell[x_new][y_new][z_new]++] = index;
+        // and remove it from the old cell by replacing it
+        // with the one at the end of the list,
+        // and lowering the counter (hence the --)
+        WhichCubesInCell[x_old][y_old][z_old][i] = WhichCubesInCell[x_old][y_old][z_old][NumCubesInCell[x_old][y_old][z_old]--];
+
+        // update the number of cubes in each cell
+        NumCubesInCell[x_old][y_old][z_old]--;
+        return;
+    }
 }
 
 /// This rotates a random particle around a random axis
@@ -635,7 +669,7 @@ int rotate_particle(void)
     } else {
         // no overlap, rotation is accepted!
         // since the cube didn't move, there is no need to update the cell lists
-        return 1;  // succesful rotation      
+        return 1; // succesful rotation
     }
 }
 
