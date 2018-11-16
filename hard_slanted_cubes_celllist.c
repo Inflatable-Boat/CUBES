@@ -36,9 +36,9 @@ static double packing_fraction = 1; // = 0.4;
 static double BetaP = 10;
 static double Phi; // angle of slanted cube
 
-char init_filename[] = "sc10.txt"; // TODO: read from cmdline
-char output_foldername[] = "datafolder/sl10_pf%04.2lfp%04.1lfa%04.2lf";
-char output_filename[] = "volumes/sl10_pf%04.2lfp%04.1lfa%04.2lf";
+char init_filename[] = "sc15.txt"; // TODO: read from cmdline
+char output_foldername[] = "datafolder/sl15_pf%04.2lfp%04.1lfa%04.2lf";
+char output_filename[] = "volumes/sl15_pf%04.2lfp%04.1lfa%04.2lf";
 
 const int output_steps = 100;
 
@@ -309,17 +309,17 @@ bool is_overlap_between(int i, int j)
 /// and adjusts delta and deltaV accordingly.
 void nudge_deltas(double mov, double vol, double rot)
 {
-    if (mov < 0.4)
+    if (mov < 0.3)
         Delta *= 0.9; // acceptance too low  --> decrease delta
-    if (mov > 0.6 && Delta < Edge_Length / 2.)
+    if (mov > 0.4 && Delta < Edge_Length / 2.)
         Delta *= 1.1; // acceptance too high --> increase delta
-    if (vol < 0.4)
+    if (vol < 0.1)
         DeltaV *= 0.9;
-    if (vol > 0.6)
+    if (vol > 0.2)
         DeltaV *= 1.1;
-    if (rot < 0.4)
+    if (rot < 0.3)
         DeltaR *= 0.9;
-    if (rot > 0.6 && DeltaR < M_PI / 4)
+    if (rot > 0.4 && DeltaR < M_PI / 4)
         DeltaR *= 1.1;
 }
 
@@ -348,6 +348,34 @@ int change_volume(void)
                 }
             }
         }
+        // check by cell list but don't check particles twice:
+        // I'm not sure if this is faster than just doing the easy check each pair
+        /* for (int i = 0; i < n_particles; i++) {
+            for (int j = i + 1; j < n_particles; j++) {
+                int cell1 = InWhichCellIsThisCube[i];
+                int cell2 = InWhichCellIsThisCube[j];
+                int x1, x2, y1, y2, z1, z2;
+                x1 = cell1 / (NC * NC), x2 = cell2 / (NC * NC);
+                bool x_ok1 = ((x1 + CellsPerDim) % CellsPerDim) < ((x2 + 2 + CellsPerDim) % CellsPerDim);
+                bool x_ok2 = ((x1 + CellsPerDim) % CellsPerDim) > ((x2 - 2 + CellsPerDim) % CellsPerDim);
+                bool x_ok = x_ok1 && x_ok2;
+                if (!x_ok) continue;
+                y1 = (cell1 / NC) % NC, y2 = (cell2 / NC) % NC;
+                bool y_ok1 = ((y1 + CellsPerDim) % CellsPerDim) < ((y2 + 2 + CellsPerDim) % CellsPerDim);
+                bool y_ok2 = ((y1 + CellsPerDim) % CellsPerDim) > ((y2 - 2 + CellsPerDim) % CellsPerDim);
+                bool y_ok = y_ok1 && y_ok2;
+                if (!y_ok) continue;
+                z1 = cell1 % NC, z2 = cell2 % NC;
+                bool z_ok1 = ((z1 + CellsPerDim) % CellsPerDim) < ((z2 + 2 + CellsPerDim) % CellsPerDim);
+                bool z_ok2 = ((z1 + CellsPerDim) % CellsPerDim) > ((z2 - 2 + CellsPerDim) % CellsPerDim);
+                bool z_ok = z_ok1 && z_ok2;
+                if (!z_ok) continue;
+                    if (is_overlap_between(i, j)) {
+                        is_collision = true;
+                        i = j = n_particles; // i.e. break out of both loops
+                    }
+            }
+        } */
     }
 
     if (is_collision) {
@@ -488,7 +516,7 @@ void initialize_cell_list(void)
 }
 
 /// Must be called every succesful volume change, and during initialization
-void update_CellLength(void)
+inline void update_CellLength(void)
 {
     CellLength = box[0] / CellsPerDim;
 }
@@ -630,7 +658,7 @@ void update_cell_list(int index, vec3_t r_old)
         // and remove it from the old cell by replacing it
         // with the one at the end of the list,
         // and lowering the counter (hence the --)
-        WhichCubesInCell[x_old][y_old][z_old][i] = WhichCubesInCell[x_old][y_old][z_old][NumCubesInCell[x_old][y_old][z_old]--];
+        WhichCubesInCell[x_old][y_old][z_old][i] = WhichCubesInCell[x_old][y_old][z_old][--NumCubesInCell[x_old][y_old][z_old]];
         return;
     }
 }

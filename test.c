@@ -101,7 +101,17 @@ int main(int argc, char* argv[])
     { // geen fucking warning ech nie????
         printf("ech nie\n");
     } */
-    
+
+    /* int aap = 1;
+    printf("%d %d   ", aap++, aap++); // 2 1
+    printf("%d\n", aap); // 3 */
+
+    /* int aap[3];
+    printf("%d", aap[3000]); // segmentation fault (core dumped) */
+
 
     return 0;
 }
+
+
+
