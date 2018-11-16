@@ -17,4 +17,4 @@
 /usr/bin/time --output=lengths/time15_p130_27.txt --format="\t%E real,\t%U user,\t%S sys" ./sl15_cl.exe 500001 0.50 13.0 1.26610367 > /dev/null &
 /usr/bin/time --output=lengths/time15_p140_27.txt --format="\t%E real,\t%U user,\t%S sys" ./sl15_cl.exe 500001 0.50 14.0 1.26610367 > /dev/null &
 /usr/bin/time --output=lengths/time15_p150_27.txt --format="\t%E real,\t%U user,\t%S sys" ./sl15_cl.exe 500001 0.50 15.0 1.26610367 > /dev/null &
-/usr/bin/time --output=lengths/time15_p200_27.txt --format="\t%E real,\t%U user,\t%S sys" (./sl15_cl.exe 500001 0.50 20.0 1.26610367 > /dev/null &
+/usr/bin/time --output=lengths/time15_p200_27.txt --format="\t%E real,\t%U user,\t%S sys" ./sl15_cl.exe 500001 0.50 20.0 1.26610367 > /dev/null &
