@@ -182,17 +182,17 @@ bool is_overlap(int i, int j)
 /// and adjusts delta and deltaV accordingly.
 void nudge_deltas(double mov, double vol, double rot)
 {
-    if (mov < 0.4)
+    if (mov < 0.3)
         Delta *= 0.9; // acceptance too low  --> decrease delta
-    if (mov > 0.6 && Delta < Edge_Length / 2.)
+    if (mov > 0.4 && Delta < Edge_Length / 2.)
         Delta *= 1.1; // acceptance too high --> increase delta
-    if (vol < 0.4)
+    if (vol < 0.1)
         DeltaV *= 0.9;
-    if (vol > 0.6)
+    if (vol > 0.2)
         DeltaV *= 1.1;
-    if (rot < 0.4)
+    if (rot < 0.3)
         DeltaR *= 0.9;
-    if (rot > 0.6 && DeltaR < M_PI / 4)
+    if (rot > 0.4 && DeltaR < M_PI / 4)
         DeltaR *= 1.1;
 }
 

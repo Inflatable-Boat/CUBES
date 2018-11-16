@@ -1,0 +1,20 @@
+#!/bin/sh
+/usr/bin/time --output=lengths/time7_p010_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 1.0 1.25 > /dev/null &
+/usr/bin/time --output=lengths/time7_p020_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 2.0 1.25 > /dev/null &
+/usr/bin/time --output=lengths/time7_p030_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 3.0 1.25 > /dev/null &
+/usr/bin/time --output=lengths/time7_p040_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 4.0 1.25 > /dev/null &
+/usr/bin/time --output=lengths/time7_p050_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 5.0 1.25 > /dev/null &
+/usr/bin/time --output=lengths/time7_p060_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 6.0 1.25 > /dev/null &
+/usr/bin/time --output=lengths/time7_p065_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 6.5 1.25 > /dev/null &
+/usr/bin/time --output=lengths/time7_p070_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 7.0 1.25 > /dev/null &
+/usr/bin/time --output=lengths/time7_p075_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 7.5 1.25 > /dev/null &
+/usr/bin/time --output=lengths/time7_p080_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 8.0 1.25 > /dev/null &
+/usr/bin/time --output=lengths/time7_p085_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 8.5 1.25 > /dev/null &
+/usr/bin/time --output=lengths/time7_p090_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 9.0 1.25 > /dev/null &
+/usr/bin/time --output=lengths/time7_p100_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 10.0 1.25 > /dev/null &
+/usr/bin/time --output=lengths/time7_p110_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 11.0 1.25 > /dev/null &
+/usr/bin/time --output=lengths/time7_p120_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 12.0 1.25 > /dev/null &
+/usr/bin/time --output=lengths/time7_p130_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 13.0 1.25 > /dev/null &
+/usr/bin/time --output=lengths/time7_p140_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 14.0 1.25 > /dev/null &
+/usr/bin/time --output=lengths/time7_p150_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 15.0 1.25 > /dev/null &
+/usr/bin/time --output=lengths/time7_p200_25.txt --format="\t%E real,\t%U user,\t%S sys" ./sl_read7.exe 500001 0.50 20.0 1.25 > /dev/null &

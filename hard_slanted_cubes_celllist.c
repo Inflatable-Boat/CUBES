@@ -38,7 +38,7 @@ static double Phi; // angle of slanted cube
 
 char init_filename[] = "sc15.txt"; // TODO: read from cmdline
 char output_foldername[] = "datafolder/sl15_pf%04.2lfp%04.1lfa%04.2lf";
-char output_filename[] = "volumes/sl15_pf%04.2lfp%04.1lfa%04.2lf";
+char output_filename[] = "densities/sl15_pf%04.2lfp%04.1lfa%04.2lf";
 
 const int output_steps = 100;
 
@@ -81,7 +81,7 @@ int move_particle_cell_list(void);
 int rotate_particle(void);
 int change_volume(void);
 void nudge_deltas(double mov, double vol, double rot);
-void write_data(int step, FILE* fp_vol);
+void write_data(int step, FILE* fp_density);
 
 // collision detection
 bool is_overlap_between(int i, int j);
@@ -119,17 +119,17 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
     mkdir("datafolder");
     mkdir(output_foldername);
-    mkdir("volumes");
+    mkdir("densities");
 #elif __linux__
     // Linux needs me to set rights, this gives rwx to me and just r to all others.
     mkdir("datafolder", S_IRWXU | S_IRGRP | S_IROTH);
     mkdir(output_foldername, S_IRWXU | S_IRGRP | S_IROTH);
-    mkdir("volumes", S_IRWXU | S_IRGRP | S_IROTH);
+    mkdir("densities", S_IRWXU | S_IRGRP | S_IROTH);
 #endif
 
     char output_file[128] = "";
     sprintf(output_file, output_filename, packing_fraction, BetaP, Phi);
-    FILE* fp_vol = fopen(output_file, "w");
+    FILE* fp_density = fopen(output_file, "w");
 
     int mov_accepted = 0, vol_accepted = 0, rot_accepted = 0;
     int mov_attempted = 0, vol_attempted = 0, rot_attempted = 0;
@@ -167,11 +167,11 @@ int main(int argc, char* argv[])
             // And reset for the next loop
             mov_attempted = rot_attempted = vol_attempted = 0;
             mov_accepted = rot_accepted = vol_accepted = 0;
-            write_data(step, fp_vol);
+            write_data(step, fp_density);
         }
     }
 
-    fclose(fp_vol); // volumes/sl...
+    fclose(fp_density); // densities/sl...
 
     return 0;
 }
@@ -698,10 +698,10 @@ int rotate_particle(void)
     }
 }
 
-void write_data(int step, FILE* fp_vol) // TODO: how many decimal digits are needed? maybe 6 is too much.
+void write_data(int step, FILE* fp_density)
 {
-    fprintf(fp_vol, "%lf\n", box[0] * box[1] * box[2]);
-    fflush(fp_vol); // write the volumes everytime we have one, otherwise it waits for ~400 lines
+    fprintf(fp_density, "%lf\n", n_particles * ParticleVolume / (box[0] * box[1] * box[2]));
+    fflush(fp_density); // write the densities everytime we have one, otherwise it waits for ~400 lines
 
     char buffer[128];
     strcpy(buffer, output_foldername);

@@ -1,7 +1,9 @@
 datafolder
 volumes
+densities
+old_scripts
+lengths
 *.exe
 *.out
-sc*.txt
 *.nb
 screenshot*
