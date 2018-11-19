@@ -26,7 +26,6 @@
 #define NC 16 // max number of cells per direction
 // WARNING!, don't make NC much larger than 32, because
 // WhichCubesInCell is an array of size NC^4, this is already a million at NC == 32.
-#define Edge_Length 1 // TODO: decide to definitely remove this option
 
 /* Initialization variables */
 // many have been made not constant, so that one can enter into the command line:
@@ -216,7 +215,7 @@ vec3_t get_offset(int i, int j)
         offset.z += SinPhi;
         offset.x += CosPhi;
     }
-    offset = v3_muls(offset, Edge_Length);
+    // offset = v3_muls(offset, Edge_Length); // Edge_Length == 1
 
     offset = m4_mul_dir(m[i], offset);
 
@@ -268,7 +267,7 @@ bool is_overlap_between(int i, int j)
     // If the cubes are more than their circumscribed sphere apart, they couldn't possibly overlap.
     // Similarly, if they are less than their inscribed sphere apart, they couldn't possible NOT overlap.
     float len2 = v3_dot(r2_r1, r2_r1); // sqrtf is slow so test length^2
-    if (len2 > (3 + 2 * CosPhi) * Edge_Length * Edge_Length)
+    if (len2 > (3 + 2 * CosPhi)) // * Edge_Length * Edge_Length) // Edge_Length == 1
         return false;
     /* if (len2 < SinPhi * Edge_Length * Edge_Length)
         return true; */
@@ -311,7 +310,7 @@ void nudge_deltas(double mov, double vol, double rot)
 {
     if (mov < 0.3)
         Delta *= 0.9; // acceptance too low  --> decrease delta
-    if (mov > 0.4 && Delta < Edge_Length / 2.)
+    if (mov > 0.4 && Delta < 0.5) // Edge_Length == 1
         Delta *= 1.1; // acceptance too high --> increase delta
     if (vol < 0.1)
         DeltaV *= 0.9;
@@ -445,7 +444,8 @@ void read_data(void)
         }
     }
 
-    ParticleVolume = pow(Edge_Length, 3.) * SinPhi;
+    // ParticleVolume = pow(Edge_Length, 3.) * SinPhi; // Edge_Length == 1
+    ParticleVolume = SinPhi; // Edge_Length == 1
 
     // Now load all particle positions into r
     double pos;
@@ -677,9 +677,7 @@ int rotate_particle(void)
         for (int i = 0; i < 3; i++)
             x[i] = ran(-1, 1);
         dist = x[0] * x[0] + x[1] * x[1] + x[2] * x[2];
-    } while (dist > 1); // TODO: dist = 0 problematic? can this happen at all?
-    if (dist == 0) // TODO: remove this baby
-        printf("\nholy shit the random number generator is exactly zero!\n");
+    } while (dist > 1 || dist == 0); // dist == 0 doesn't seem to happen
     vec3_t rot_axis = vec3(x[0], x[1], x[2]); // the axis doesn't need to be normalized
     mat4_t rot_mx = m4_rotation(ran(-DeltaR, DeltaR), rot_axis);
 
@@ -726,7 +724,8 @@ void write_data(int step, FILE* fp_density)
         float* pgarbage = &(r[n].x);
         for (int d = 0; d < NDIM; ++d)
             fprintf(fp, "%lf\t", *(pgarbage + d)); // the position of the center of cube
-        fprintf(fp, "%d\t", Edge_Length);
+        // fprintf(fp, "%d\t", Edge_Length); // Edge_Length == 1
+        fprintf(fp, "1\t");
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
                 fprintf(fp, "%f\t", m[n].m[d1][d2]);
