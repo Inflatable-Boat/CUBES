@@ -64,6 +64,8 @@ static double SinPhi; // Since Phi doesn't change, it's faster to calculate only
 /* Functions */
 
 inline static double ran(double low, double high);
+inline int pos_mod_i(int a, int b);
+inline double pos_mod_f(double a, double b);
 void scale(double scale_factor);
 
 // initialization
@@ -88,7 +90,7 @@ bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1);
 vec3_t get_offset(int i, int j);
 bool is_overlap_from(int index);
 void update_cell_list(int index, vec3_t r_old);
-void update_CellLength(void);
+inline void update_CellLength(void);
 
 /* Main */
 
@@ -181,6 +183,18 @@ int main(int argc, char* argv[])
 inline static double ran(double low, double high)
 {
     return (high - low) * dsfmt_genrand() + low;
+}
+
+/// returns a (mod b), nonnegative, given that a >= -b is always true
+inline int pos_mod_i(int a, int b)
+{
+    return (a + b) % b;
+}
+
+/// returns a (mod b), nonnegative, given that a >= -b is always true
+inline double pos_mod_f(double a, double b)
+{
+    return fmod(a + b, b);
 }
 
 /// Scales the system with the scale factor
@@ -488,7 +502,9 @@ void initialize_cell_list(void)
 
     // now assign each cube to the cell they are in,
     // and count how many cubes are in each cell.
-    for (int x = 0; x < CellsPerDim; x++) {
+
+    // either check per cell:
+    /* for (int x = 0; x < CellsPerDim; x++) {
         for (int y = 0; y < CellsPerDim; y++) {
             for (int z = 0; z < CellsPerDim; z++) {
                 // now check for every particle if its x, y, z values lie within
@@ -512,6 +528,18 @@ void initialize_cell_list(void)
                 }
             }
         }
+    } */
+    
+    // or check per particle:
+    for (int i = 0; i < n_particles; i++) {
+        int x = r[i].x / CellLength;
+        int y = r[i].y / CellLength;
+        int z = r[i].z / CellLength;
+        // add particle i to WhichCubesInCell at the end of the list
+        // and add one to the counter of cubes of this cell (hence the ++)
+        WhichCubesInCell[x][y][z][NumCubesInCell[x][y][z]++] = i;
+        // and keep track of in which cell this cube is
+        InWhichCellIsThisCube[i] = NC * NC * x + NC * y + z;
     }
 }
 
@@ -520,44 +548,6 @@ inline void update_CellLength(void)
 {
     CellLength = box[0] / CellsPerDim;
 }
-
-/// This moves a random particle in a cube of volume (2 * delta)^3.
-/// Note this gives particles a tendency to move to one of the 8 corners of the cube,
-/// however it obeys detailed balance.^{[citation needed]}
-/// returns 1 on succesful move, 0 on unsuccesful move.
-/* int move_particle(void)
-{
-    // first choose the particle and remember its position
-    int index = (int)ran(0., n_particles); // goes from 0 to n_particles - 1
-    vec3_t r_old = r[index];
-
-    float* pgarbage = &(r[index].x);
-    for (int d = 0; d < NDIM; d++) {
-        *(pgarbage + d) += ran(-Delta, Delta);
-        // periodic boundary conditions happen here, fmod = floating point modulo. Since delta < box[dim],
-        // the following expression will always return a positive number.
-        *(pgarbage + d) = fmodf(*(pgarbage + d) + box[d], box[d]);
-    }
-
-    // TODO: make cell structure in box so we don't need as many checks
-    // if is_overlap_between(index, any other one) == true, it stops the loop,
-    // as any collision results in an unsuccesful move.
-    // TODO: parallelize?
-    bool is_collision = false;
-    for (int i = index + 1; i < index + n_particles; i++) {
-        if (is_overlap_between(index, i % n_particles)) {
-            is_collision = true;
-            break;
-        }
-    }
-
-    if (is_collision) {
-        r[index] = r_old; // move back
-        return 0; // unsuccesful move
-    } else {
-        return 1; // succesful move
-    }
-} */
 
 /// This function returns if cube number index overlaps, using cell lists
 bool is_overlap_from(int index)
@@ -573,9 +563,9 @@ bool is_overlap_from(int index)
         for (int j = -1; j < 2; j++) {
             for (int k = -1; k < 2; k++) {
                 // now loop over all cubes in this cell, remember periodic boundary conditions
-                int loop_x = (x + i + CellsPerDim) % CellsPerDim;
-                int loop_y = (y + j + CellsPerDim) % CellsPerDim;
-                int loop_z = (z + k + CellsPerDim) % CellsPerDim;
+                int loop_x = pos_mod_i(x + i, CellsPerDim);
+                int loop_y = pos_mod_i(y + j, CellsPerDim);
+                int loop_z = pos_mod_i(z + k, CellsPerDim);
                 for (int cube = 0; cube < NumCubesInCell[loop_x][loop_y][loop_z]; cube++) {
                     int index2 = WhichCubesInCell[loop_x][loop_y][loop_z][cube];
                     // if checking your own cell, do not check overlap with yourself
@@ -615,7 +605,9 @@ int move_particle_cell_list(void)
         *(pgarbage + d) += ran(-Delta, Delta);
         // periodic boundary conditions happen here, fmod = floating point modulo. Since delta < box[dim],
         // the following expression will always return a positive number.
-        *(pgarbage + d) = fmodf(*(pgarbage + d) + box[d], box[d]);
+        // *(pgarbage + d) = fmodf(*(pgarbage + d) + box[d], box[d]);
+        *(pgarbage + d) = pos_mod_f(*(pgarbage + d), box[d]);
+        // TODO: maybe make faster by only checking on boundary cells
     }
 
     // and check for overlaps
@@ -634,10 +626,11 @@ int move_particle_cell_list(void)
 /// If not, update (Num/Which)CubesInCell and InWhichCellIsThisCube.
 void update_cell_list(int index, vec3_t r_old)
 {
+    int cell_old = InWhichCellIsThisCube[index];
+    int x_old = cell_old / (NC * NC);
+    int y_old = (cell_old / NC) % NC;
+    int z_old = cell_old % NC;
     vec3_t r_new = r[index];
-    int x_old = InWhichCellIsThisCube[index] / (NC * NC);
-    int y_old = (InWhichCellIsThisCube[index] / NC) % NC;
-    int z_old = InWhichCellIsThisCube[index] % NC;
     int x_new = r_new.x / CellLength;
     int y_new = r_new.y / CellLength;
     int z_new = r_new.z / CellLength;
@@ -647,7 +640,23 @@ void update_cell_list(int index, vec3_t r_old)
         // update in which cell this cube is
         InWhichCellIsThisCube[index] = NC * NC * x_new + NC * y_new + z_new;
         // update WhichCubesInCell, first check at what index the moved cube was
-        int i;
+        int cube = 0;
+        while (index != WhichCubesInCell[x_old][y_old][z_old][cube]) {
+            cube++;
+            if (cube > 100) {
+                printf("infinite loop in update_cell_list\n");
+            }
+        }
+        // now cube contains the index in the cell list
+        
+        // add the cube to the new cell and add one to the counter (hence ++)
+        WhichCubesInCell[x_new][y_new][z_new][NumCubesInCell[x_new][y_new][z_new]++] = index;
+        // and remove the cube in the old cell by replacing it with the last
+        // in the list and remove one from the counter (hence --)
+        int last_in_list = WhichCubesInCell[x_old][y_old][z_old][--NumCubesInCell[x_old][y_old][z_old]];
+        WhichCubesInCell[x_old][y_old][z_old][cube] = last_in_list;
+        
+        /* int i;
         for (i = 0; i < NumCubesInCell[x_old][y_old][z_old]; i++) {
             int cube_index = WhichCubesInCell[x_old][y_old][z_old][i];
             if (cube_index == index)
@@ -659,6 +668,7 @@ void update_cell_list(int index, vec3_t r_old)
         // with the one at the end of the list,
         // and lowering the counter (hence the --)
         WhichCubesInCell[x_old][y_old][z_old][i] = WhichCubesInCell[x_old][y_old][z_old][--NumCubesInCell[x_old][y_old][z_old]];
+        */
         return;
     }
 }
@@ -724,8 +734,8 @@ void write_data(int step, FILE* fp_density)
         float* pgarbage = &(r[n].x);
         for (int d = 0; d < NDIM; ++d)
             fprintf(fp, "%lf\t", *(pgarbage + d)); // the position of the center of cube
-        // fprintf(fp, "%d\t", Edge_Length); // Edge_Length == 1
-        fprintf(fp, "1\t");
+        // fprintf(fp, "%d\t", Edge_Length);
+        fprintf(fp, "1\t"); // Edge_Length == 1
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
                 fprintf(fp, "%f\t", m[n].m[d1][d2]);
@@ -788,7 +798,7 @@ void remove_overlap(void)
         }
         if (is_collision) {
             scale(1.05); // make the system bigger and check for collisions again
-            printf("packing fraction adjusted to %lf\n",
+            printf("initial packing fraction lowered to %lf\n",
                 n_particles * ParticleVolume / (box[0] * box[1] * box[2]));
         }
     } while (is_collision);
@@ -818,7 +828,7 @@ int parse_commandline(int argc, char* argv[])
         printf("reading Phi has failed\n");
         return 1;
     };
-    if (mc_steps <= 100 || packing_fraction > 1) {
+    if (mc_steps <= 100) {
         printf("mc_steps > 100\n");
         return 2;
     }
