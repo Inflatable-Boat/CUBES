@@ -35,9 +35,9 @@ static double packing_fraction = 1; // = 0.4;
 static double BetaP = 10;
 static double Phi; // angle of slanted cube
 
-char init_filename[] = "sc15.txt"; // TODO: read from cmdline
-char output_foldername[] = "datafolder/sl15_pf%04.2lfp%04.1lfa%04.2lf";
-char output_filename[] = "densities/sl15_pf%04.2lfp%04.1lfa%04.2lf";
+char init_filename[] = "sc12.txt"; // TODO: read from cmdline
+char output_foldername[] = "datafolder/sl12_pf%04.2lfp%04.1lfa%04.2lf";
+char output_filename[] = "densities/sl12_pf%04.2lfp%04.1lfa%04.2lf";
 
 const int output_steps = 100;
 
@@ -62,6 +62,7 @@ static double CosPhi; // cos and sin of Phi appear a lot, and are expensive to c
 static double SinPhi; // Since Phi doesn't change, it's faster to calculate only once.
 
 /* Functions */
+void print_celllists(void);
 
 inline static double ran(double low, double high);
 inline int pos_mod_i(int a, int b);
@@ -90,7 +91,7 @@ bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1);
 vec3_t get_offset(int i, int j);
 bool is_overlap_from(int index);
 void update_cell_list(int index, vec3_t r_old);
-inline void update_CellLength(void);
+inline static void update_CellLength(void);
 
 /* Main */
 
@@ -152,6 +153,27 @@ int main(int argc, char* argv[])
             }
         }
 
+        //DEBUG
+        // print_celllists();
+        /* bool debug_collision=false;
+        bool debug_collision2=false;
+        printf("chekcing collisions\n");
+        for (int i = 0; i < n_particles; i++) {
+            debug_collision=debug_collision|| is_overlap_from(i);
+            for (int j = i + 1; j < n_particles; j++) {
+                debug_collision2=debug_collision2|| is_overlap_between(i, j);
+                if(debug_collision2) j=N;
+            }
+        }
+        if(debug_collision)
+            printf("es gibt collisionenen gedurft haben wollen mogen kunnnen 1\n");
+        if(debug_collision2)
+            printf("es gibt collisionenen gedurft haben wollen mogen kunnnen 2\n"); */
+        // dbg note: 2 ==> 1 seems to be the case, i.e. overlap_between implies overlap_from,
+        // not the other way around, which does not make sense because 
+        // overlap_from checks using overlap_between
+        //ENDEBUG
+
         if (step % output_steps == 0) {
             double move_acceptance = (double)mov_accepted / mov_attempted;
             double rotation_acceptance = (double)rot_accepted / rot_attempted;
@@ -201,6 +223,7 @@ inline double pos_mod_f(double a, double b)
 void scale(double scale_factor)
 {
     for (int n = 0; n < n_particles; ++n) {
+        // We use pointers to loop over the x, y, z members of the vec3_t type.
         float* pgarbage = &(r[n].x);
         for (int d = 0; d < NDIM; ++d)
             *(pgarbage + d) *= scale_factor;
@@ -283,9 +306,8 @@ bool is_overlap_between(int i, int j)
     float len2 = v3_dot(r2_r1, r2_r1); // sqrtf is slow so test length^2
     if (len2 > (3 + 2 * CosPhi)) // * Edge_Length * Edge_Length) // Edge_Length == 1
         return false;
-    /* if (len2 < SinPhi * Edge_Length * Edge_Length)
-        return true; */
-    // this doesn't happen all that often anyway
+    if (len2 < SinPhi * SinPhi)
+        return true;
 
     // Now we use the separating axis theorem. Check for separation along all normals
     // and crossproducts between edges of the cubes. Only if along all these axes
@@ -297,7 +319,7 @@ bool is_overlap_between(int i, int j)
     }
 
     // Now load the cross products between edges
-    vec3_t edges1[3], edges2[3]; // TODO: do this nicely in a for loop or sth.
+    vec3_t edges1[3], edges2[3];
     edges1[0] = v3_sub(get_offset(i, 0), get_offset(i, 1));
     edges1[1] = v3_sub(get_offset(i, 0), get_offset(i, 2));
     edges1[2] = v3_sub(get_offset(i, 0), get_offset(i, 4));
@@ -309,12 +331,12 @@ bool is_overlap_between(int i, int j)
         axes[k + 6] = v3_cross(edges1[k / 3], edges2[k % 3]);
     }
 
-    // TODO: parallelize?
     for (int k = 0; k < 15; k++)
         if (!is_collision_along_axis(axes[k], i, j, r2_r1))
-            return false;
+            return false; // found separation, no overlap!
     // TODO: make smarter e.g. check only 2 points from first cube
 
+    // overlap on all axes ==> the cubes overlap
     return true;
 }
 
@@ -464,6 +486,7 @@ void read_data(void)
     // Now load all particle positions into r
     double pos;
     for (int i = 0; i < n_particles; i++) {
+        // We use pointers to loop over the x, y, z members of the vec3_t type.
         float* pgarbage = &(r[i].x);
         for (int d = 0; d < NDIM; d++) {
             if (!fscanf(pFile, "%lf", &pos))
@@ -490,10 +513,10 @@ void initialize_cell_list(void)
             }
 
     double min_cell_length = sqrt(3 + 2 * CosPhi);
-    double num_of_particles_per_dim = pow(n_particles, 1. / 3.);
+    // double num_of_particles_per_dim = pow(n_particles, 1. / 3.); //WTF was I thinking
     // CellsPerDim must not be too large, so that CellLength >= min_cell_length
     // therefore, rounding CellsPerDim down is okay.
-    CellsPerDim = (int)(num_of_particles_per_dim / min_cell_length);
+    CellsPerDim = (int)(box[0] / min_cell_length);
 
     // TODO: maybe must be done every ~100 mc steps?
     update_CellLength();
@@ -544,7 +567,7 @@ void initialize_cell_list(void)
 }
 
 /// Must be called every succesful volume change, and during initialization
-inline void update_CellLength(void)
+inline static void update_CellLength(void)
 {
     CellLength = box[0] / CellsPerDim;
 }
@@ -600,10 +623,11 @@ int move_particle_cell_list(void)
     vec3_t r_old = r[index];
 
     // move the cube
+    // We use pointers to loop over the x, y, z members of the vec3_t type.
     float* pgarbage = &(r[index].x);
     for (int d = 0; d < NDIM; d++) {
         *(pgarbage + d) += ran(-Delta, Delta);
-        // periodic boundary conditions happen here, fmod = floating point modulo. Since delta < box[dim],
+        // periodic boundary conditions happen here, in pos_mod_f. Since delta < box[dim],
         // the following expression will always return a positive number.
         // *(pgarbage + d) = fmodf(*(pgarbage + d) + box[d], box[d]);
         *(pgarbage + d) = pos_mod_f(*(pgarbage + d), box[d]);
@@ -731,10 +755,10 @@ void write_data(int step, FILE* fp_density)
             fprintf(fp, "\n");
     }
     for (int n = 0; n < n_particles; ++n) {
+        // We use pointers to loop over the x, y, z members of the vec3_t type.
         float* pgarbage = &(r[n].x);
         for (int d = 0; d < NDIM; ++d)
             fprintf(fp, "%lf\t", *(pgarbage + d)); // the position of the center of cube
-        // fprintf(fp, "%d\t", Edge_Length);
         fprintf(fp, "1\t"); // Edge_Length == 1
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
@@ -845,4 +869,42 @@ int parse_commandline(int argc, char* argv[])
         return 2;
     }
     return 0; // no exceptions, run the program
+}
+
+/// DEBUG method
+/// CellsPerDim, CellLength,
+/// NumCubesInCell[][][], WhichCubesInCell[][][][] and InWhichCellIsThisCube[]
+void print_celllists(void)
+{
+    printf("boxsize: %lf", box[0]);
+    printf("\tCellLength: %lf", CellLength);
+    printf("\tCellsPerDim: %d\n", CellsPerDim);
+
+    printf("InWhichCellIsThisCube:\n");
+    for (int i = 0; i < n_particles; i++) {
+        int cell = InWhichCellIsThisCube[i];
+        printf("%d: %d, %d, %d\n", i, cell / (NC * NC), (cell / NC) % NC, cell % NC);
+    }
+
+    printf("\nNumCubesInCell:\n");
+    for (int i = 0; i < CellsPerDim; i++) {
+        for (int j = 0; j < CellsPerDim; j++) {
+            for (int k = 0; k < CellsPerDim; k++) {
+                printf("%d, %d, %d: %d\n", i, j, k, NumCubesInCell[i][j][k]);
+            }
+        }
+    }
+
+    printf("\nWhichCubesInCell:\n");
+    for (int i = 0; i < CellsPerDim; i++) {
+        for (int j = 0; j < CellsPerDim; j++) {
+            for (int k = 0; k < CellsPerDim; k++) {
+                printf("%d, %d, %d: ", i, j, k);
+                for (int l = 0; l < NumCubesInCell[i][j][k]; l++) {
+                    printf("%d ", WhichCubesInCell[i][j][k][l]);
+                }
+                printf("\n");
+            }
+        }
+    }
 }

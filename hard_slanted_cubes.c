@@ -561,6 +561,18 @@ int main(int argc, char* argv[])
                 vol_accepted += change_volume();
             }
         }
+        //DEBUG
+        bool debug_collision=false;
+        printf("checking collisions\n");
+        for (int i = 0; i < n_particles; i++) {
+            for (int j = i + 1; j < n_particles; j++) {
+                debug_collision=debug_collision|| is_overlap(i, j);
+                if(debug_collision) j=N;
+            }
+        }
+        if(debug_collision)
+            printf("collision!\n");
+        //ENDEBUG
 
         if (step % output_steps == 0) {
             double move_acceptance = (double)mov_accepted / mov_attempted;
