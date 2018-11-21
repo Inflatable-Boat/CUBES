@@ -6,7 +6,7 @@
 #include <sys/stat.h> // mkdir on Linux
 #include <sys/types.h> // mkdir on Linux
 #endif
-#include <unistd.h> // I forgot what this was for
+// #include <unistd.h> // sleep()
 // #include <iostream> // C++
 #include <stdbool.h> // C requires this for (bool, true, false) to work
 #include <string.h> // This is for C (strcpy, strcat, etc. ). For C++, use #include <string>
@@ -36,8 +36,8 @@ static double BetaP = 10;
 static double Phi; // angle of slanted cube
 
 char init_filename[] = "sc12.txt"; // TODO: read from cmdline
-char output_foldername[] = "datafolder/sl12_pf%04.2lfp%04.1lfa%04.2lf";
-char output_filename[] = "densities/sl12_pf%04.2lfp%04.1lfa%04.2lf";
+char output_foldername[] = "datafolder/sl12_2_pf%04.2lfp%04.1lfa%04.2lf";
+char output_filename[] = "densities/sl12_2_pf%04.2lfp%04.1lfa%04.2lf";
 
 const int output_steps = 100;
 
@@ -152,27 +152,6 @@ int main(int argc, char* argv[])
                 vol_accepted += change_volume();
             }
         }
-
-        //DEBUG
-        // print_celllists();
-        /* bool debug_collision=false;
-        bool debug_collision2=false;
-        printf("chekcing collisions\n");
-        for (int i = 0; i < n_particles; i++) {
-            debug_collision=debug_collision|| is_overlap_from(i);
-            for (int j = i + 1; j < n_particles; j++) {
-                debug_collision2=debug_collision2|| is_overlap_between(i, j);
-                if(debug_collision2) j=N;
-            }
-        }
-        if(debug_collision)
-            printf("es gibt collisionenen gedurft haben wollen mogen kunnnen 1\n");
-        if(debug_collision2)
-            printf("es gibt collisionenen gedurft haben wollen mogen kunnnen 2\n"); */
-        // dbg note: 2 ==> 1 seems to be the case, i.e. overlap_between implies overlap_from,
-        // not the other way around, which does not make sense because 
-        // overlap_from checks using overlap_between
-        //ENDEBUG
 
         if (step % output_steps == 0) {
             double move_acceptance = (double)mov_accepted / mov_attempted;
@@ -376,11 +355,15 @@ int change_volume(void)
     bool is_collision = false;
     if (scale_factor < 1.0) {
         for (int i = 0; i < n_particles; i++) {
-            for (int j = i + 1; j < n_particles; j++) {
+            /* for (int j = i + 1; j < n_particles; j++) {
                 if (is_overlap_between(i, j)) {
                     is_collision = true;
                     i = j = n_particles; // i.e. break out of both loops
                 }
+            } */
+            if (is_overlap_from(i)) {
+                is_collision = true;
+                break;
             }
         }
         // check by cell list but don't check particles twice:
@@ -512,48 +495,21 @@ void initialize_cell_list(void)
                 }
             }
 
-    double min_cell_length = sqrt(3 + 2 * CosPhi);
+    // the minimum cell length is the diameter of circumscribed sphere,
+    // plus the maximum length we allow a particle to move in one step.
+    double min_cell_length = sqrt(3 + 2 * CosPhi) + 0.5;
     // double num_of_particles_per_dim = pow(n_particles, 1. / 3.); //WTF was I thinking
+
     // CellsPerDim must not be too large, so that CellLength >= min_cell_length
     // therefore, rounding CellsPerDim down is okay.
     CellsPerDim = (int)(box[0] / min_cell_length);
 
-    // TODO: maybe must be done every ~100 mc steps?
     update_CellLength();
     // Update CellLength every volume change, so that
     // all particles stay in the same cell when the system is scaled
 
     // now assign each cube to the cell they are in,
     // and count how many cubes are in each cell.
-
-    // either check per cell:
-    /* for (int x = 0; x < CellsPerDim; x++) {
-        for (int y = 0; y < CellsPerDim; y++) {
-            for (int z = 0; z < CellsPerDim; z++) {
-                // now check for every particle if its x, y, z values lie within
-                // x*CellLength and (x+1)*CellLength, ...y..., ...z...
-                // while this is very inefficient, it is only initialization
-                double xx, yy, zz;
-                xx = x * CellLength;
-                yy = y * CellLength;
-                zz = z * CellLength;
-                for (int i = 0; i < n_particles; i++) {
-                    bool is_in_x_range = (xx <= r[i].x) && (r[i].x < xx + CellLength);
-                    bool is_in_y_range = (yy <= r[i].y) && (r[i].y < yy + CellLength);
-                    bool is_in_z_range = (zz <= r[i].z) && (r[i].z < zz + CellLength);
-                    if (is_in_x_range && is_in_y_range && is_in_z_range) {
-                        // add particle i to WhichCubesInCell at the end of the list
-                        // and add one to the counter of cubes of this cell (hence the ++)
-                        WhichCubesInCell[x][y][z][NumCubesInCell[x][y][z]++] = i;
-                        // and keep track of in which cell this cube is
-                        InWhichCellIsThisCube[i] = NC * NC * x + NC * y + z;
-                    }
-                }
-            }
-        }
-    } */
-    
-    // or check per particle:
     for (int i = 0; i < n_particles; i++) {
         int x = r[i].x / CellLength;
         int y = r[i].y / CellLength;
@@ -667,7 +623,7 @@ void update_cell_list(int index, vec3_t r_old)
         int cube = 0;
         while (index != WhichCubesInCell[x_old][y_old][z_old][cube]) {
             cube++;
-            if (cube > 100) {
+            if (cube > NC) {
                 printf("infinite loop in update_cell_list\n");
             }
         }
@@ -679,20 +635,6 @@ void update_cell_list(int index, vec3_t r_old)
         // in the list and remove one from the counter (hence --)
         int last_in_list = WhichCubesInCell[x_old][y_old][z_old][--NumCubesInCell[x_old][y_old][z_old]];
         WhichCubesInCell[x_old][y_old][z_old][cube] = last_in_list;
-        
-        /* int i;
-        for (i = 0; i < NumCubesInCell[x_old][y_old][z_old]; i++) {
-            int cube_index = WhichCubesInCell[x_old][y_old][z_old][i];
-            if (cube_index == index)
-                break; // now i contains the relevant index.
-        }
-        // add cube to the new cell and add one to the counter (hence the ++)
-        WhichCubesInCell[x_new][y_new][z_new][NumCubesInCell[x_new][y_new][z_new]++] = index;
-        // and remove it from the old cell by replacing it
-        // with the one at the end of the list,
-        // and lowering the counter (hence the --)
-        WhichCubesInCell[x_old][y_old][z_old][i] = WhichCubesInCell[x_old][y_old][z_old][--NumCubesInCell[x_old][y_old][z_old]];
-        */
         return;
     }
 }
@@ -869,42 +811,4 @@ int parse_commandline(int argc, char* argv[])
         return 2;
     }
     return 0; // no exceptions, run the program
-}
-
-/// DEBUG method
-/// CellsPerDim, CellLength,
-/// NumCubesInCell[][][], WhichCubesInCell[][][][] and InWhichCellIsThisCube[]
-void print_celllists(void)
-{
-    printf("boxsize: %lf", box[0]);
-    printf("\tCellLength: %lf", CellLength);
-    printf("\tCellsPerDim: %d\n", CellsPerDim);
-
-    printf("InWhichCellIsThisCube:\n");
-    for (int i = 0; i < n_particles; i++) {
-        int cell = InWhichCellIsThisCube[i];
-        printf("%d: %d, %d, %d\n", i, cell / (NC * NC), (cell / NC) % NC, cell % NC);
-    }
-
-    printf("\nNumCubesInCell:\n");
-    for (int i = 0; i < CellsPerDim; i++) {
-        for (int j = 0; j < CellsPerDim; j++) {
-            for (int k = 0; k < CellsPerDim; k++) {
-                printf("%d, %d, %d: %d\n", i, j, k, NumCubesInCell[i][j][k]);
-            }
-        }
-    }
-
-    printf("\nWhichCubesInCell:\n");
-    for (int i = 0; i < CellsPerDim; i++) {
-        for (int j = 0; j < CellsPerDim; j++) {
-            for (int k = 0; k < CellsPerDim; k++) {
-                printf("%d, %d, %d: ", i, j, k);
-                for (int l = 0; l < NumCubesInCell[i][j][k]; l++) {
-                    printf("%d ", WhichCubesInCell[i][j][k][l]);
-                }
-                printf("\n");
-            }
-        }
-    }
 }
