@@ -35,9 +35,9 @@ static double packing_fraction = 1; // = 0.4;
 static double BetaP = 10;
 static double Phi; // angle of slanted cube
 
-char init_filename[] = "sc12.txt"; // TODO: read from cmdline
-char output_foldername[] = "datafolder/sl12_2_pf%04.2lfp%04.1lfa%04.2lf";
-char output_filename[] = "densities/sl12_2_pf%04.2lfp%04.1lfa%04.2lf";
+char init_filename[] = "sc10.txt"; // TODO: read from cmdline
+char output_foldername[] = "datafolder/sl_10_pf%04.2lfp%04.1lfa%04.2lf";
+char output_filename[] = "densities/sl_10_pf%04.2lfp%04.1lfa%04.2lf";
 
 const int output_steps = 100;
 
@@ -90,7 +90,7 @@ bool is_overlap_between(int i, int j);
 bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1);
 vec3_t get_offset(int i, int j);
 bool is_overlap_from(int index);
-void update_cell_list(int index, vec3_t r_old);
+void update_cell_list(int index);
 inline static void update_CellLength(void);
 
 /* Main */
@@ -268,6 +268,8 @@ bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
 /// Checks if cube i and cube j overlap using the separating axis theorem
 bool is_overlap_between(int i, int j)
 {
+    // the next line shouldn't be necessary!
+    // if (i == j) return false; // don't check on overlap with yourself!
     vec3_t r2_r1 = v3_sub(r[i], r[j]); // read as r2 - r1
 
     // We need to apply nearest image convention to r2_r1.
@@ -281,7 +283,7 @@ bool is_overlap_between(int i, int j)
     }
 
     // If the cubes are more than their circumscribed sphere apart, they couldn't possibly overlap.
-    // Similarly, if they are less than their inscribed sphere apart, they couldn't possible NOT overlap.
+    // Similarly, if they are less than their inscribed sphere apart, they couldn't possibly NOT overlap.
     float len2 = v3_dot(r2_r1, r2_r1); // sqrtf is slow so test length^2
     if (len2 > (3 + 2 * CosPhi)) // * Edge_Length * Edge_Length) // Edge_Length == 1
         return false;
@@ -355,45 +357,11 @@ int change_volume(void)
     bool is_collision = false;
     if (scale_factor < 1.0) {
         for (int i = 0; i < n_particles; i++) {
-            /* for (int j = i + 1; j < n_particles; j++) {
-                if (is_overlap_between(i, j)) {
-                    is_collision = true;
-                    i = j = n_particles; // i.e. break out of both loops
-                }
-            } */
             if (is_overlap_from(i)) {
                 is_collision = true;
                 break;
             }
         }
-        // check by cell list but don't check particles twice:
-        // I'm not sure if this is faster than just doing the easy check each pair
-        /* for (int i = 0; i < n_particles; i++) {
-            for (int j = i + 1; j < n_particles; j++) {
-                int cell1 = InWhichCellIsThisCube[i];
-                int cell2 = InWhichCellIsThisCube[j];
-                int x1, x2, y1, y2, z1, z2;
-                x1 = cell1 / (NC * NC), x2 = cell2 / (NC * NC);
-                bool x_ok1 = ((x1 + CellsPerDim) % CellsPerDim) < ((x2 + 2 + CellsPerDim) % CellsPerDim);
-                bool x_ok2 = ((x1 + CellsPerDim) % CellsPerDim) > ((x2 - 2 + CellsPerDim) % CellsPerDim);
-                bool x_ok = x_ok1 && x_ok2;
-                if (!x_ok) continue;
-                y1 = (cell1 / NC) % NC, y2 = (cell2 / NC) % NC;
-                bool y_ok1 = ((y1 + CellsPerDim) % CellsPerDim) < ((y2 + 2 + CellsPerDim) % CellsPerDim);
-                bool y_ok2 = ((y1 + CellsPerDim) % CellsPerDim) > ((y2 - 2 + CellsPerDim) % CellsPerDim);
-                bool y_ok = y_ok1 && y_ok2;
-                if (!y_ok) continue;
-                z1 = cell1 % NC, z2 = cell2 % NC;
-                bool z_ok1 = ((z1 + CellsPerDim) % CellsPerDim) < ((z2 + 2 + CellsPerDim) % CellsPerDim);
-                bool z_ok2 = ((z1 + CellsPerDim) % CellsPerDim) > ((z2 - 2 + CellsPerDim) % CellsPerDim);
-                bool z_ok = z_ok1 && z_ok2;
-                if (!z_ok) continue;
-                    if (is_overlap_between(i, j)) {
-                        is_collision = true;
-                        i = j = n_particles; // i.e. break out of both loops
-                    }
-            }
-        } */
     }
 
     if (is_collision) {
@@ -419,7 +387,7 @@ int change_volume(void)
 void read_data(void)
 {
     FILE* pFile = fopen(init_filename, "r");
-    if (!fscanf(pFile, "%i", &n_particles))
+    if (!fscanf(pFile, "%d", &n_particles))
         exit(1);
 
     // Gives a proper warning in the next line in main()
@@ -499,10 +467,13 @@ void initialize_cell_list(void)
     // plus the maximum length we allow a particle to move in one step.
     double min_cell_length = sqrt(3 + 2 * CosPhi) + 0.5;
     // double num_of_particles_per_dim = pow(n_particles, 1. / 3.); //WTF was I thinking
+    // the minimum box size is (the volume of a maximally packed box)^(1/3)
+    double min_box_size = pow(n_particles * ParticleVolume, 1. / 3.);
 
-    // CellsPerDim must not be too large, so that CellLength >= min_cell_length
+    // CellsPerDim must not be too large, so that
+    // box[0] / CellsPerDim = CellLength >= min_cell_length
     // therefore, rounding CellsPerDim down is okay.
-    CellsPerDim = (int)(box[0] / min_cell_length);
+    CellsPerDim = (int)(min_box_size / min_cell_length);
 
     update_CellLength();
     // Update CellLength every volume change, so that
@@ -548,10 +519,9 @@ bool is_overlap_from(int index)
                 for (int cube = 0; cube < NumCubesInCell[loop_x][loop_y][loop_z]; cube++) {
                     int index2 = WhichCubesInCell[loop_x][loop_y][loop_z][cube];
                     // if checking your own cell, do not check overlap with yourself
-                    if (0 == i && i == j && j == k) {
-                        if (index == index2) {
-                            continue; // TODO: is this efficient enough?
-                        }
+                    // is_overlap_between(i, i) returns false
+                    if (index == index2) {
+                        continue; // TODO: is this efficient enough?
                     }
 
                     if (is_overlap_between(index, index2)) {
@@ -596,7 +566,7 @@ int move_particle_cell_list(void)
         return 0; // unsuccesful move
     } else {
         // remember to update (Num/Which)CubesInCell and InWhichCellIsThisCube
-        update_cell_list(index, r_old);
+        update_cell_list(index);
         return 1; // succesful move
     }
 }
@@ -604,7 +574,7 @@ int move_particle_cell_list(void)
 /// This function updates the cell list. At this point, r[index] contains the new
 /// (accepted) position, and we need to check if is in the same cell as before.
 /// If not, update (Num/Which)CubesInCell and InWhichCellIsThisCube.
-void update_cell_list(int index, vec3_t r_old)
+void update_cell_list(int index)
 {
     int cell_old = InWhichCellIsThisCube[index];
     int x_old = cell_old / (NC * NC);
@@ -623,7 +593,7 @@ void update_cell_list(int index, vec3_t r_old)
         int cube = 0;
         while (index != WhichCubesInCell[x_old][y_old][z_old][cube]) {
             cube++;
-            if (cube > NC) {
+            if (cube >= NC) {
                 printf("infinite loop in update_cell_list\n");
             }
         }

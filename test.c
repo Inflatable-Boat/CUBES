@@ -109,6 +109,15 @@ int main(int argc, char* argv[])
     /* int aap[3];
     printf("%d", aap[3000]); // segmentation fault (core dumped) */
 
+    FILE* fp = fopen("read_file_test.txt", "r");
+    int a=0,b=0;
+    double e=0,f=0;
+    int garbage;
+    fscanf(fp, "%d %d %d %d", &a, &b, &garbage, &garbage);
+    fscanf(fp, "%lf %lf %lf %lf", &e, &f, &garbage, &garbage);
+    printf("%d %d %lf %lf\n", a, b, e, f);
+    fclose(fp);
+
 
     return 0;
 }
