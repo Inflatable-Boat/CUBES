@@ -1,4 +1,4 @@
-#include "math_4d.h" // https://github.com/arkanis/single-header-file-c-libs/blob/master/math_3d.h
+#include "math_5d.h" // https://github.com/arkanis/single-header-file-c-libs/blob/master/math_3d.h
 #include "mt19937.h" // Mersenne Twister (dsmft_genrand();)
 #ifdef _WIN32
 #include <direct.h> // mkdir on Windows
@@ -37,8 +37,8 @@ static double BetaP = 10;
 static double Phi; // angle of slanted cube
 
 char init_filename[] = "sc10.txt"; // TODO: read from cmdline
-char output_foldername[] = "datafolder/sl10dbg2_pf%04.2lfp%04.1lfa%04.2lf";
-char output_filename[] = "densities/sl10dbg2_pf%04.2lfp%04.1lfa%04.2lf";
+char output_foldername[] = "datafolder/sl10d_pf%04.2lfp%04.1lfa%04.2lf";
+char output_filename[] = "densities/sl10d_pf%04.2lfp%04.1lfa%04.2lf";
 
 const int output_steps = 100;
 
@@ -66,8 +66,8 @@ static double SinPhi; // Since Phi doesn't change, it's faster to calculate only
 void print_celllists(void);
 
 inline static double ran(double low, double high);
-inline int pos_mod_i(int a, int b);
-inline double pos_mod_f(double a, double b);
+inline static int pos_mod_i(int a, int b);
+inline static double pos_mod_f(double a, double b);
 void scale(double scale_factor);
 
 // initialization
@@ -202,13 +202,13 @@ inline static double ran(double low, double high)
 }
 
 /// returns a (mod b), nonnegative, given that a >= -b is always true
-inline int pos_mod_i(int a, int b)
+inline static int pos_mod_i(int a, int b)
 {
     return (a + b) % b;
 }
 
 /// returns a (mod b), nonnegative, given that a >= -b is always true
-inline double pos_mod_f(double a, double b)
+inline static double pos_mod_f(double a, double b)
 {
     return fmod(a + b, b);
 }
@@ -218,7 +218,7 @@ void scale(double scale_factor)
 {
     for (int n = 0; n < n_particles; ++n) {
         // We use pointers to loop over the x, y, z members of the vec3_t type.
-        float* pgarbage = &(r[n].x);
+        double* pgarbage = &(r[n].x);
         for (int d = 0; d < NDIM; ++d)
             *(pgarbage + d) *= scale_factor;
     }
@@ -261,7 +261,7 @@ bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
     // https://gamedevelopment.tutsplus.com/tutorials/collision-detection-using-the-separating-axis-theorem--gamedev-169)
     // axis = v3_norm(axis);
 
-    float min1, min2, max1, max2, temp;
+    double min1, min2, max1, max2, temp;
     min1 = max1 = v3_dot(axis, v3_add(r2_r1, get_offset(i, 0)));
     min2 = max2 = v3_dot(axis, get_offset(j, 0));
     for (int n = 1; n < 8; n++) {
@@ -289,7 +289,7 @@ bool is_overlap_between(int i, int j)
 
     // We need to apply nearest image convention to r2_r1.
     // We use pointers to loop over the x, y, z members of the vec3_t type.
-    float* pdist = &(r2_r1.x);
+    double* pdist = &(r2_r1.x);
     for (int d = 0; d < NDIM; d++) {
         if (*(pdist + d) > 0.5 * box[d])
             *(pdist + d) -= box[d];
@@ -299,7 +299,7 @@ bool is_overlap_between(int i, int j)
 
     // If the cubes are more than their circumscribed sphere apart, they couldn't possibly overlap.
     // Similarly, if they are less than their inscribed sphere apart, they couldn't possibly NOT overlap.
-    float len2 = v3_dot(r2_r1, r2_r1); // sqrtf is slow so test length^2
+    double len2 = v3_dot(r2_r1, r2_r1); // sqrtf is slow so test length^2
     if (len2 > (3 + 2 * CosPhi)) // * Edge_Length * Edge_Length) // Edge_Length == 1
         return false;
     if (len2 < SinPhi * SinPhi)
@@ -453,7 +453,7 @@ void read_data(void)
     double pos;
     for (int i = 0; i < n_particles; i++) {
         // We use pointers to loop over the x, y, z members of the vec3_t type.
-        float* pgarbage = &(r[i].x);
+        double* pgarbage = &(r[i].x);
         for (int d = 0; d < NDIM; d++) {
             if (!fscanf(pFile, "%lf", &pos))
                 exit(3); // Now pos contains what r[i][dim] should be
@@ -567,7 +567,7 @@ int move_particle_cell_list(void)
 
     // move the cube
     // We use pointers to loop over the x, y, z members of the vec3_t type.
-    float* pgarbage = &(r[index].x);
+    double* pgarbage = &(r[index].x);
     for (int d = 0; d < NDIM; d++) {
         *(pgarbage + d) += ran(-Delta, Delta);
         // periodic boundary conditions happen here, in pos_mod_f. Since delta < box[dim],
@@ -598,7 +598,7 @@ void update_cell_list(int index)
     int y_old = (cell_old / NC) % NC;
     int z_old = cell_old % NC;
     vec3_t r_new = r[index];
-    int x_new = r_new.x / CellLength; // TODO: is this necessary? too safe?
+    int x_new = r_new.x / CellLength;
     int y_new = r_new.y / CellLength;
     int z_new = r_new.z / CellLength;
     if (x_new == CellsPerDim || y_new == CellsPerDim || z_new == CellsPerDim) {
@@ -696,13 +696,13 @@ void write_data(int step, FILE* fp_density)
     }
     for (int n = 0; n < n_particles; ++n) {
         // We use pointers to loop over the x, y, z members of the vec3_t type.
-        float* pgarbage = &(r[n].x);
+        double* pgarbage = &(r[n].x);
         for (int d = 0; d < NDIM; ++d)
             fprintf(fp, "%lf\t", *(pgarbage + d)); // the position of the center of cube
         fprintf(fp, "1\t"); // Edge_Length == 1
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
-                fprintf(fp, "%f\t", m[n].m[d1][d2]);
+                fprintf(fp, "%lf\t", m[n].m[d1][d2]);
             }
         }
         fprintf(fp, "10 %lf\n", Phi); // 10 is for slanted cubes.
