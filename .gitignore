@@ -3,6 +3,7 @@ volumes
 densities
 old_scripts
 lengths
+logs
 *.exe
 *.out
 *.nb

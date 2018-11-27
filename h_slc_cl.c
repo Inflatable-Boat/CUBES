@@ -37,8 +37,8 @@ static double BetaP = 10;
 static double Phi; // angle of slanted cube
 
 char init_filename[] = "sc10.txt"; // TODO: read from cmdline
-char output_foldername[] = "datafolder/sl10d_6test_pf%04.2lfp%04.1lfa%04.2lf";
-char output_filename[] = "densities/sl10d_6test_pf%04.2lfp%04.1lfa%04.2lf";
+char output_foldername[] = "datafolder/sl10d_newcl_pf%04.2lfp%04.1lfa%04.2lf";
+char output_filename[] = "densities/sl10d_newcl_pf%04.2lfp%04.1lfa%04.2lf";
 
 const int output_steps = 100;
 
@@ -93,6 +93,7 @@ vec3_t get_offset(int i, int j);
 bool is_overlap_from(int index);
 void update_cell_list(int index);
 inline static void update_CellLength(void);
+bool check_for_overlap(void);
 
 void print_celllists(void);
 
@@ -185,6 +186,8 @@ int main(int argc, char* argv[])
             mov_attempted = rot_attempted = vol_attempted = 0;
             mov_accepted = rot_accepted = vol_accepted = 0;
             write_data(step, fp_density);
+            // if(check_for_overlap) // TODO fix this is always true??
+            //     printf("Found overlap in this step!\n");
         }
     }
 
@@ -479,10 +482,8 @@ void initialize_cell_list(void)
                 }
             }
 
-    // the minimum cell length is the diameter of circumscribed sphere,
-    // plus the maximum length we allow a particle to move in one step.
-    double min_cell_length = sqrt(3 + 2 * CosPhi) + 0.5;
-    // double num_of_particles_per_dim = pow(n_particles, 1. / 3.); //WTF was I thinking
+    // the minimum cell length is the diameter of circumscribed sphere
+    double min_cell_length = sqrt(3 + 2 * CosPhi);
     // the minimum box size is (the volume of a maximally packed box)^(1/3)
     double min_box_size = pow(n_particles * ParticleVolume, 1. / 3.);
 
@@ -578,13 +579,15 @@ int move_particle_cell_list(void)
         // TODO: maybe make faster by only checking on boundary cells
     }
 
+    update_cell_list(index);
+
     // and check for overlaps
     if (is_overlap_from(index)) {
         r[index] = r_old; // move back
+        update_cell_list(index); // and re-update the cell list. // TODO: make more efficient
         return 0; // unsuccesful move
     } else {
         // remember to update (Num/Which)CubesInCell and InWhichCellIsThisCube
-        update_cell_list(index);
         return 1; // succesful move
     }
 }
@@ -618,7 +621,7 @@ void update_cell_list(int index)
             printf("\n");
         }
 
-        exit(6); // yeah so this actually happens for floats.
+        // exit(6); // yeah so this actually happens for floats.
         x_new = x_new % CellsPerDim;
         y_new = y_new % CellsPerDim;
         z_new = z_new % CellsPerDim;
@@ -764,6 +767,19 @@ void set_random_orientation(void)
             m[i] = m4_mul(m4_rotation(M_PI / 2, axis), m[i]);
         }
     }
+}
+
+bool check_for_overlap(void)
+{
+    for (int i = 0; i < n_particles; i++) {
+        for (int j = i + 1; j < n_particles; j++) {
+            if (is_overlap_between(i, j)) {
+                return true;
+
+            }
+        }
+    }
+    return false;
 }
 
 /// reduces initial packing fraction if there is overlap
