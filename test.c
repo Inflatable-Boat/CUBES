@@ -119,6 +119,15 @@ int main(int argc, char* argv[])
     fclose(fp); */
 
     // printf("%d\n", (int)(14.015651999999999/14.015652));
+    /* const char string[] = "this is a \
+        multiline string, does\
+                an enter or tab  or two appear?\
+            hello\n"; // no enter, yes tab
+    printf(string); */
+
+    if (strcmp(argv[1], "3") == 0) {
+        printf("aap\n");
+    }
 
     return 0;
 }
