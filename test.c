@@ -125,9 +125,11 @@ int main(int argc, char* argv[])
             hello\n"; // no enter, yes tab
     printf(string); */
 
-    if (strcmp(argv[1], "3") == 0) {
+    /* if (strcmp(argv[1], "3") == 0) {
         printf("aap\n");
-    }
+    } */
+    
+    return 1;
 
     return 0;
 }

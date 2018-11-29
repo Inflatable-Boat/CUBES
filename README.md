@@ -12,7 +12,7 @@ N
 B_00 B_01 B_02
 B_10 B_11 B_12
 B_20 B_21 B_22
-R_0 R_1 R_2 L M_00 M_01 M_02 M_10 M_11 M_12 M_20 M_21 M_22 COLOR PHI
+R_0 R_1 R_2 L M_00 M_01 M_02 M_10 M_11 M_12 M_20 M_21 M_22 10 PHI COLOR
  
 Note that the rotation matrix, as its name implies, only describes a rotation of the 
 particle from a predefined orientation. This predefined orientation is one where the

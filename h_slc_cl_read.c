@@ -32,13 +32,16 @@
 // many have been made not constant, so that one can enter into the command line:
 // a.exe mc_steps packing_fraction BetaP Phi
 static int mc_steps;
-static double packing_fraction ;
+static double packing_fraction;
 static double BetaP;
 static double Phi; // angle of slanted cube
 
-// char init_filename[] = "sc10.txt"; // TODO: read from cmdline
+// char init_filename[] = "sc10.txt";
 // char output_foldername[] = "datafolder/sl10d_newcl_overlapcheck_pf%04.2lfp%04.1lfa%04.2lf";
 // char output_filename[] = "densities/sl10d_newcl_overlapcheck_pf%04.2lfp%04.1lfa%04.2lf";
+const char labelstring[] = "v1_%2dpf%04.2lfp%04.1lfa%04.2lf";
+// e.g. sl10pf0.50p08.0a1.25:
+// 10 cubes_per_dim, pack_frac 0.50, pressure 8.0, angle 1.25
 const char usage_string[] = "usage: program.exe (r for read / c for create)\
 (readfile / # cubes per dim) mc_steps packing_fraction BetaP Phi\n";
 
@@ -74,7 +77,8 @@ void scale(double scale_factor);
 
 // initialization
 int parse_commandline(int argc, char* argv[]);
-void read_data2(void);
+void read_data2(char* argv[]);
+void create_system(int cubes_per_dim);
 void set_packing_fraction(void);
 void set_random_orientation(void);
 void remove_overlap(void);
@@ -110,8 +114,6 @@ int main(int argc, char* argv[])
         return 1;
     };
 
-    read_data2();
-
     set_packing_fraction();
     set_random_orientation(); // to stop pushing to rhombic phase
     remove_overlap(); // due to too high a packing fraction or rotation
@@ -127,14 +129,10 @@ int main(int argc, char* argv[])
         }
         printf("\n");
     }
-    // exit(4);
-
     if (n_particles == 0) {
-        printf("Error: box dimensions, or n_particles = 0, or n_particles > %d\n", N);
+        printf("Error: this should never ever happen\n");
         return 2;
     }
-    // replace %4.1lf with packing_fraction and BetaP and Phi
-    sprintf(output_foldername, output_foldername, packing_fraction, BetaP, Phi);
 
 // make the folder to store all the data in, if it already exists do nothing.
 #ifdef _WIN32
@@ -147,6 +145,9 @@ int main(int argc, char* argv[])
     mkdir(output_foldername, S_IRWXU | S_IRGRP | S_IROTH);
     mkdir("densities", S_IRWXU | S_IRGRP | S_IROTH);
 #endif
+
+    // replace %4.1lf with packing_fraction and BetaP and Phi
+    sprintf(output_foldername, output_foldername, packing_fraction, BetaP, Phi);
 
     char output_file[128] = "";
     sprintf(output_file, output_filename, packing_fraction, BetaP, Phi);
@@ -197,7 +198,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    fclose(fp_density); // densities/sl...
+    fclose(fp_density); // densities/...
 
     return 0;
 }
@@ -406,32 +407,114 @@ int change_volume(void)
 }
 
 /// This function reads the initial configuration of the system,
-/// it trusts the user to supply data in the correct format.
+/// it reads data in the same format as it outputs data.
 /// It also initializes SinPhi, CosPhi, Normal, ParticleVolume, r, and m (rot. mx.).
-// TODO: just read num_cubes_per_dim from commandline and generate the system
-/* void read_data(void)
+void read_data2(char* argv[])
 {
-    FILE* pFile = fopen(init_filename, "r");
-    if (!fscanf(pFile, "%d", &n_particles))
+    FILE* pFile = fopen(argv[2], "r");
+    if (NULL == pFile) {
+        printf("file not found: %s\n", argv[2]);
         exit(1);
+    }
+    // read n_particles
+    if (!fscanf(pFile, "%d", &n_particles)) {
+        printf("failed to read num of particles\n");
+        exit(2);
+    }
+    if (n_particles < 1 || n_particles > N) {
+        printf("num particles %d, go into code and change N (max nparticles)\n", n_particles);
+        exit(2);
+    }
+    double garbagef; // garbage float
 
-    // Gives a proper warning in the next line in main()
-    if (n_particles > N) {
-        n_particles = 0;
-        return;
+    // three zeroes which do nothing
+    if (!fscanf(pFile, "%lf %lf %lf", &garbagef, &garbagef, &garbagef)) {
+        printf("failed to read three zeroes\n");
+        exit(2);
     }
 
-    // Put the dimensions of the boundaries in box
-    double templeft;
-    double tempright;
-    for (int i = 0; i < NDIM; i++) {
-        if (!fscanf(pFile, "%lf %lf", &templeft, &tempright))
-            exit(2);
-        box[i] = tempright - templeft;
-        if (box[i] < 0) {
-            printf("Error: box dimension negative\n");
-            n_particles = 0; // Gives a proper warning in the next line in main()
-            return;
+    for (int d = 0; d < 9; ++d) { // dimensions of box
+        if (d % 4 == 0) {
+            if (!fscanf(pFile, "%lf\t", &(box[d / 4]))) {
+                printf("failed to read dimensions of box\n");
+                exit(2);                
+            }
+        } else {
+            if (!fscanf(pFile, "%lf\t", &garbagef)) {
+                printf("failed to read dimensions of box\n");
+                exit(2);       
+            }
+        }
+    }
+
+    // now read the particles
+    bool rf = true; // read flag. if false, something went wrong
+    for (int n = 0; n < n_particles; ++n) {
+        // We use pointers to loop over the x, y, z members of the vec3_t type.
+        double* pgarbage = &(r[n].x);
+        for (int d = 0; d < NDIM; ++d) // the position of the center of cube
+            rf = rf && fscanf(pFile, "%lf\t", (pgarbage + d));
+        rf = rf && fscanf(pFile, "%lf\t", &garbagef); // Edge_Length == 1
+        for (int d1 = 0; d1 < NDIM; d1++) {
+            for (int d2 = 0; d2 < NDIM; d2++) {
+                rf = rf && fscanf(pFile, "%lf\t", &(m[n].m[d1][d2]));
+            }
+        }
+        rf = rf && fscanf(pFile, "%lf", &garbagef);
+        if (n==0) {
+            rf = rf && fscanf(pFile, "%lf\n", &Phi); // only read Phi once
+        } else {
+            if(EOF == fscanf(pFile, "%lf\n", &garbagef)) {
+                printf("reached end of read file unexpectedly\n");
+                exit(2);
+            }
+        }
+    }
+    if (!rf) { // if read flag false, something went wrong.
+        printf("failed to read (one of the) particles\n");
+        exit(2);                
+    }
+    fclose(pFile);
+
+    SinPhi = sin(Phi);
+    CosPhi = cos(Phi);
+
+    // now initialize the normals, put everything to zero first:
+    for (int i = 0; i < 3; i++) {
+        Normal[i].x = Normal[i].y = Normal[i].z = 0;
+    }
+    Normal[0].x = SinPhi; // normal on x-dir
+    Normal[0].z = -CosPhi;
+    Normal[1].y = 1.; // normal on y-dir
+    Normal[2].z = 1.; // normal on z-dir
+
+    ParticleVolume = SinPhi; // Edge_Length == 1
+}
+
+/// This function creates the initial configuration of the system.
+/// It also initializes SinPhi, CosPhi, Normal, ParticleVolume, r, and m (rot. mx.).
+void create_system(int cubes_per_dim)
+{
+    // initialize n_particles
+    n_particles = cubes_per_dim * cubes_per_dim * cubes_per_dim;
+    if (n_particles > N) {
+        printf("num particles too large, go into code and change N (max nparticles)\n");
+        exit(2);
+    }
+
+    // initialize box
+    for (int d = 0; d < NDIM; d++) {
+        box[d] = cubes_per_dim; // this will be changed in set_packingfraction
+    }
+
+    // initialize the particle positions (r) on a simple cubic lattice
+    {   int index = 0;
+        for (int i = 0; i < cubes_per_dim; i++) {
+            for (int j = 0; j < cubes_per_dim; j++) {
+                for (int k = 0; k < cubes_per_dim; k++) {
+                    r[index++] = vec3(i + 0.5, j + 0.5, k + 0.5);
+                }
+            }
         }
     }
 
@@ -455,78 +538,6 @@ int change_volume(void)
             m[i].m[d][d] = 1; // 1 on the diagonal
         }
     }
-
-    // ParticleVolume = pow(Edge_Length, 3.) * SinPhi; // Edge_Length == 1
-    ParticleVolume = SinPhi; // Edge_Length == 1
-
-    // Now load all particle positions into r
-    double pos;
-    for (int i = 0; i < n_particles; i++) {
-        // We use pointers to loop over the x, y, z members of the vec3_t type.
-        double* pgarbage = &(r[i].x);
-        for (int d = 0; d < NDIM; d++) {
-            if (!fscanf(pFile, "%lf", &pos))
-                exit(3); // Now pos contains what r[i][dim] should be
-            *(pgarbage + d) = pos;
-        }
-    }
-
-    fclose(pFile);
-} */
-
-void read_data2(void)
-{
-    FILE* pFile = fopen(init_filename, "r");
-    if (!fscanf(pFile, "%d", &n_particles))
-        exit(1);
-
-    // Gives a proper warning in the next line in main()
-    if (n_particles > N) {
-        n_particles = 0;
-        return;
-    }
-    double garbagef;
-    fscanf(pFile, "%lf %lf %lf", &garbagef, &garbagef, &garbagef); // three zeroes which do nothing
-
-    for (int d = 0; d < 9; ++d) { // dimensions of box
-        if (d % 4 == 0) {
-            fscanf(pFile, "%lf\t", &(box[d / 4]));
-        } else {
-            fscanf(pFile, "%lf\t", &garbagef);
-        }
-    }
-
-    // now read the particles
-    for (int n = 0; n < n_particles; ++n) {
-        // We use pointers to loop over the x, y, z members of the vec3_t type.
-        float* pgarbage = &(r[n].x);
-        for (int d = 0; d < NDIM; ++d)
-            fscanf(pFile, "%f\t", (pgarbage + d)); // the position of the center of cube
-        fscanf(pFile, "%lf\t", &garbagef); // Edge_Length == 1
-        for (int d1 = 0; d1 < NDIM; d1++) {
-            for (int d2 = 0; d2 < NDIM; d2++) {
-                fscanf(pFile, "%f\t", &(m[n].m[d1][d2]));
-            }
-        }
-        fscanf(pFile, "%lf", &garbagef);
-        if (n==0) {
-            fscanf(pFile, "%lf\n", &Phi);
-        } else {
-            fscanf(pFile, "%lf\n", &garbagef);
-        }
-    }
-
-    SinPhi = sin(Phi);
-    CosPhi = cos(Phi);
-
-    // now initialize the normals, put everything to zero first:
-    for (int i = 0; i < 3; i++) {
-        Normal[i].x = Normal[i].y = Normal[i].z = 0;
-    }
-    Normal[0].x = SinPhi; // normal on x-dir
-    Normal[0].z = -CosPhi;
-    Normal[1].y = 1.; // normal on y-dir
-    Normal[2].z = 1.; // normal on z-dir
 
     ParticleVolume = SinPhi; // Edge_Length == 1
 }
@@ -848,24 +859,6 @@ bool is_overlap(void)
 /// reduces initial packing fraction if there is overlap
 void remove_overlap(void)
 {
-    /* bool is_collision = false;
-    do {
-        is_collision = false;
-        for (int i = 0; i < n_particles; i++) {
-            for (int j = i + 1; j < n_particles; j++) {
-                if (is_overlap_between(i, j)) {
-                    is_collision = true;
-                    i = j = n_particles; // i.e. break out of both loops
-                }
-            }
-        }
-        if (is_collision) {
-            scale(1.05); // make the system bigger and check for collisions again
-            printf("initial packing fraction lowered to %lf\n",
-                n_particles * ParticleVolume / (box[0] * box[1] * box[2]));
-        }
-    } while (is_collision); */
-
     while (is_overlap()) {
         scale(1.05); // make the system bigger and check for collisions again
         printf("initial packing fraction lowered to %lf\n",
@@ -913,6 +906,24 @@ int parse_commandline(int argc, char* argv[])
         printf("0 < Phi < 1.57079632679\n");
         return 2;
     }
+
+    // read data from a file or create a system with cubes_per_dim cubes per dimension
+    if (strcmp(argv[1], "read") == 0 || strcmp(argv[1], "r") == 0) {
+        printf("reading file %s...\n", argv[1]);
+        read_data2(argv);
+    } else if (strcmp(argv[1], "create") == 0 || strcmp(argv[1], "c") == 0) {
+        int cubes_per_dim = atoi(argv[2]);
+        if (cubes_per_dim < 4 || cubes_per_dim > 41) {
+            printf("3 < cubes_per_dim < 42\n%s", usage_string);
+            return 1;
+        }
+        printf("creating system with %d cubes...\n", cubes_per_dim);
+        create_system(cubes_per_dim);
+    } else {
+        printf("error reading first argument: %s\n", argv[1]);
+        return 1;
+    }
+
     return 0; // no exceptions, run the program
 }
 
