@@ -4,6 +4,7 @@ densities
 old_scripts
 lengths
 logs
+prev1*
 *.exe
 *.out
 *.nb

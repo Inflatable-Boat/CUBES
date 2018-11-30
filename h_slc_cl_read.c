@@ -53,6 +53,8 @@ static double Delta = 0.05; // delta, deltaV, deltaR are dynamic, i.e. every out
 static double DeltaR = 0.05; // they will be nudged a bit to keep
 static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
 
+static bool IsCreated;
+
 static vec3_t r[N]; // position of center of cube
 static mat4_t m[N]; // rotation matrix of cube
 static double CellLength; // The length of a cell
@@ -116,8 +118,18 @@ int main(int argc, char* argv[])
     };
 
     set_packing_fraction();
-    set_random_orientation(); // to stop pushing to rhombic phase
-    remove_overlap(); // due to too high a packing fraction or rotation
+    if (IsCreated) {
+        set_random_orientation(); // to stop pushing to rhombic phase
+        remove_overlap(); // due to too high a packing fraction or rotation
+    } else { // TODO: check read_data
+        if (is_overlap()) {
+            printf("\n\n\n\tWARNING\n\n\nThe read file contains overlap.\n\
+            Expanding system until no overlap left\n");
+            remove_overlap();
+        } else {
+            printf("No overlap detected, continuing simulation.\n");
+        }
+    }
     initialize_cell_list();
     // DEBUG: print NumCubesInCell, and other cell list numbers.
     printf("celllength: %lf\nboxsize: %lf\ncellsperdim: %d\n\n", CellLength, box[0], CellsPerDim);
@@ -785,9 +797,10 @@ void write_data(int step, FILE* fp_density, char datafolder_name[128])
     sprintf(datafile, buffer, step); // replace %07d with step and put in output_file.
     // char datafile[128];
     // strcpy(datafile, datafolder_name);
-    // strcat(datafile, "/coords_step%07d.poly"); // THIS GOES WRONG
+    // strcat(datafile, "/coords_step%07d.poly");
     // sprintf(datafile, datafile, step); // replace %07d with step and put in output_file.
-
+    // THIS GOES WRONG
+    
     FILE* fp = fopen(datafile, "w");
     fprintf(fp, "%d\n", n_particles);
     fprintf(fp, "0.0\t0.0\t0.0\n");
@@ -921,6 +934,7 @@ int parse_commandline(int argc, char* argv[])
         printf("reading file %s...\n", argv[2]);
         read_data2(argv[2]);
         CubesPerDim = (int)pow(n_particles, 1. / 3.);
+        IsCreated = false;
     } else if (strcmp(argv[1], "create") == 0 || strcmp(argv[1], "c") == 0) {
         CubesPerDim = atoi(argv[2]);
         if (CubesPerDim < 4 || CubesPerDim > 41) {
@@ -928,6 +942,7 @@ int parse_commandline(int argc, char* argv[])
             return 1;
         }
         create_system(CubesPerDim);
+        IsCreated = true;
         printf("creating system with %d cubes...\n", n_particles);
     } else {
         printf("error reading first argument: %s\n", argv[1]);
