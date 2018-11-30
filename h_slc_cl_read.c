@@ -39,10 +39,10 @@ static double Phi; // angle of slanted cube
 // char init_filename[] = "sc10.txt";
 // char output_foldername[] = "datafolder/sl10d_newcl_overlapcheck_pf%04.2lfp%04.1lfa%04.2lf";
 // char output_filename[] = "densities/sl10d_newcl_overlapcheck_pf%04.2lfp%04.1lfa%04.2lf";
-const char labelstring[] = "v1_%2dpf%04.2lfp%04.1lfa%04.2lf";
+const char labelstring[] = "v1_%02dpf%04.2lfp%04.1lfa%04.2lf";
 // e.g. sl10pf0.50p08.0a1.25:
-// 10 cubes_per_dim, pack_frac 0.50, pressure 8.0, angle 1.25
-const char usage_string[] = "usage: program.exe (r for read / c for create)\
+// 10 CubesPerDim, pack_frac 0.50, pressure 8.0, angle 1.25
+const char usage_string[] = "usage: program.exe (r for read / c for create) \
 (readfile / # cubes per dim) mc_steps packing_fraction BetaP Phi\n";
 
 const int output_steps = 100;
@@ -63,6 +63,7 @@ static int InWhichCellIsThisCube[N]; // (a,b,c) == NC*NC*a + NC*b + c
 static double box[NDIM]; // dimensions of box
 static vec3_t Normal[3]; // the normal vector of an unrotated cube. Normal[0] is the normal in the x-dir, etc.
 static int n_particles = 0;
+static int CubesPerDim;
 static double ParticleVolume;
 static double CosPhi; // cos and sin of Phi appear a lot, and are expensive to calculate.
 static double SinPhi; // Since Phi doesn't change, it's faster to calculate only once.
@@ -77,8 +78,8 @@ void scale(double scale_factor);
 
 // initialization
 int parse_commandline(int argc, char* argv[]);
-void read_data2(char* argv[]);
-void create_system(int cubes_per_dim);
+void read_data2(char* init_file);
+void create_system();
 void set_packing_fraction(void);
 void set_random_orientation(void);
 void remove_overlap(void);
@@ -90,7 +91,7 @@ int move_particle_cell_list(void);
 int rotate_particle(void);
 int change_volume(void);
 void nudge_deltas(double mov, double vol, double rot);
-void write_data(int step, FILE* fp_density);
+void write_data(int step, FILE* fp_density, char datafolder_name[128]);
 
 // collision detection
 bool is_overlap_between(int i, int j);
@@ -129,29 +130,34 @@ int main(int argc, char* argv[])
         }
         printf("\n");
     }
-    if (n_particles == 0) {
-        printf("Error: this should never ever happen\n");
-        return 2;
-    }
+    char buffer[128] = "datafolder/";
+    strcat(buffer, labelstring);
+    char datafolder_name[128] = "";
+    // replace all %d, %lf in buffer with values and put in datafolder_name
+    sprintf(datafolder_name, buffer, CubesPerDim, packing_fraction, BetaP, Phi);
 
 // make the folder to store all the data in, if it already exists do nothing.
 #ifdef _WIN32
     mkdir("datafolder");
-    mkdir(output_foldername);
+    mkdir(datafolder_name);
     mkdir("densities");
 #elif __linux__
     // Linux needs me to set rights, this gives rwx to me and just r to all others.
     mkdir("datafolder", S_IRWXU | S_IRGRP | S_IROTH);
-    mkdir(output_foldername, S_IRWXU | S_IRGRP | S_IROTH);
+    mkdir(datafolder_name, S_IRWXU | S_IRGRP | S_IROTH);
     mkdir("densities", S_IRWXU | S_IRGRP | S_IROTH);
+#elif
+    printf("Please use Linux or Windows\n");
+    exit(3);
 #endif
 
-    // replace %4.1lf with packing_fraction and BetaP and Phi
-    sprintf(output_foldername, output_foldername, packing_fraction, BetaP, Phi);
+    char buffer2[128] = "densities/";
+    strcat(buffer2, labelstring);
+    char density_filename[128] = "";
+    // replace all %d, %lf in buffer2 with values and put in density_filename
+    sprintf(density_filename, buffer2, CubesPerDim, packing_fraction, BetaP, Phi);
 
-    char output_file[128] = "";
-    sprintf(output_file, output_filename, packing_fraction, BetaP, Phi);
-    FILE* fp_density = fopen(output_file, "w");
+    FILE* fp_density = fopen(density_filename, "w");
 
     int mov_accepted = 0, vol_accepted = 0, rot_accepted = 0;
     int mov_attempted = 0, vol_attempted = 0, rot_attempted = 0;
@@ -189,7 +195,7 @@ int main(int argc, char* argv[])
             // And reset for the next loop
             mov_attempted = rot_attempted = vol_attempted = 0;
             mov_accepted = rot_accepted = vol_accepted = 0;
-            write_data(step, fp_density);
+            write_data(step, fp_density, datafolder_name);
             if (step % 10000 == 0) {
                 if (is_overlap()) {
                     printf("Found overlap in this step!\n");
@@ -409,11 +415,11 @@ int change_volume(void)
 /// This function reads the initial configuration of the system,
 /// it reads data in the same format as it outputs data.
 /// It also initializes SinPhi, CosPhi, Normal, ParticleVolume, r, and m (rot. mx.).
-void read_data2(char* argv[])
+void read_data2(char* init_file)
 {
-    FILE* pFile = fopen(argv[2], "r");
+    FILE* pFile = fopen(init_file, "r");
     if (NULL == pFile) {
-        printf("file not found: %s\n", argv[2]);
+        printf("file not found: %s\n", init_file);
         exit(1);
     }
     // read n_particles
@@ -425,7 +431,7 @@ void read_data2(char* argv[])
         printf("num particles %d, go into code and change N (max nparticles)\n", n_particles);
         exit(2);
     }
-    double garbagef; // garbage float
+    double garbagef; // garbage (double) float
 
     // three zeroes which do nothing
     if (!fscanf(pFile, "%lf %lf %lf", &garbagef, &garbagef, &garbagef)) {
@@ -437,12 +443,12 @@ void read_data2(char* argv[])
         if (d % 4 == 0) {
             if (!fscanf(pFile, "%lf\t", &(box[d / 4]))) {
                 printf("failed to read dimensions of box\n");
-                exit(2);                
+                exit(2);
             }
         } else {
             if (!fscanf(pFile, "%lf\t", &garbagef)) {
                 printf("failed to read dimensions of box\n");
-                exit(2);       
+                exit(2);
             }
         }
     }
@@ -461,10 +467,10 @@ void read_data2(char* argv[])
             }
         }
         rf = rf && fscanf(pFile, "%lf", &garbagef);
-        if (n==0) {
+        if (n == 0) {
             rf = rf && fscanf(pFile, "%lf\n", &Phi); // only read Phi once
         } else {
-            if(EOF == fscanf(pFile, "%lf\n", &garbagef)) {
+            if (EOF == fscanf(pFile, "%lf\n", &garbagef)) {
                 printf("reached end of read file unexpectedly\n");
                 exit(2);
             }
@@ -472,12 +478,13 @@ void read_data2(char* argv[])
     }
     if (!rf) { // if read flag false, something went wrong.
         printf("failed to read (one of the) particles\n");
-        exit(2);                
+        exit(2);
     }
     fclose(pFile);
 
     SinPhi = sin(Phi);
     CosPhi = cos(Phi);
+    ParticleVolume = SinPhi; // Edge_Length == 1
 
     // now initialize the normals, put everything to zero first:
     for (int i = 0; i < 3; i++) {
@@ -487,16 +494,14 @@ void read_data2(char* argv[])
     Normal[0].z = -CosPhi;
     Normal[1].y = 1.; // normal on y-dir
     Normal[2].z = 1.; // normal on z-dir
-
-    ParticleVolume = SinPhi; // Edge_Length == 1
 }
 
 /// This function creates the initial configuration of the system.
 /// It also initializes SinPhi, CosPhi, Normal, ParticleVolume, r, and m (rot. mx.).
-void create_system(int cubes_per_dim)
+void create_system()
 {
     // initialize n_particles
-    n_particles = cubes_per_dim * cubes_per_dim * cubes_per_dim;
+    n_particles = CubesPerDim * CubesPerDim * CubesPerDim;
     if (n_particles > N) {
         printf("num particles too large, go into code and change N (max nparticles)\n");
         exit(2);
@@ -504,14 +509,15 @@ void create_system(int cubes_per_dim)
 
     // initialize box
     for (int d = 0; d < NDIM; d++) {
-        box[d] = cubes_per_dim; // this will be changed in set_packingfraction
+        box[d] = CubesPerDim; // this will be changed in set_packingfraction
     }
 
     // initialize the particle positions (r) on a simple cubic lattice
-    {   int index = 0;
-        for (int i = 0; i < cubes_per_dim; i++) {
-            for (int j = 0; j < cubes_per_dim; j++) {
-                for (int k = 0; k < cubes_per_dim; k++) {
+    {
+        int index = 0;
+        for (int i = 0; i < CubesPerDim; i++) {
+            for (int j = 0; j < CubesPerDim; j++) {
+                for (int k = 0; k < CubesPerDim; k++) {
                     r[index++] = vec3(i + 0.5, j + 0.5, k + 0.5);
                 }
             }
@@ -520,6 +526,7 @@ void create_system(int cubes_per_dim)
 
     SinPhi = sin(Phi);
     CosPhi = cos(Phi);
+    ParticleVolume = SinPhi; // Edge_Length == 1
 
     // now initialize the normals, put everything to zero first:
     for (int i = 0; i < 3; i++) {
@@ -538,8 +545,6 @@ void create_system(int cubes_per_dim)
             m[i].m[d][d] = 1; // 1 on the diagonal
         }
     }
-
-    ParticleVolume = SinPhi; // Edge_Length == 1
 }
 
 /// Initializes CellsPerDim, CellLength,
@@ -767,19 +772,23 @@ int rotate_particle(void)
     }
 }
 
-void write_data(int step, FILE* fp_density)
+void write_data(int step, FILE* fp_density, char datafolder_name[128])
 {
     fprintf(fp_density, "%lf\n", n_particles * ParticleVolume / (box[0] * box[1] * box[2]));
     fflush(fp_density); // write the densities everytime we have one, otherwise it waits for ~400 lines
 
     char buffer[128];
-    strcpy(buffer, output_foldername);
-
+    strcpy(buffer, datafolder_name);
     strcat(buffer, "/coords_step%07d.poly");
-    char output_file[128];
-    sprintf(output_file, buffer, step); // replace %07d with step and put in output_file.
 
-    FILE* fp = fopen(output_file, "w");
+    char datafile[128];
+    sprintf(datafile, buffer, step); // replace %07d with step and put in output_file.
+    // char datafile[128];
+    // strcpy(datafile, datafolder_name);
+    // strcat(datafile, "/coords_step%07d.poly"); // THIS GOES WRONG
+    // sprintf(datafile, datafile, step); // replace %07d with step and put in output_file.
+
+    FILE* fp = fopen(datafile, "w");
     fprintf(fp, "%d\n", n_particles);
     fprintf(fp, "0.0\t0.0\t0.0\n");
     for (int d = 0; d < 9; ++d) { // dimensions of box
@@ -870,23 +879,23 @@ void remove_overlap(void)
 /// If something goes wrong, return != 0
 int parse_commandline(int argc, char* argv[])
 {
-    if (argc != 5) {
-        printf("need 4 arguments:\n");
+    if (argc != 7) {
+        printf("need 6 arguments:\n");
         return 3;
     }
-    if (EOF == sscanf(argv[1], "%d", &mc_steps)) {
+    if (EOF == sscanf(argv[3], "%d", &mc_steps)) {
         printf("reading mc_steps has failed\n");
         return 1;
     };
-    if (EOF == sscanf(argv[2], "%lf", &packing_fraction)) {
+    if (EOF == sscanf(argv[4], "%lf", &packing_fraction)) {
         printf("reading packing_fraction has failed\n");
         return 1;
     };
-    if (EOF == sscanf(argv[3], "%lf", &BetaP)) {
+    if (EOF == sscanf(argv[5], "%lf", &BetaP)) {
         printf("reading BetaP has failed\n");
         return 1;
     };
-    if (EOF == sscanf(argv[4], "%lf", &Phi)) {
+    if (EOF == sscanf(argv[6], "%lf", &Phi)) {
         printf("reading Phi has failed\n");
         return 1;
     };
@@ -898,8 +907,8 @@ int parse_commandline(int argc, char* argv[])
         printf("0 < packing_fraction <= 1\n");
         return 2;
     }
-    if (BetaP <= 0) {
-        printf("BetaP > 0\n");
+    if (BetaP <= 0 || BetaP >= 100) {
+        printf("0 < BetaP < 100\n");
         return 2;
     }
     if (Phi <= 0 || Phi > M_PI / 2) {
@@ -907,18 +916,19 @@ int parse_commandline(int argc, char* argv[])
         return 2;
     }
 
-    // read data from a file or create a system with cubes_per_dim cubes per dimension
+    // read data from a file or create a system with CubesPerDim cubes per dimension
     if (strcmp(argv[1], "read") == 0 || strcmp(argv[1], "r") == 0) {
-        printf("reading file %s...\n", argv[1]);
-        read_data2(argv);
+        printf("reading file %s...\n", argv[2]);
+        read_data2(argv[2]);
+        CubesPerDim = (int)pow(n_particles, 1. / 3.);
     } else if (strcmp(argv[1], "create") == 0 || strcmp(argv[1], "c") == 0) {
-        int cubes_per_dim = atoi(argv[2]);
-        if (cubes_per_dim < 4 || cubes_per_dim > 41) {
-            printf("3 < cubes_per_dim < 42\n%s", usage_string);
+        CubesPerDim = atoi(argv[2]);
+        if (CubesPerDim < 4 || CubesPerDim > 41) {
+            printf("3 < CubesPerDim < 42, integer!\n%s", usage_string);
             return 1;
         }
-        printf("creating system with %d cubes...\n", cubes_per_dim);
-        create_system(cubes_per_dim);
+        create_system(CubesPerDim);
+        printf("creating system with %d cubes...\n", n_particles);
     } else {
         printf("error reading first argument: %s\n", argv[1]);
         return 1;
