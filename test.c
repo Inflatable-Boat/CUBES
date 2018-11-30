@@ -10,7 +10,7 @@ inline static double ran(double low, double high)
     return (high - low) * dsfmt_genrand() + low;
 }
 
-void write(char datafolder_name[128])
+/* void write(char datafolder_name[128])
 {
     char buffer[128];
     strcpy(buffer, datafolder_name);
@@ -29,7 +29,7 @@ void write(char datafolder_name[128])
     printf("output_file = %s\n", output_file);
 }
 
-const char labelstring[] = "v1_%02dpf%04.2lfp%04.1lfa%04.2lf";
+const char labelstring[] = "v1_%02dpf%04.2lfp%04.1lfa%04.2lf"; */
 
 
 int main(int argc, char* argv[])
@@ -156,19 +156,19 @@ int main(int argc, char* argv[])
     sprintf(string, string, 8, 612321423234315675675676523.3324328);
     printf("%s", string); */
 
-    char buffer[128] = "datafolder/";
-    strcat(buffer, labelstring);
-    // char datafolder_name[128] = "";
-    // replace %4.1lf with packing_fraction and BetaP and Phi
-    printf("%s\n", buffer);
-    sprintf(buffer, buffer, // undefined behaviour, sometimes works, sometimes not
-    /* CubesPerDim */ 8,
-    /* packing_fraction */ 0.5,
-    /* BetaP */ 12.,
-    /* Phi */ 1.25);
+    // char buffer[128] = "datafolder/";
+    // strcat(buffer, labelstring);
+    // // char datafolder_name[128] = "";
+    // // replace %4.1lf with packing_fraction and BetaP and Phi
+    // printf("%s\n", buffer);
+    // sprintf(buffer, buffer, // undefined behaviour, sometimes works, sometimes not
+    // /* CubesPerDim */ 8,
+    // /* packing_fraction */ 0.5,
+    // /* BetaP */ 12.,
+    // /* Phi */ 1.25);
 
-    printf("%s\n", buffer);
-    write(buffer);
+    // printf("%s\n", buffer);
+    // write(buffer);
 
 
     return 0;
