@@ -169,7 +169,14 @@ int main(int argc, char* argv[])
 
     // printf("%s\n", buffer);
     // write(buffer);
-
+    
+    /* int aap = 1, noot = 0, mies = -1;
+    printf("%d, %d, %d becomes\n%d, %d, %d\n", aap, noot, mies, ~aap, ~noot, ~mies);
+    for (int i = 31; i >= 0; i--) {
+        if (mies & (1 << i)) printf("1");
+        else printf("0");
+    }
+    printf("\n"); */
 
     return 0;
 }

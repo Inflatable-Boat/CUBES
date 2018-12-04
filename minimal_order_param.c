@@ -91,7 +91,7 @@ double sqr(double x){
  *             DIST_PART
  * Distance between two particles
  ***********************************************/
-double dist_part(int i,int j)
+/* double dist_part(int i,int j)
 {
   double dx = part[i].x-part[j].x;
   double dy = part[i].y-part[j].y; 
@@ -101,7 +101,7 @@ double dist_part(int i,int j)
   if(dy > box.yhalf) dy=dy-box.y; else if(dy < -box.yhalf) dy=dy+box.y;
   if(dz > box.zhalf) dz=dz-box.z; else if(dz < -box.zhalf) dz=dz+box.z;
   return dx*dx+dy*dy+dz*dz;
-}
+} */
 
 /************************************************
  *             PLGNDR
