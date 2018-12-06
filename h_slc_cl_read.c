@@ -7,11 +7,11 @@
 #include <sys/types.h> // mkdir on Linux
 #endif
 // #include <unistd.h> // sleep()
-// #include <iostream> // C++
 #include <stdbool.h> // C requires this for (bool, true, false) to work
 #include <string.h> // This is for C (strcpy, strcat, etc. ). For C++, use #include <string>
 // #include <math.h> // in "math_4d.h" // in Linux, make sure to gcc ... -lm, -lm stands for linking math library.
 // #include <stdio.h> // in "math_4d.h" // C
+// #include <iostream> // C++
 #include <time.h> // time(NULL)
 
 #ifndef M_PI
@@ -36,9 +36,6 @@ static double packing_fraction;
 static double BetaP;
 static double Phi; // angle of slanted cube
 
-// char init_filename[] = "sc10.txt";
-// char output_foldername[] = "datafolder/sl10d_newcl_overlapcheck_pf%04.2lfp%04.1lfa%04.2lf";
-// char output_filename[] = "densities/sl10d_newcl_overlapcheck_pf%04.2lfp%04.1lfa%04.2lf";
 const char labelstring[] = "v1_%02dpf%04.2lfp%04.1lfa%04.2lf";
 // e.g. sl10pf0.50p08.0a1.25:
 // 10 CubesPerDim, pack_frac 0.50, pressure 8.0, angle 1.25
@@ -53,7 +50,7 @@ static double Delta = 0.05; // delta, deltaV, deltaR are dynamic, i.e. every out
 static double DeltaR = 0.05; // they will be nudged a bit to keep
 static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
 
-static bool IsCreated;
+static bool IsCreated; // Did we create a system or read a file
 
 static vec3_t r[N]; // position of center of cube
 static mat4_t m[N]; // rotation matrix of cube
@@ -104,8 +101,6 @@ void update_cell_list(int index);
 inline static void update_CellLength(void);
 bool is_overlap(void);
 
-void print_celllists(void);
-
 /* Main */
 
 int main(int argc, char* argv[])
@@ -117,13 +112,13 @@ int main(int argc, char* argv[])
         return 1;
     };
 
-    set_packing_fraction();
     if (IsCreated) {
+        set_packing_fraction();
         set_random_orientation(); // to stop pushing to rhombic phase
         remove_overlap(); // due to too high a packing fraction or rotation
-    } else { // TODO: check read_data
+    } else {
         if (is_overlap()) {
-            printf("\n\n\n\tWARNING\n\n\nThe read file contains overlap.\n\
+            printf("\n\n\tWARNING\n\n\nThe read file contains overlap.\n\
             Expanding system until no overlap left\n");
             remove_overlap();
         } else {
@@ -256,7 +251,7 @@ void scale(double scale_factor)
 
 /// This function returns the offset of the jth vertex (j = 0, ... , 7)
 /// from the center of cube number i:     3----7
-///                                      /|   /|
+/// (y points into the screen)           /|   /|
 ///     z                               1-+--5 |
 ///     | y                             | 2--+-6
 ///     |/                              |/   |/
@@ -882,7 +877,7 @@ bool is_overlap(void)
 void remove_overlap(void)
 {
     while (is_overlap()) {
-        scale(1.05); // make the system bigger and check for collisions again
+        scale(1.01); // make the system bigger and check for collisions again
         printf("initial packing fraction lowered to %lf\n",
             n_particles * ParticleVolume / (box[0] * box[1] * box[2]));
     }
@@ -912,8 +907,8 @@ int parse_commandline(int argc, char* argv[])
         printf("reading Phi has failed\n");
         return 1;
     };
-    if (mc_steps <= 100) {
-        printf("mc_steps > 100\n");
+    if (mc_steps < 100) {
+        printf("mc_steps > 99\n");
         return 2;
     }
     if (packing_fraction <= 0 || packing_fraction > 1) {

@@ -178,6 +178,20 @@ int main(int argc, char* argv[])
     }
     printf("\n"); */
 
+    /* char aap[32] = "aap";
+    char noot[32] = "noot baby";
+    strcpy(noot, aap);
+    printf("noot now contains %s\n", noot); // prints aap
+    printf("looping over noot, though:\n");
+    for (int i = 0; i < 32; i++) {
+        printf("%c", noot[i]); // prints aap baby
+    }
+    printf("\n"); */
+
+    /* char aap[32];
+    double noot[32];
+    printf("%ld, %ld\n", sizeof aap, sizeof noot); // prints 32, 256 */
+
     return 0;
 }
 

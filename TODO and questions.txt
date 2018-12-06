@@ -1,0 +1,81 @@
+TODO:
+================================================================================================
+- make write_data2 to write data in the format for order_parameter
+
+- make output file name(s) readable from command line
+
+- understand crystal.c?
+
+
+
+------------------------------------------------------------------------------------------------
+= make read_data2 to read from .poly files (i.e. to make it able to read the files it makes)
+	= make the initial configuration file something to be entered on the command line
+= check read_data2, is probably still bugged.
+	= nope, i set packing fraction when reading but that should only happen when creating
+= check if cell lists are fixed
+	= YES
+= read_data2 can be found in tests/test.c!
+= generate initial configuration
+
+
+
+
+
+Notes:
+================================================================================================
+
+
+
+------------------------------------------------------------------------------------------------
+Last runs:
+- _6fix: apply per bd cond upon find
+- _6test: exit upon find
+	- no exits
+- newcl: new (conventional) method of doing celllists + prints & apply per. bd. cnd.
+	- no prints
+------------------------------------------------------------------------------------------------
+Last meeting:
+= Instead of celllength >= diam + max_step_size, and update celllist after completed step,
+	do celllength >= diam and update celllist after move, and again if move back.
+= Pipe stdout to a log file rather than /dev/null
+------------------------------------------------------------------------------------------------
+Since overlap seems to occur right at the boundary of the box, maybe something funny is
+	going on when saying x_new = (int) r_new.x / CellLength;. HOWEVER, sometimes, e.g. at
+	pressure 1 for one particular simulation (TODO: which one), it happens everywhere.
+	Nevertheless, the following tests will run for the weekend:
+
+- sl10v2: increased MAXPC, probably not gonna do anything (PNGDA)
+	- indeed, overlap still happens.
+
+- sl10v3: increased MAXPC, pos_mod_f in update_cell_list(), PNGDA
+	- exit status (5), Too many particles in one cell???
+
+- dbg: increased MAXPC, pos_mod_f in update_cell_list(), exit(6) upon overshooting, PNGDA
+	- exit status (5), Too many particles in one cell???
+
+- dbg2: increased MAXPC, exit(6) upon overshooting, PNGDA
+	- exit status (6), overshoot indeed happens!
+
+- sl10d: increased MAXPC, increased precision of math4d.h (math5d.h, where float --> double)
+	- (seemingly) no overlaps!
+
+
+
+
+
+Questions:
+================================================================================================
+- Ask Frank:
+	- What is typedef struct {double nz; double si; double co ;int n;}bndT;
+		-
+	- What is typedef struct {int n; bndT * bnd;}blistT;
+		-
+	- Is particlestocount == n_part always true?
+		-
+
+
+
+------------------------------------------------------------------------------------------------
+= Randomly orienting, is 12 rotations of \pm pi/2 around random axes aligned with box enough?
+	= yes
