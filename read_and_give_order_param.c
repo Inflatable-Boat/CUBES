@@ -47,6 +47,9 @@ typedef struct {
 } blistT; // list of bndTs
 blistT* blist;
 
+/* Tunable variables */
+const double BONDLENGTHSQ = 1.55*1.55;
+
 /* Initialization variables */
 // many have been made not constant, so that one can enter into the command line:
 // a.exe mc_steps packing_fraction BetaP Phi
@@ -131,7 +134,7 @@ int main(int argc, char* argv[])
 
     strcat(buffer, "/coords_step%07d.poly");
 
-    for (int step = 0; step < mc_steps; step += 100) {
+    for (int step = 0; step <= mc_steps; step += 100) {
         char datafile_name[128] = "";
         // replace all %d, %lf in buffer with values and put in datafile_name
         sprintf(datafile_name, buffer, CubesPerDim, packing_fraction, BetaP, Phi, 0);
@@ -675,10 +678,17 @@ compl_t* calc_order(void)
     memset(orderp, (int)0.0, sizeof(compl_t) * n_particles * (l * 2 + 1));
     for (i = 0; i < n_particles; i++) { // TODO: ask Frank if particlestocount == n_part
         q1 = (orderp + i * (2 * l + 1) + l);
-        for (j = 0; j < blist[i].n; j++) {
-            if (blist[i].bnd[j].n > i) {
-                q2 = (orderp + blist[i].bnd[j].n * (2 * l + 1) + l);
-                order(l, &(blist[i].bnd[j]), q1, q2);
+        // for (j = 0; j < blist[i].n; j++) { // TODO I assume this is looping over neighbours
+        //     if (blist[i].bnd[j].n > i) {
+        //         q2 = (orderp + blist[i].bnd[j].n * (2 * l + 1) + l);
+        //         order(l, &(blist[i].bnd[j]), q1, q2);
+        //     }
+        // }
+        for (j = i + 1; j < n_particles; j++) {
+            double dist2 = v3_dot(r[i], r[j]);
+            if (dist2 < BONDLENGTHSQ) {
+                q2 = (orderp + j * (2 * l + 1) + l);
+                order(l, argh, q1, q2);
             }
         }
     }
