@@ -1,5 +1,8 @@
 TODO:
 ================================================================================================
+- make crystal_modified.c work
+
+
 - make write_data2 to write data in the format for order_parameter
 
 - make output file name(s) readable from command line
@@ -24,6 +27,8 @@ TODO:
 
 Notes:
 ================================================================================================
+Now the idea is to just use the crystal.c file, but use my own read_file method and convert
+my positions "r[N]" into particle array called "p".
 
 
 
@@ -66,13 +71,15 @@ Since overlap seems to occur right at the boundary of the box, maybe something f
 
 Questions:
 ================================================================================================
-- Ask Frank:
-	- What is typedef struct {double nz; double si; double co ;int n;}bndT;
-		-
-	- What is typedef struct {int n; bndT * bnd;}blistT;
-		-
-	- Is particlestocount == n_part always true?
-		-
+= Ask Frank:
+	= What is typedef struct {double nz; double si; double co ;int n;}bndT;
+		= a bond between two particles (i.e. they are close enough to each other,
+		  where the position w.r.t eachother is given in polar coords, z-dist, sin and
+		  cos of the angle around z-axis.
+	= What is typedef struct {int n; bndT * bnd;}blistT;
+		= a list of pointers to these bndTs, with the length of this list.
+	= Is particlestocount == n_part always true?
+		= yes
 
 
 

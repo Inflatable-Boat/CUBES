@@ -196,7 +196,7 @@ void order(int l, bndT *bnd, compl *res1, compl *res2){
   int m=0;
   z=bnd->nz;
 
-//for m=0
+  //for m=0
   p = plgndr(l,0,z);
   fc= facs(l,0);
   f = sqrt( (2*l+1) * INVFPI *fc );
@@ -211,7 +211,7 @@ void order(int l, bndT *bnd, compl *res1, compl *res2){
   cp=0;
 
   for(m=1;m<=l;m++){
-//positive m
+  //positive m
     p = plgndr(l,m,z);
     fc=facs(l,m);
     f = sqrt( (2*l+1) * INVFPI *fc );
@@ -231,7 +231,7 @@ void order(int l, bndT *bnd, compl *res1, compl *res2){
     (res2+m)->re += r*c;
     (res2+m)->im += r*s;
 
-//negative m
+    //negative m
     r *= minpow(m);
     (res1-m)->re += r*c;
     (res1-m)->im += -r*s;

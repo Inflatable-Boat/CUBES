@@ -40,15 +40,28 @@ typedef struct {
     double si;
     double co;
     int n;
-} bndT; // TODO: ask Frank wtf this is
+} bndT; // z position, sin(polar angle), cos(polar angle) of relative position of two particles
 typedef struct {
     int n;
     bndT* bnd;
 } blistT; // list of bndTs
 blistT* blist;
+typedef struct {
+  double x;
+  double y;
+  double z;
+  double xhalf;
+  double yhalf;
+  double zhalf;
+  double oneoverx;
+  double oneovery;
+  double oneoverz;
+  double min;
+} tbox;
+
 
 /* Tunable variables */
-const double BONDLENGTHSQ = 1.55*1.55;
+const double BONDLENGTHSQ = 1.55 * 1.55;
 
 /* Initialization variables */
 // many have been made not constant, so that one can enter into the command line:
@@ -76,6 +89,7 @@ static int NumCubesInCell[NC][NC][NC]; // how many cubes in each cell
 static int WhichCubesInCell[NC][NC][NC][MAXPC]; // which cubes in each cell
 static int InWhichCellIsThisCube[N]; // (a,b,c) == NC*NC*a + NC*b + c
 static double box[NDIM]; // dimensions of box
+tbox box;
 static vec3_t Normal[3]; // the normal vector of an unrotated cube. Normal[0] is the normal in the x-dir, etc.
 static int n_particles = 0;
 static int CubesPerDim;
@@ -89,8 +103,15 @@ double dotprod(compl_t* vec1, compl_t* vec2, int l);
 float plgndr(int l, int m, double x);
 double gammln(double xx);
 double facs(int l, int m);
+double minpow(int m);
 void order(int l, bndT* bnd, compl_t* res1, compl_t* res2);
 compl_t* calc_order(void);
+void init_box(double x_box, double y_box, double z_box);
+void init_cells(void);
+void init_nblist(void);
+void update_nblist(void);
+void update_nblistp(int p);
+int coords2cell(double x, double y, double z);
 
 inline static int pos_mod_i(int a, int b);
 
@@ -129,7 +150,7 @@ int main(int argc, char* argv[])
 
     char outputfile_name[128] = "";
     strcpy(outputfile_name, datafolder_name);
-    strcat(outputfile_name, "/order.txt");
+    strcat(outputfile_name, "/order.txt"); // TODO: put in seperate directory in main?
     FILE* fp_order = fopen(outputfile_name, "w");
 
     strcat(buffer, "/coords_step%07d.poly");
@@ -137,19 +158,19 @@ int main(int argc, char* argv[])
     for (int step = 0; step <= mc_steps; step += 100) {
         char datafile_name[128] = "";
         // replace all %d, %lf in buffer with values and put in datafile_name
-        sprintf(datafile_name, buffer, CubesPerDim, packing_fraction, BetaP, Phi, 0);
+        sprintf(datafile_name, buffer, CubesPerDim, packing_fraction, BetaP, Phi, step);
         printf("datafile_name: %s\n", datafile_name);
 
-        read_data2(datafolder_name, 0);
+        read_data2(datafile_name, 0);
         if (is_overlap()) {
             printf("\n\n\tWARNING\n\n\nThe read file contains overlap.\nExiting.\n");
             exit(4);
         }
 
-        compl_t*order = calc_order();
-        fprintf(fp_order, "%lf ", 1);
+        // compl_t*order = calc_order();
+        fprintf(fp_order, "%lf ", 1.0);
 
-        free(order);
+        // free(order);
     }
 
     fclose(fp_order);
@@ -604,6 +625,18 @@ double facs(int l, int m)
 }
 
 /************************************************
+ *             MINPOW
+ * Powers of -1
+ ***********************************************/
+double minpow(int m)
+{
+    if ((m & 1) == 1)
+        return -1.0;
+    else
+        return 1.0;
+}
+
+/************************************************
  *             ORDER
  * Calculate q for a pair of particles
  ***********************************************/
@@ -665,6 +698,198 @@ void order(int l, bndT* bnd, compl_t* res1, compl_t* res2)
 }
 
 /************************************************
+ *             COORDS2CELL
+ * Find cell associated with particle position
+ ***********************************************/
+/* int coords2cell(double x, double y, double z)
+{
+    int i = ((int)(nx * (x + box.xhalf) * box.oneoverx) % nx) * ny * nz + ((int)(ny * (y + box.yhalf) * box.oneovery) % ny) * nz + ((int)(nz * (z + box.zhalf) * box.oneoverz) % nz);
+    return i;
+} */
+
+/************************************************
+ *             UPDATE_NBLISTP
+ * Find neighbors of a particle
+ ***********************************************/
+/* void update_nblistp(int p)
+{
+    int i, j, c, cellp, id;
+    bndT* bnd;
+    double d, dxy, dx, dy, dz;
+    cellp = InWhichCellIsThisCube[p];
+    blist[p].n = 0;
+    for (i = 26; i >= 0; i--) {
+        c = cells[cellp].buren[i];
+        for (j = cells[c].n - 1; j >= 0; j--) {
+            id = cells[c].particles[j];
+            if (id != p) {
+                dx = part[p].x - part[id].x;
+                dy = part[p].y - part[id].y;
+                dz = part[p].z - part[id].z;
+                if (!radius) {
+                    if (dx > box.xhalf)
+                        dx -= box.x;
+                    else if (dx < -box.xhalf)
+                        dx += box.x;
+                    if (dy > box.yhalf)
+                        dy -= box.y;
+                    else if (dy < -box.yhalf)
+                        dy += box.y;
+                    if (dz > box.zhalf)
+                        dz -= box.z;
+                    else if (dz < -box.zhalf)
+                        dz += box.z;
+                }
+                d = dx * dx + dy * dy + dz * dz;
+
+                if (d < bndLengthSq) {
+                    bnd = &(blist[p].bnd[blist[p].n]);
+                    blist[p].n++;
+                    //          printf ("Test: %d, %d, %d, %d, %d\n", p, id, blist[p].n, i, j);
+                    bnd->n = id;
+                    if (id > p) {
+                        d = 1.0 / sqrt(d);
+                        //            bnd->nx = dx*d;
+                        //            bnd->ny = dy*d;
+                        bnd->nz = dz * d;
+                        if (dx == 0 && dy == 0) {
+                            bnd->si = 0;
+                            bnd->co = 1;
+                        } else {
+                            dxy = 1.0 / sqrt(dx * dx + dy * dy);
+                            bnd->si = dy * dxy;
+                            bnd->co = dx * dxy;
+                        }
+                    }
+                }
+            }
+        }
+    }
+} */
+
+/************************************************
+ *             UPDATE_NBLIST
+ * Make neighbor list for all particles
+ ***********************************************/
+/* void update_nblist(void)
+{
+    int p;
+    for (p = particlestocount - 1; p >= 0; p--) {
+        update_nblistp(p);
+    }
+} */
+
+/************************************************
+ *             INIT_NBLIST
+ * Initialize the neighbor list
+ ***********************************************/
+// void init_nblist(void)
+// {
+//     int p;
+//     blist = (blistT*)malloc(sizeof(blistT) * n_part);
+//     numconn = (int*)malloc(sizeof(int) * n_part);
+//     for (p = n_part - 1; p >= 0; p--) {
+//         blist[p].bnd = (bndT*)malloc(sizeof(bndT) * MAX_NEIGHBORS);
+//         numconn[p] = 0;
+//         update_nblistp(p);
+//     }
+// }
+
+// /************************************************
+//  *             INIT_CELLS
+//  * Initialize the cell list
+//  ***********************************************/
+// void init_cells(void)
+// {
+//     n_cells = 0;
+//     int x, y, z, i, j, k;
+//     int dx, dy, dz, a, b, c;
+//     double cellsize = max_d;
+//     if (cellsize < bndLength)
+//         cellsize = bndLength;
+//     nx = floor(box.x / cellsize);
+//     ny = floor(box.y / cellsize);
+//     nz = floor(box.z / cellsize);
+//     min_cell = box.x / nx;
+//     if (box.y / ny < min_cell)
+//         min_cell = box.y / ny;
+//     if (box.z / nz < min_cell)
+//         min_cell = box.z / nz; //set min_cell
+//     printf("cells: %d, %d, %d (%lf)\n", nx, ny, nz, cellsize);
+//     n_cells = nx * ny * nz;
+//     // printf ("Cells: %d (%lf)\n", n_cells, cellsize);
+//     cells = (tcells*)malloc(n_cells * sizeof(tcells));
+//     for (x = 0; x < nx; x++)
+//         for (y = 0; y < ny; y++)
+//             for (z = 0; z < nz; z++) {
+//                 i = x * ny * nz + y * nz + z;
+//                 cells[i].x1 = x * box.x / nx - box.xhalf;
+//                 cells[i].y1 = y * box.y / ny - box.yhalf;
+//                 cells[i].z1 = z * box.z / nz - box.zhalf;
+//                 cells[i].x2 = (x + 1) * box.x / nx - box.xhalf;
+//                 cells[i].y2 = (y + 1) * box.y / ny - box.yhalf;
+//                 cells[i].z2 = (z + 1) * box.z / nz - box.zhalf;
+//                 cells[i].n = 0;
+//                 k = 0;
+//                 for (a = -1; a < 2; a++)
+//                     for (b = -1; b < 2; b++)
+//                         for (c = -1; c < 2; c++) { //adding one self as a neighbor now (handy or not??)
+//                             dx = a;
+//                             dy = b;
+//                             dz = c;
+//                             if (x + dx < 0)
+//                                 dx = nx - 1;
+//                             if (x + dx > nx - 1)
+//                                 dx = -nx + 1;
+//                             if (y + dy < 0)
+//                                 dy = ny - 1;
+//                             if (y + dy > ny - 1)
+//                                 dy = -ny + 1;
+//                             if (z + dz < 0)
+//                                 dz = nz - 1;
+//                             if (z + dz > nz - 1)
+//                                 dz = -nz + 1;
+//                             j = (x + dx) * ny * nz + (y + dy) * nz + (z + dz);
+//                             //      printf("%i   %i %i %i  %i %i %i\n",j,dx,dy,dz, x+dx,y+dy,z+dz);
+//                             cells[i].buren[k] = j;
+//                             k++;
+//                         }
+//             }
+//     for (i = 0; i < particlestocount; i++) {
+//         j = coords2cell(part[i].x, part[i].y, part[i].z);
+//         if (cells[j].n + 1 >= MAX_PART_CELL) {
+//             printf("ERROR: Too many particles in a cell!\n");
+//             exit(666);
+//         }
+//         cells[j].particles[cells[j].n] = i;
+//         part[i].cell = j;
+//         cells[j].n++;
+//     }
+// }
+
+/************************************************
+ *             INIT_BOX
+ * Initialize box parameters
+ ***********************************************/
+/* void init_box(double x_box, double y_box, double z_box)
+{
+    box[0] = x_box;
+    box.y = y_box;
+    box.z = z_box;
+    box.min = box.x;
+    if (box.min > box.y)
+        box.min = box.y;
+    if (box.min > box.z)
+        box.min = box.z;
+    box.xhalf = box.x * 0.5;
+    box.yhalf = box.y * 0.5;
+    box.zhalf = box.z * 0.5;
+    box.oneoverx = 1.0 / box.x;
+    box.oneovery = 1.0 / box.y;
+    box.oneoverz = 1.0 / box.z;
+} */
+
+/************************************************
  *             CALC_ORDER
  * Calculate q_4 for all particles
  ***********************************************/
@@ -676,7 +901,7 @@ compl_t* calc_order(void)
     double temp;
     compl_t* orderp = (compl_t*)malloc(sizeof(compl_t) * n_particles * (l * 2 + 1));
     memset(orderp, (int)0.0, sizeof(compl_t) * n_particles * (l * 2 + 1));
-    for (i = 0; i < n_particles; i++) { // TODO: ask Frank if particlestocount == n_part
+    for (i = 0; i < n_particles; i++) {
         q1 = (orderp + i * (2 * l + 1) + l);
         // for (j = 0; j < blist[i].n; j++) { // TODO I assume this is looping over neighbours
         //     if (blist[i].bnd[j].n > i) {
@@ -688,7 +913,7 @@ compl_t* calc_order(void)
             double dist2 = v3_dot(r[i], r[j]);
             if (dist2 < BONDLENGTHSQ) {
                 q2 = (orderp + j * (2 * l + 1) + l);
-                order(l, argh, q1, q2);
+                // order(l, argh, q1, q2); //TODO
             }
         }
     }
