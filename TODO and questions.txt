@@ -1,7 +1,7 @@
 TODO:
 ================================================================================================
 - make crystal_modified.c work
-
+	- Segmentation fault (core dumped)
 
 - make write_data2 to write data in the format for order_parameter
 
