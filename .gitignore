@@ -11,3 +11,6 @@ prev1*
 *.nb
 screenshot*
 *.cub
+opengl
+clusdatafolder
+old_code

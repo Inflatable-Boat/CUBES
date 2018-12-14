@@ -4,6 +4,8 @@
         "math_4d.h": "c",
         "types.h": "c",
         "string.h": "c",
-        "stat.h": "c"
+        "stat.h": "c",
+        "math_5d.h": "c",
+        "math_3d.h": "c"
     } // so that custom snippet suggestions are on top
 }

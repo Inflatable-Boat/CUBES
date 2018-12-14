@@ -1,4 +1,4 @@
-#include "math_5d.h" // https://github.com/arkanis/single-header-file-c-libs/blob/master/math_3d.h
+#include "math_3d.h" // https://github.com/arkanis/single-header-file-c-libs/blob/master/math_3d.h
 #include "mt19937.h" // Mersenne Twister (dsmft_genrand();)
 #ifdef _WIN32
 #include <direct.h> // mkdir on Windows
@@ -137,6 +137,7 @@ int main(int argc, char* argv[])
         }
         printf("\n");
     }
+    // ENDEBUG
     char buffer[128] = "datafolder/";
     strcat(buffer, labelstring);
     char datafolder_name[128] = "";

@@ -1,7 +1,6 @@
 TODO:
 ================================================================================================
-- make crystal_modified.c work
-	- Segmentation fault (core dumped)
+
 
 - make write_data2 to write data in the format for order_parameter
 
@@ -12,6 +11,8 @@ TODO:
 
 
 ------------------------------------------------------------------------------------------------
+= make crystal_modified.c work
+	= Segmentation fault (core dumped)
 = make read_data2 to read from .poly files (i.e. to make it able to read the files it makes)
 	= make the initial configuration file something to be entered on the command line
 = check read_data2, is probably still bugged.
