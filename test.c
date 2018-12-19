@@ -192,6 +192,13 @@ int main(int argc, char* argv[])
     double noot[32];
     printf("%ld, %ld\n", sizeof aap, sizeof noot); // prints 32, 256 */
 
+    /* double noot = 0, mies = 0;
+    int aap = sscanf("a 3.0 4.0 5.0\n", "%lf %lf", &noot, &mies);
+    printf("read %d arguments, namely:\n1st: %lf,\n2nd: %lf\n", aap, noot, mies); */
+    // prints 0 arguments, namely 0 and 0.
+
+
+
     return 0;
 }
 

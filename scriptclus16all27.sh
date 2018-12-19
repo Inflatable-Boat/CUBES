@@ -1,0 +1,25 @@
+#!/bin/sh
+./order_maker_nosave 16 500001 0.50  1.0 1.26610367 > logs/clusv1_16_p010_27 &
+./order_maker_nosave 16 500001 0.50  3.0 1.26610367 > logs/clusv1_16_p030_27 &
+./order_maker_nosave 16 500001 0.50  5.0 1.26610367 > logs/clusv1_16_p050_27 &
+./order_maker_nosave 16 500001 0.50  7.0 1.26610367 > logs/clusv1_16_p070_27 &
+./order_maker_nosave 16 500001 0.50  7.1 1.26610367 > logs/clusv1_16_p071_27 &
+./order_maker_nosave 16 500001 0.50  7.2 1.26610367 > logs/clusv1_16_p072_27 &
+./order_maker_nosave 16 500001 0.50  7.3 1.26610367 > logs/clusv1_16_p073_27 &
+./order_maker_nosave 16 500001 0.50  7.4 1.26610367 > logs/clusv1_16_p074_27 &
+./order_maker_nosave 16 500001 0.50  7.5 1.26610367 > logs/clusv1_16_p075_27 &
+./order_maker_nosave 16 500001 0.50  7.6 1.26610367 > logs/clusv1_16_p076_27 &
+./order_maker_nosave 16 500001 0.50  7.7 1.26610367 > logs/clusv1_16_p077_27 &
+./order_maker_nosave 16 500001 0.50  7.8 1.26610367 > logs/clusv1_16_p078_27 &
+./order_maker_nosave 16 500001 0.50  7.9 1.26610367 > logs/clusv1_16_p079_27 &
+./order_maker_nosave 16 500001 0.50  8.0 1.26610367 > logs/clusv1_16_p080_27 &
+./order_maker_nosave 16 500001 0.50  8.1 1.26610367 > logs/clusv1_16_p081_27 &
+./order_maker_nosave 16 500001 0.50  8.2 1.26610367 > logs/clusv1_16_p082_27 &
+./order_maker_nosave 16 500001 0.50  8.3 1.26610367 > logs/clusv1_16_p083_27 &
+./order_maker_nosave 16 500001 0.50  8.4 1.26610367 > logs/clusv1_16_p084_27 &
+./order_maker_nosave 16 500001 0.50  8.5 1.26610367 > logs/clusv1_16_p085_27 &
+./order_maker_nosave 16 500001 0.50  9.0 1.26610367 > logs/clusv1_16_p090_27 &
+./order_maker_nosave 16 500001 0.50  9.5 1.26610367 > logs/clusv1_16_p095_27 &
+./order_maker_nosave 16 500001 0.50 10.0 1.26610367 > logs/clusv1_16_p100_27 &
+./order_maker_nosave 16 500001 0.50 12.0 1.26610367 > logs/clusv1_16_p120_27 &
+./order_maker_nosave 16 500001 0.50 15.0 1.26610367 > logs/clusv1_16_p150_27 &

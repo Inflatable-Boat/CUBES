@@ -804,30 +804,30 @@ void save_cluss(int* cluss, int* size, int big, int nn)
     }
 
     // printf("saving to files\n");
-    if (dontsave == 0) {
-        for (i = 0; i < n_part; i++) {
-            if (cluss[i] && size[cluss[i]] > 2) {
-                int rnk = rank[cluss[i]];
-                if (rnk > 0)
-                    rnk = ((rnk - 1) % 25) + 1;
-                char ch = 'a' + rnk;
-                //          char ch = 'a' + (numconn[i]);
-                fprintf(file, "%c %lf %lf %lf %lf ", ch, part[i].x, part[i].y, part[i].z, part[i].d);
-                // fprintf(file, "%s\n", part[i].str);
-            } else {
-                char ch = 'a';
-                //          char ch = 'a' + (numconn[i]);
-                fprintf(file, "%c %lf %lf %lf %lf ", ch, part[i].x, part[i].y, part[i].z, part[i].d / 10);
-                // fprintf(file, "%s\n", part[i].str);
-            }
-            for (int d1 = 0; d1 < NDIM; d1++) {
-                for (int d2 = 0; d2 < NDIM; d2++) {
-                    fprintf(file, "%lf\t", ruud_m[i].m[d1][d2]);
-                }
-            }
-            fprintf(file, "10 %lf\n", Phi); // 10 is for slanted cubes
+    // if (dontsave == 0) {
+    for (i = 0; i < n_part; i++) {
+        if (cluss[i] && size[cluss[i]] > 2) {
+            int rnk = rank[cluss[i]];
+            if (rnk > 0)
+                rnk = ((rnk - 1) % 25) + 1;
+            char ch = 'a' + rnk;
+            //          char ch = 'a' + (numconn[i]);
+            fprintf(file, "%c %lf %lf %lf %lf ", ch, part[i].x, part[i].y, part[i].z, part[i].d);
+            // fprintf(file, "%s\n", part[i].str);
+        } else {
+            char ch = 'a';
+            //          char ch = 'a' + (numconn[i]);
+            fprintf(file, "%c %lf %lf %lf %lf ", ch, part[i].x, part[i].y, part[i].z, part[i].d / 10);
+            // fprintf(file, "%s\n", part[i].str);
         }
+        for (int d1 = 0; d1 < NDIM; d1++) {
+            for (int d2 = 0; d2 < NDIM; d2++) {
+                fprintf(file, "%lf\t", ruud_m[i].m[d1][d2]);
+            }
+        }
+        fprintf(file, "10 %lf\n", Phi); // 10 is for slanted cubes
     }
+    // } // if (dontsave == 0)
     fprintf(datafile, "%lf  %d  %d\n", percentage, numclus, maxsize);
     fclose(file);
     fclose(datafile);
@@ -890,7 +890,9 @@ void calc_clusters(int* conn, compl_t* orderp)
     }
 
     // printf("save_cluss\n");
-    save_cluss(cluss, size, big, cn);
+    if (dontsave == 0) {
+        save_cluss(cluss, size, big, cn);
+    }
     percentage = tcs / (double)n_part;
     maxsize = big;
     numclus = cn - 1;

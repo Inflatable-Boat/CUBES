@@ -1,12 +1,13 @@
 TODO:
 ================================================================================================
+- make nice fluids for densities 6-9 (go as high as possible)
+
+- make the clusters visible in normal visualization format, call this program visualize3
 
 
 - make write_data2 to write data in the format for order_parameter
 
 - make output file name(s) readable from command line
-
-- understand crystal.c?
 
 
 
@@ -28,11 +29,17 @@ TODO:
 
 Notes:
 ================================================================================================
+Last meeting:
+- make "nice fluids library" for densities 6-9 (go as high as possible)
+	- do this by making a low density fluid, crushing as fast as possible until reaching
+	  desired density and checking if the system has order at this point.
+- work on communication
+
+
+
+------------------------------------------------------------------------------------------------
 Now the idea is to just use the crystal.c file, but use my own read_file method and convert
 my positions "r[N]" into particle array called "p".
-
-
-
 ------------------------------------------------------------------------------------------------
 Last runs:
 - _6fix: apply per bd cond upon find
@@ -72,6 +79,9 @@ Since overlap seems to occur right at the boundary of the box, maybe something f
 
 Questions:
 ================================================================================================
+
+
+------------------------------------------------------------------------------------------------
 = Ask Frank:
 	= What is typedef struct {double nz; double si; double co ;int n;}bndT;
 		= a bond between two particles (i.e. they are close enough to each other,
@@ -81,9 +91,5 @@ Questions:
 		= a list of pointers to these bndTs, with the length of this list.
 	= Is particlestocount == n_part always true?
 		= yes
-
-
-
-------------------------------------------------------------------------------------------------
 = Randomly orienting, is 12 rotations of \pm pi/2 around random axes aligned with box enough?
-	= yes
+	= yes, probably
