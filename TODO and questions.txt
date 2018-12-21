@@ -1,6 +1,7 @@
 TODO:
 ================================================================================================
 - make nice fluids for densities 6-9 (go as high as possible)
+	- make v3 do: stop volume moves after reaching desired pf, i.e. make it do NVT
 
 - make the clusters visible in normal visualization format, call this program visualize3
 
@@ -29,6 +30,9 @@ TODO:
 
 Notes:
 ================================================================================================
+- v2_read_crush.c will start at low density and crush it to the specified density, i.e.
+  put pressure to 10000 until the desired density is reached, making a snapshot at that moment.
+
 Last meeting:
 - make "nice fluids library" for densities 6-9 (go as high as possible)
 	- do this by making a low density fluid, crushing as fast as possible until reaching
