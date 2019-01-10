@@ -1,7 +1,9 @@
 TODO:
 ================================================================================================
-- make nice fluids for densities 6-9 (go as high as possible)
-	- make v3 do: stop volume moves after reaching desired pf, i.e. make it do NVT
+- make nice fluids for pressures 6-9 (go as high as possible) and differing angles (see notes):
+	### - make v3 do: stop volume moves after reaching desired pf, i.e. make it do NVT
+	- make v3 do: do one run and save inside a file at which snapshots/after how many
+	  runs we find 0.4x (for x = 0, 1, ... , 9) and 0.50
 
 - make the clusters visible in normal visualization format, call this program visualize3
 
@@ -9,6 +11,8 @@ TODO:
 - make write_data2 to write data in the format for order_parameter
 
 - make output file name(s) readable from command line
+
+- make readme of visualization tool, explain how h_slc_cl_read.c works?
 
 
 
@@ -30,6 +34,15 @@ TODO:
 
 Notes:
 ================================================================================================
+- slant angles we wish to study: arccos[x] (for x = 0.0, 0.1, ... , 0.4), in radians:
+	1.57079632679490, 1.47062890563334, 1.36943840600457, 1.26610367277950, 1.15927948072741
+	in degrees:   90, 84.26,            78.46,            72.54,            66.42.
+	(0.5, 60 degrees, 1.04719755119660 we will not do due to six-fold symmetry possibility)
+- OOPS, I don't need 16 programs running and letting them stop at different packing fractions!
+	Because they start at the same time, their seed is the same, so each simulation is
+	exactly the same! Just save the snapshot when we have reached a higher packing fraction.
+	Implementing this idea in v3_read_crush.c
+
 - v2_read_crush.c will start at low density and crush it to the specified density, i.e.
   put pressure to 10000 until the desired density is reached, making a snapshot at that moment.
 
@@ -96,4 +109,4 @@ Questions:
 	= Is particlestocount == n_part always true?
 		= yes
 = Randomly orienting, is 12 rotations of \pm pi/2 around random axes aligned with box enough?
-	= yes, probably
+	= yes, probably, we will check this using the positional order parameter

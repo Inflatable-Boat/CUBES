@@ -1,7 +1,7 @@
 Usage of h_slc_cl_read.c
 ========================
 
-Compile on linux with `gcc -Wall -O3 h_slc_cl_read.c -lm -o v1read`.  
+Compile on Linux with `gcc -Wall -O3 h_slc_cl_read.c -lm -o v1read`. On Windows, `-lm` is not necessary.  
 `-Wall` for all warnings, `-O3` for maximum optimization, `-lm` to link math library `math.h`.  
 Note the program also needs the files `math_3d.h` and `mt19937.h` (also in this repository) in the same directory as `h_slc_cl_read.c`.
 
@@ -32,8 +32,12 @@ Lastly it also outputs snapshots of the system every 100 steps into e.g. `datafo
 ## Examples
 
 Example 1: `./v1read c 12 500001 0.50 8.0 1.26610367`  
-**c**reates a system of **12** cubes per dimension, runs for **500001** steps, 
-start at a packing fraction of **0.50**, set pressure to **8.0**, set slant angle of cubes to **1.26610367** radians (~72 degrees).  
+**c**reates a system of **12** cubes per dimension,  
+runs for **500001** steps,  
+start at a packing fraction of **0.50**,  
+set pressure to **8.0**,  
+set slant angle of cubes to **1.26610367** radians (~72 degrees).
+
 Example 2: `./v1read r coords_step0500000.poly 500001 0.60 1.0 1.26610367`  
 **r**eads file **coords_step0500000.poly**, runs for **500001** steps,
 and saves it in datafolder/v1_XXpf**0.60**p**01.0**a**1.27**, 
@@ -61,7 +65,6 @@ v0 = ( L, 0, 0 )
 v1 = ( 0, L, 0 )
 v2 = ( L cos(PHI), 0, L sin(PHI) )
 
----
 ## Example:
 
 The following would represent one slanted cube, placed in the origin, of edge length 1, unrotated from its default orientation, with a slant angle of 1.4 radians

@@ -197,6 +197,11 @@ int main(int argc, char* argv[])
     printf("read %d arguments, namely:\n1st: %lf,\n2nd: %lf\n", aap, noot, mies); */
     // prints 0 arguments, namely 0 and 0.
 
+    /* double aap = 0.1;
+    printf("aap is %lf\n", aap); // 0.1
+    printf("aap is now %lf\n", (aap+=0.1) - 0.1); // 0.1
+    printf("aap is %lf\n", aap); // 0.2 */
+    
 
 
     return 0;

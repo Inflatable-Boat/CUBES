@@ -1,7 +1,6 @@
 datafolder
 volumes
 densities
-old_scripts
 lengths
 times
 logs
@@ -13,4 +12,6 @@ screenshot*
 *.cub
 opengl
 clusdatafolder
-old_code
+old_*
+old_scripts
+
