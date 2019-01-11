@@ -231,7 +231,7 @@ int main(int argc, char* argv[])
                     printf("saving this step number to file %s\n", pack_frac_string);
                     fprintf(fp_stepnumbers, "%d\n", step);
 
-                    pack_frac_check += 0.1;
+                    pack_frac_check += 0.01;
                     if (pack_frac_check > 0.5)
                         return 0;
                 }

@@ -202,7 +202,9 @@ int main(int argc, char* argv[])
     printf("aap is now %lf\n", (aap+=0.1) - 0.1); // 0.1
     printf("aap is %lf\n", aap); // 0.2 */
     
-
+    double aap = 1.570796326794896558;
+    /////////////1.570796326794896558
+    const double not = M_PI / 2;
 
     return 0;
 }
