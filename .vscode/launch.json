@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/sl10_cl.exe",
+            "program": "${workspaceFolder}/a.out",
             "args": ["1000","0.90", "10","1.2661036727795"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

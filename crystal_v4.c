@@ -1,12 +1,12 @@
-#include "math_3d.h"
+// #include "math_3d.h"
 #include <malloc.h>
-#include <math.h>
-#include <stdbool.h>
-#include <stdio.h>
+// #include <math.h>
+// #include <stdbool.h>
+// #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
+// #include <string.h>
+// #include <time.h>
+// #include <unistd.h>
 #ifdef _WIN32
 #include <direct.h> // mkdir on Windows
 #elif __linux__
@@ -28,24 +28,23 @@ int nbnd_cuttoff = 4; //Number of correlated bonds for a crystalline particle
 double obnd_cuttoff = 0.0; //Order to be in the same cluster (0.0 for all touching clusters 0.9 to see defects)
 
 //////////////////////////////////////////////////////////////// my additions
-const char labelstring[] = "v3_%02dpf%04.2lfp%04.1lfa%04.2lf";
+extern const char labelstring[];
 // e.g. sl10pf0.50p08.0a1.25:
 // 10 CubesPerDim, pack_frac 0.50, pressure 8.0, angle 1.25
-const char usage_string[] = "usage: program.exe CubesPerDim \
-mc_steps packing_fraction BetaP Phi\n";
-static int CubesPerDim;
-static int mc_steps;
-static double packing_fraction;
-static double BetaP;
-static double Phi;
-static int n_particles;
-static double ruud_box[3];
-static vec3_t ruud_r[N]; // position of center of cube
-static mat4_t ruud_m[N]; // rotation matrix of cube
-static vec3_t Normal[3];
-static double SinPhi;
-static double CosPhi;
-static double ParticleVolume;
+/* const char usage_string[] = "usage: program.exe CubesPerDim \
+mc_steps packing_fraction BetaP Phi\n"; */
+extern int CubesPerDim;
+extern int mc_steps;
+extern double packing_fraction;
+extern double BetaP;
+extern double Phi;
+extern int n_particles;
+extern double box[NDIM];
+extern vec3_t rr[N]; // position of center of cube
+extern mat4_t mm[N]; // rotation matrix of cube
+extern double SinPhi;
+extern double CosPhi;
+extern double ParticleVolume;
 //////////////////////////////////////////////////////////////// end of my additions
 
 typedef struct {
@@ -98,7 +97,7 @@ typedef struct {
     double oneoverz;
     double min;
 } tbox_t;
-tbox_t box;
+tbox_t tbox;
 
 typedef struct {
     double x;
@@ -139,18 +138,18 @@ double dist_part(int i, int j)
     double dx = part[i].x - part[j].x;
     double dy = part[i].y - part[j].y;
     double dz = part[i].z - part[j].z;
-    if (dx > box.xhalf)
-        dx = dx - box.x;
-    else if (dx < -box.xhalf)
-        dx = dx + box.x;
-    if (dy > box.yhalf)
-        dy = dy - box.y;
-    else if (dy < -box.yhalf)
-        dy = dy + box.y;
-    if (dz > box.zhalf)
-        dz = dz - box.z;
-    else if (dz < -box.zhalf)
-        dz = dz + box.z;
+    if (dx > tbox.xhalf)
+        dx = dx - tbox.x;
+    else if (dx < -tbox.xhalf)
+        dx = dx + tbox.x;
+    if (dy > tbox.yhalf)
+        dy = dy - tbox.y;
+    else if (dy < -tbox.yhalf)
+        dy = dy + tbox.y;
+    if (dz > tbox.zhalf)
+        dz = dz - tbox.z;
+    else if (dz < -tbox.zhalf)
+        dz = dz + tbox.z;
     return dx * dx + dy * dy + dz * dz;
 }
 
@@ -320,7 +319,7 @@ double dotprod(compl_t* vec1, compl_t* vec2, int l)
  ***********************************************/
 int coords2cell(double x, double y, double z)
 {
-    int i = ((int)(nx * (x + box.xhalf) * box.oneoverx) % nx) * ny * nz + ((int)(ny * (y + box.yhalf) * box.oneovery) % ny) * nz + ((int)(nz * (z + box.zhalf) * box.oneoverz) % nz);
+    int i = ((int)(nx * (x + tbox.xhalf) * tbox.oneoverx) % nx) * ny * nz + ((int)(ny * (y + tbox.yhalf) * tbox.oneovery) % ny) * nz + ((int)(nz * (z + tbox.zhalf) * tbox.oneoverz) % nz);
     return i;
 }
 
@@ -344,18 +343,18 @@ void update_nblistp(int p)
                 dy = part[p].y - part[id].y;
                 dz = part[p].z - part[id].z;
 
-                if (dx > box.xhalf)
-                    dx -= box.x;
-                else if (dx < -box.xhalf)
-                    dx += box.x;
-                if (dy > box.yhalf)
-                    dy -= box.y;
-                else if (dy < -box.yhalf)
-                    dy += box.y;
-                if (dz > box.zhalf)
-                    dz -= box.z;
-                else if (dz < -box.zhalf)
-                    dz += box.z;
+                if (dx > tbox.xhalf)
+                    dx -= tbox.x;
+                else if (dx < -tbox.xhalf)
+                    dx += tbox.x;
+                if (dy > tbox.yhalf)
+                    dy -= tbox.y;
+                else if (dy < -tbox.yhalf)
+                    dy += tbox.y;
+                if (dz > tbox.zhalf)
+                    dz -= tbox.z;
+                else if (dz < -tbox.zhalf)
+                    dz += tbox.z;
 
                 d = dx * dx + dy * dy + dz * dz;
 
@@ -425,17 +424,17 @@ void init_cells(void)
     double cellsize = bndLength;
     // if (cellsize < bndLength)
     //     cellsize = bndLength;
-    double ruud_min_cell_size = sqrt(3 + CosPhi);
+    double ruud_min_cell_size = sqrt(3 + 2 * CosPhi);
     if (cellsize < ruud_min_cell_size)
         cellsize = ruud_min_cell_size;
-    nx = floor(box.x / cellsize);
-    ny = floor(box.y / cellsize);
-    nz = floor(box.z / cellsize);
-    min_cell = box.x / nx;
-    if (box.y / ny < min_cell)
-        min_cell = box.y / ny;
-    if (box.z / nz < min_cell)
-        min_cell = box.z / nz; //set min_cell
+    nx = floor(tbox.x / cellsize);
+    ny = floor(tbox.y / cellsize);
+    nz = floor(tbox.z / cellsize);
+    min_cell = tbox.x / nx;
+    if (tbox.y / ny < min_cell)
+        min_cell = tbox.y / ny;
+    if (tbox.z / nz < min_cell)
+        min_cell = tbox.z / nz; //set min_cell
     // printf("cells: %d, %d, %d (%lf)\n", nx, ny, nz, cellsize);
     n_cells = nx * ny * nz;
     // printf ("Cells: %d (%lf)\n", n_cells, cellsize);
@@ -444,12 +443,12 @@ void init_cells(void)
         for (y = 0; y < ny; y++)
             for (z = 0; z < nz; z++) {
                 i = x * ny * nz + y * nz + z;
-                cells[i].x1 = x * box.x / nx - box.xhalf;
-                cells[i].y1 = y * box.y / ny - box.yhalf;
-                cells[i].z1 = z * box.z / nz - box.zhalf;
-                cells[i].x2 = (x + 1) * box.x / nx - box.xhalf;
-                cells[i].y2 = (y + 1) * box.y / ny - box.yhalf;
-                cells[i].z2 = (z + 1) * box.z / nz - box.zhalf;
+                cells[i].x1 = x * tbox.x / nx - tbox.xhalf;
+                cells[i].y1 = y * tbox.y / ny - tbox.yhalf;
+                cells[i].z1 = z * tbox.z / nz - tbox.zhalf;
+                cells[i].x2 = (x + 1) * tbox.x / nx - tbox.xhalf;
+                cells[i].y2 = (y + 1) * tbox.y / ny - tbox.yhalf;
+                cells[i].z2 = (z + 1) * tbox.z / nz - tbox.zhalf;
                 cells[i].n = 0;
                 k = 0;
                 for (a = -1; a < 2; a++)
@@ -507,150 +506,24 @@ void getline_number(char* str, int n, FILE* f)
 
 /************************************************
  *             INIT_BOX
- * Initialize box parameters
+ * Initialize tbox parameters
  ***********************************************/
 void init_box(double x_box, double y_box, double z_box)
 {
-    box.x = x_box;
-    box.y = y_box;
-    box.z = z_box;
-    box.min = box.x;
-    if (box.min > box.y)
-        box.min = box.y;
-    if (box.min > box.z)
-        box.min = box.z;
-    box.xhalf = box.x * 0.5;
-    box.yhalf = box.y * 0.5;
-    box.zhalf = box.z * 0.5;
-    box.oneoverx = 1.0 / box.x;
-    box.oneovery = 1.0 / box.y;
-    box.oneoverz = 1.0 / box.z;
-}
-
-/************************************************
- *             LOAD
- * Read in coordinate file
- ***********************************************/
-int load(tpart_t** pp, int* np, int close)
-{
-    // static FILE* fp = NULL;
-    // static double rstart = 0;
-    // particlestocount = 0;
-    //  double xa,xb,ya,yb,za,zb;
-    // if (close && fp) {
-    //     fclose(fp);
-    //     return -1;
-    // }
-    int n;
-    // char str[256];
-    tpart_t* p;
-    // if (fp == NULL)
-    //     fp = fopen(filename, "r");
-    // if (fp) {
-    // getline_number(str, 256, fp);
-    // if (sscanf(str, "%i\n", np) != 1) {
-    //     if (sscanf(str, "&%i\n", np) != 1)
-    //         return -1; //// new snapshot
-    // }
-    *np = n_particles;
-
-    // getline_number(str, 256, fp);
-    /*    sscanf(str,"%le %le\n",&xa,&xb);
-    getline_number(str,256,fp);
-    sscanf(str,"%le %le\n",&ya,&yb);
-    getline_number(str,256,fp);
-    sscanf(str,"%le %le\n",&za,&zb);*/
-
-    // int lengths = sscanf(str, "%lf %lf %lf\n", &xsize, &ysize, &zsize);
-    // if (lengths != 3) {
-    //     printf("Problem! Boxsize unknown.\n");
-    //     fclose(fp);
-    //     exit(666);
-    // }
-    init_box(ruud_box[0], ruud_box[1], ruud_box[2]);
-
-    p = (tpart_t*)malloc(*np * sizeof(tpart_t));
-
-    // double t1, t2, t3, t4;
-    // int ti;
-    // avr_d = 0.0;
-    // max_d = 0.0;
-    // char type;
-    for (n = 0; n < *np; n++) {
-        // getline_number(str, 256, fp);
-        // int r;
-        // r = sscanf(str, "%c %le %le %le %le %[^\n]s\n", &type, &t1, &t2, &t3, &t4, p[n].str);
-
-        // if (r >= 4) {
-        p[n].x = ruud_r[n].x;
-        p[n].y = ruud_r[n].y;
-        p[n].z = ruud_r[n].z;
-        p[n].c = 'a';
-        // } else {
-        //     printf("Error reading coords.in\n");
-        //     exit(666);
-        // }
-        // if (r >= 5) {
-        //     if (rstart == 0) {
-        //         particlestocount++;
-        //         rstart = t4;
-        //     } else if (t4 == rstart)
-        //         particlestocount++;
-        //     else
-        //         rstart = -1;
-        //     p[n].d = t4;
-        //     if (rstart > 0)
-        //         avr_d += p[n].d;
-        // } else {
-        p[n].d = 1.0;
-        // particlestocount = *np;
-        //     avr_d++;
-        // }
-        // if (max_d < p[n].d)
-        //     max_d = p[n].d;
-        //      p[n].x-=(xa+xb)*0.5;
-        //      p[n].y-=(ya+yb)*0.5;
-        //      p[n].z-=(za+zb)*0.5;
-        //      if(p[n].x > xb-xa || p[n].x < xa-xb) printf("ERROR: Particle outside box\n");
-        //      if(p[n].y > yb-ya || p[n].y < ya-yb) printf("ERROR: Particle outside box\n");
-        //      if(p[n].z > zb-za || p[n].z < za-zb) printf("ERROR: Particle outside box\n");
-        // p[n].r = p[n].d * 0.5;
-        /*    for(n=0;n<n_part;n++){
-      p[n].x -= (xb+xa)/2.0;
-      p[n].y -= (yb+ya)/2.0;
-      p[n].z -= (zb+za)/2.0;
-    }*/
-    }
-
-    // avr_d /= (double)particlestocount;
-    *pp = p;
-    // } else {
-    //     printf("Error coord file not found!\n");
-    //     exit(666);
-    // }
-    //  printf ("Particles: %d (%lf, %lf)\n", particlestocount, avr_d, max_d);
-    particlestocount = *np;
-    return 1; ////
-}
-
-/************************************************
- *             LOAD_PARTICLES
- * Read file and initialize stuff
- ***********************************************/
-int load_particles()
-{
-    if (load(&part, &n_part, 0) == -1) {
-        printf("something went wrong in load\n");
-        exit(1);
-    }
-    // return -1;
-    //  bndLength=1.4*avr_d;
-    bndLengthSq = bndLength * bndLength;
-    // printf("initializing cells\n");
-    init_cells();
-    // printf("initializing nblist\n");
-    init_nblist();
-    return 0; //// not end of file, continue
+    tbox.x = x_box;
+    tbox.y = y_box;
+    tbox.z = z_box;
+    tbox.min = tbox.x;
+    if (tbox.min > tbox.y)
+        tbox.min = tbox.y;
+    if (tbox.min > tbox.z)
+        tbox.min = tbox.z;
+    tbox.xhalf = tbox.x * 0.5;
+    tbox.yhalf = tbox.y * 0.5;
+    tbox.zhalf = tbox.z * 0.5;
+    tbox.oneoverx = 1.0 / tbox.x;
+    tbox.oneovery = 1.0 / tbox.y;
+    tbox.oneoverz = 1.0 / tbox.z;
 }
 
 /************************************************
@@ -770,12 +643,12 @@ void save_cluss(int* cluss, int* size, int big, int nn)
         file = fopen(fn, "a");
         datafile = fopen(dfn, "a");
     }
-    // printf("nn = %d, n_part = %d, boxsizes: %lf %lf %lf\n", nn, n_part, box.x, box.y, box.z);
+    // printf("nn = %d, n_part = %d, boxsizes: %lf %lf %lf\n", nn, n_part, tbox.x, tbox.y, tbox.z);
     fprintf(file, "&%i \n", n_part);
-    //   printf("%f %f\n",-box.xhalf,box.xhalf);
-    //   printf("%f %f\n",-box.yhalf,box.yhalf);
-    //   printf("%f %f\n",-box.zhalf,box.zhalf);
-    fprintf(file, "%.12lf %.12lf %.12lf\n", box.x, box.y, box.z);
+    //   printf("%f %f\n",-tbox.xhalf,tbox.xhalf);
+    //   printf("%f %f\n",-tbox.yhalf,tbox.yhalf);
+    //   printf("%f %f\n",-tbox.zhalf,tbox.zhalf);
+    fprintf(file, "%.12lf %.12lf %.12lf\n", tbox.x, tbox.y, tbox.z);
 
     // printf("defining sorta ");
     int* sorta = malloc(sizeof(int) * nn);
@@ -822,7 +695,7 @@ void save_cluss(int* cluss, int* size, int big, int nn)
         }
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
-                fprintf(file, "%lf\t", ruud_m[i].m[d1][d2]);
+                fprintf(file, "%lf\t", mm[i].m[d1][d2]);
             }
         }
         fprintf(file, "10 %lf\n", Phi); // 10 is for slanted cubes
@@ -902,243 +775,102 @@ void calc_clusters(int* conn, compl_t* orderp)
     free(size);
 }
 
-/// This function reads the initial configuration of the system,
-/// it reads data in the same format as it outputs data.
-/// It also initializes SinPhi, CosPhi, Normal, ParticleVolume, r, and m (rot. mx.).
-void read_data2(char* init_file, int is_not_first_time)
+/************************************************
+ *             WRITE_DATA2
+ ***********************************************/
+void write_data2(int step, char datafolder_name[128])
 {
-    FILE* pFile = fopen(init_file, "r");
-    if (NULL == pFile) {
-        printf("file not found: %s\n", init_file);
-        exit(1);
-    }
-    // read n_particles
-    if (!fscanf(pFile, "%d", &n_particles)) {
-        printf("failed to read num of particles\n");
-        exit(2);
-    }
-    if (n_particles < 1 || n_particles > N) {
-        printf("num particles %d, go into code and change N (max nparticles)\n", n_particles);
-        exit(2);
-    }
-    double garbagef; // garbage (double) float
+    char buffer[128];
+    strcpy(buffer, datafolder_name);
+    strcat(buffer, "/clustcoords_step%07d.poly");
 
-    // three zeroes which do nothing
-    if (!fscanf(pFile, "%lf %lf %lf", &garbagef, &garbagef, &garbagef)) {
-        printf("failed to read three zeroes\n");
-        exit(2);
-    }
-
+    char datafile[128];
+    sprintf(datafile, buffer, step); // replace %07d with step and put in output_file.
+    
+    FILE* fp = fopen(datafile, "w");
+    fprintf(fp, "%d\n", n_particles);
+    fprintf(fp, "0.0\t0.0\t0.0\n");
     for (int d = 0; d < 9; ++d) { // dimensions of box
         if (d % 4 == 0) {
-            if (!fscanf(pFile, "%lf\t", &(ruud_box[d / 4]))) {
-                printf("failed to read dimensions of box\n");
-                exit(2);
-            }
+            fprintf(fp, "%lf\t", box[d / 4]);
         } else {
-            if (!fscanf(pFile, "%lf\t", &garbagef)) {
-                printf("failed to read dimensions of box\n");
-                exit(2);
-            }
+            fprintf(fp, "0.000000\t");
         }
+        if (d % 3 == 2)
+            fprintf(fp, "\n");
     }
-
-    // now read the particles
-    bool rf = true; // read flag. if false, something went wrong
     for (int n = 0; n < n_particles; ++n) {
         // We use pointers to loop over the x, y, z members of the vec3_t type.
-        double* pgarbage = &(ruud_r[n].x);
-        for (int d = 0; d < NDIM; ++d) // the position of the center of cube
-            rf = rf && fscanf(pFile, "%lf\t", (pgarbage + d));
-        rf = rf && fscanf(pFile, "%lf\t", &garbagef); // Edge_Length == 1
+        double* pgarbage = &(r[n].x);
+        for (int d = 0; d < NDIM; ++d)
+            fprintf(fp, "%lf\t", *(pgarbage + d)); // the position of the center of cube
+        fprintf(fp, "1\t"); // Edge_Length == 1
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
-                rf = rf && fscanf(pFile, "%lf\t", &(ruud_m[n].m[d1][d2]));
-                // rf = rf && fscanf(pFile, "%lf\t", &garbagef);
+                fprintf(fp, "%lf\t", m[n].m[d1][d2]);
             }
         }
-        rf = rf && fscanf(pFile, "%lf", &garbagef);
-        if (n == 0) {
-            rf = rf && fscanf(pFile, "%lf\n", &Phi); // only read Phi once
-        } else {
-            if (EOF == fscanf(pFile, "%lf\n", &garbagef)) {
-                printf("reached end of read file unexpectedly\n");
-                exit(2);
-            }
-        }
+        fprintf(fp, "10 %lf\n", Phi); // 10 is for slanted cubes.
     }
-    if (!rf) { // if read flag false, something went wrong.
-        printf("failed to read (one of the) particles\n");
-        exit(2);
-    }
-    fclose(pFile);
-
-    if (!is_not_first_time) { // only initialize these once
-        SinPhi = sin(Phi);
-        CosPhi = cos(Phi);
-        ParticleVolume = SinPhi; // Edge_Length == 1
-
-        // now initialize the normals, put everything to zero first:
-        for (int i = 0; i < 3; i++) {
-            Normal[i].x = Normal[i].y = Normal[i].z = 0;
-        }
-        Normal[0].x = SinPhi; // normal on x-dir
-        Normal[0].z = -CosPhi;
-        Normal[1].y = 1.; // normal on y-dir
-        Normal[2].z = 1.; // normal on z-dir
-    }
-
-    // initialize_cell_list();
-}
-
-/// Put parsing the commandline in a function.
-/// If something goes wrong, return != 0
-int parse_commandline(int argc, char* argv[])
-{
-    if (argc != 6) {
-        printf("need 5 arguments:\n");
-        return 3;
-    }
-    if (EOF == sscanf(argv[1], "%d", &CubesPerDim)) {
-        printf("reading CubesPerDim has failed\n");
-        return 1;
-    };
-    if (EOF == sscanf(argv[2], "%d", &mc_steps)) {
-        printf("reading mc_steps has failed\n");
-        return 1;
-    };
-    if (EOF == sscanf(argv[3], "%lf", &packing_fraction)) {
-        printf("reading packing_fraction has failed\n");
-        return 1;
-    };
-    if (EOF == sscanf(argv[4], "%lf", &BetaP)) {
-        printf("reading BetaP has failed\n");
-        return 1;
-    };
-    if (EOF == sscanf(argv[5], "%lf", &Phi)) {
-        printf("reading Phi has failed\n");
-        return 1;
-    };
-    if (CubesPerDim < 1 || CubesPerDim > 20) {
-        printf("0 < CubesPerDim < 21\n");
-        return 2;
-    }
-    if (mc_steps < 100) {
-        printf("mc_steps > 99\n");
-        return 2;
-    }
-    if (packing_fraction <= 0 || packing_fraction > 1) {
-        printf("0 < packing_fraction <= 1\n");
-        return 2;
-    }
-    if (BetaP <= 0 || BetaP >= 100) {
-        printf("0 < BetaP < 100\n");
-        return 2;
-    }
-    if (Phi <= 0 || Phi > M_PI / 2) {
-        printf("0 < Phi < 1.57079632679\n");
-        return 2;
-    }
-
-    return 0; // no exceptions, run the program
+    fclose(fp);
 }
 
 /************************************************
  *             MAIN
  ***********************************************/
-int main(int argc, char** argv)
+int crystal(int step)
 {
     // int f = 0, i = 0;
     compl_t* order = NULL;
     int* connections = NULL;
-
-    if (parse_commandline(argc, argv)) { // if ... parsing fails
-        printf(usage_string);
-        return 1;
-    };
 
     char buffer[128] = "datafolder/";
     strcat(buffer, labelstring);
     char datafolder_name[128] = "";
     // replace all %d, %lf in buffer with values and put in datafolder_name
     sprintf(datafolder_name, buffer, CubesPerDim, packing_fraction, BetaP, Phi);
-    printf("datafolder_name: %s\n", datafolder_name);
 
-// make the folder to store all the data in, if it already exists do nothing.
-#ifdef _WIN32
-    mkdir("clusdatafolder");
-#elif __linux__
-    // Linux needs me to set rights, this gives rwx to me and just r to all others.
-    mkdir("clusdatafolder", S_IRWXU | S_IRGRP | S_IROTH);
-#elif
-    printf("Please use Linux or Windows\n");
-    exit(3);
-#endif
+    // Now 
 
-    // char outputfile_name[128] = "";
-    // strcpy(outputfile_name, datafolder_name);
-    // strcat(outputfile_name, "/order.txt"); // TODO: put in separate directory in main?
-    // FILE* fp_order = fopen(outputfile_name, "w");
+    // int load(tpart_t** pp, int* np, int close):
+    tpart_t* p;
+    n_part = n_particles;
+    init_box(box[0], box[1], box[2]);
+    p = (tpart_t*)malloc(n_part * sizeof(tpart_t));
 
-    strcat(buffer, "/coords_step%07d.poly");
-
-    for (int step = 0; step <= mc_steps; step += 100) {
-        char datafile_name[128] = "";
-        // replace all %d, %lf in buffer with values and put in datafile_name
-        sprintf(datafile_name, buffer, CubesPerDim, packing_fraction, BetaP, Phi, step);
-        // printf("datafile_name: %s\n", datafile_name);
-
-        read_data2(datafile_name, step);
-        // filename = datafile_name;
-        // if (is_overlap()) {
-        //     printf("\n\n\tWARNING\n\n\nThe read file contains overlap.\nExiting.\n");
-        //     exit(4);
-        // }
-
-        if (load_particles() == -1) {
-            printf("something went wrong in load_particles \
-huh this message shouldn't be visible\n");
-            exit(2);
-        }
-        // printf("calculating order\n");
-        order = calc_order();
-        // printf("calculating connections\n");
-        connections = calc_conn(order);
-        // printf("calculating clusters\n");
-        calc_clusters(connections, order);
-        free(order);
-        free(connections);
-        free(part);
-        free(cells);
-        free(numconn);
-        for (int i = 0; i < n_part; i++)
-            free(blist[i].bnd);
-        free(blist);
-
-        printf("%4.1lf%%\t(step %d of %d)", 100.0 * step / mc_steps, step, mc_steps);
+    for (int n = 0; n < n_part; n++) {
+        p[n].x = rr[n].x;
+        p[n].y = rr[n].y;
+        p[n].z = rr[n].z;
+        p[n].c = 'a';
+        p[n].d = 1.0;
     }
-    printf("\n");
 
-    // fclose(fp_order);
+    part = p;
+    particlestocount = n_part;
+    // end load
 
-    // while (load_particles() != -1) {
-    //     printf("Frame %d: ", f);
-    //     f++;
-    //     order = calc_order();
-
-    //     connections = calc_conn(order);
-    //     calc_clusters(connections, order);
-    //     free(order);
-    //     free(connections);
-    //     free(part);
-    //     free(cells);
-    //     free(numconn);
-    //     for (i = 0; i < n_part; i++)
-    //         free(blist[i].bnd);
-    //     free(blist);
+    // load_particles():
+    // if (load(&part, &n_part, 0) == -1) {
+    //     printf("something went wrong in load\n");
+    //     exit(1);
     // }
-    // if (i == 0)
-    //     exit(999);
-    // load(NULL, NULL, 1);
+    bndLengthSq = bndLength * bndLength;
+    init_cells();
+    init_nblist();
+    // end load particles
+    
+    order = calc_order();
+    connections = calc_conn(order);
+    calc_clusters(connections, order);
+    free(order);
+    free(connections);
+    free(part);
+    free(cells);
+    free(numconn);
+    for (int i = 0; i < n_part; i++)
+        free(blist[i].bnd);
+    free(blist);
+
     return 0;
 }

@@ -4,6 +4,7 @@
 #include <stdlib.h> // malloc(), free
 #include <time.h> // time()
 #include <stdbool.h>
+#include "test2.c"
 
 inline static double ran(double low, double high)
 {
@@ -202,9 +203,10 @@ int main(int argc, char* argv[])
     printf("aap is now %lf\n", (aap+=0.1) - 0.1); // 0.1
     printf("aap is %lf\n", aap); // 0.2 */
     
-    double aap = 1.570796326794896558;
-    /////////////1.570796326794896558
-    const double not = M_PI / 2;
+    aap = 3;
+    add_one_to_aap();
+    printf("%d\n", aap);
+
 
     return 0;
 }

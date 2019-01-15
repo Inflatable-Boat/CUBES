@@ -6,7 +6,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "gcc -g -Wall -O3 hard_slanted_cubes_celllist.c -lm -o sl10_cl.exe",
+            "command": "gcc -g -Wall -O3 test.c -lm -o a.out",
             "group": {
                 "kind": "build",
                 "isDefault": true
