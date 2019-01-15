@@ -203,7 +203,7 @@ int main(int argc, char* argv[])
             double move_acceptance = (double)mov_accepted / mov_attempted;
             double rotation_acceptance = (double)rot_accepted / rot_attempted;
             double volume_acceptance = (double)vol_accepted / vol_attempted;
-            printf("%d %.3lf %.3lf   %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf\n",
+            printf("%d %.3lf %.3lf   %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf   ",
                 step, box[0] * box[1] * box[2],
                 density,
                 move_acceptance,

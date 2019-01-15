@@ -36,7 +36,7 @@ mc_steps packing_fraction BetaP Phi\n"; */
 extern int CubesPerDim;
 extern int mc_steps;
 extern double packing_fraction;
-extern double BetaP;
+double BetaP_hack = 1.0; // TODO: fix this
 extern double Phi;
 extern int n_particles;
 extern double box[NDIM];
@@ -70,7 +70,7 @@ blistT_t* blist;
 int* numconn;
 double xsize, ysize, zsize;
 
-int dontsave = 0;
+// int dontsave = 0;
 double bndLengthSq;
 int n_part;
 char* filename;
@@ -592,7 +592,7 @@ int* calc_conn(compl_t* orderp) //calculates "connected" particles
  * Output snapshot in which clusters are colored
  * Fluid particles printed small
  ***********************************************/
-void save_cluss(int* cluss, int* size, int big, int nn)
+void save_cluss(int* cluss, int* size, int big, int nn, int step)
 {
     int i;
     static int first = 1;
@@ -611,44 +611,68 @@ void save_cluss(int* cluss, int* size, int big, int nn)
     // // replace all %d, %lf in buffer with values and put in datafolder_name
     // sprintf(datafolder_name, buffer, CubesPerDim, packing_fraction, BetaP, Phi);
 
-    char buffer[128] = "clusdatafolder/";
-    strcat(buffer, labelstring);
-    strcat(buffer, ".cub");
-    char fn[128] = "";
-    sprintf(fn, buffer, CubesPerDim, packing_fraction, BetaP, Phi); // replace all %d, %lf
-    char buffer2[128] = "clusdatafolder/n";
-    strcat(buffer2, labelstring);
-    strcat(buffer2, ".cub");
-    char dfn[128];
-    sprintf(dfn, buffer2, CubesPerDim, packing_fraction, BetaP, Phi); // replace all %d, %lf
+    // char fn[128] = "";
+    // sprintf(fn, buffer, CubesPerDim, packing_fraction, BetaP, Phi); // replace all %d, %lf
+    // char buffer2[128] = "clusdatafolder/n";
+    // strcat(buffer2, labelstring);
+    // strcat(buffer2, ".cub");
+    // char dfn[128];
+    // sprintf(dfn, buffer2, CubesPerDim, packing_fraction, BetaP, Phi); // replace all %d, %lf
 
     // printf("fn = %s\ndfn= %s\n", fn, dfn);
 
-    FILE* file;
-    FILE* datafile;
+    char buffer[128] = "datafolder/";
+    strcat(buffer, labelstring); // datafolder/v4_%...
+
+    char nums_filename[128] = "";
+    sprintf(nums_filename, buffer, CubesPerDim, packing_fraction, BetaP_hack, Phi);
+    strcat(nums_filename, "/ndata"); // datafolder/v4_.../ndata
+
+    char coords_filename[128] = "";
+    strcat(buffer, "/clustcoords_step%07d.poly"); // datafolder/v4_%.../clust%...poly
+    sprintf(coords_filename, buffer, CubesPerDim, packing_fraction, BetaP_hack, Phi, step); // datafolder/v4_.../clust...poly
+
+    // printf("coords_filename = %s\nnums_filename = %s\n", coords_filename, nums_filename);
+
+    FILE* fp_coords;
+    FILE* fp_nums;
     // printf("opening files...\n");
     // printf("fn = %s\ndfn = %s\n", fn, dfn);
     if (first) {
-        if ((file = fopen(fn, "w")) == NULL) {
-            printf("couldn't open file fn = %s\n", fn);
+        if ((fp_coords = fopen(coords_filename, "w")) == NULL) {
+            printf("couldn't open file coords_filename = %s\n", coords_filename);
             exit(333);
         };
-        if ((datafile = fopen(dfn, "w")) == NULL) {
-            printf("couldn't open file dfn = %s\n", dfn);
+        if ((fp_nums = fopen(nums_filename, "w")) == NULL) {
+            printf("couldn't open file nums_filename = %s\n", nums_filename);
             exit(334);
         };
         //printf ("Writing to %s\n", fn);
         first = 0;
     } else {
-        file = fopen(fn, "a");
-        datafile = fopen(dfn, "a");
+        fp_coords = fopen(coords_filename, "w");
+        fp_nums = fopen(nums_filename, "a");
     }
-    // printf("nn = %d, n_part = %d, boxsizes: %lf %lf %lf\n", nn, n_part, tbox.x, tbox.y, tbox.z);
-    fprintf(file, "&%i \n", n_part);
-    //   printf("%f %f\n",-tbox.xhalf,tbox.xhalf);
-    //   printf("%f %f\n",-tbox.yhalf,tbox.yhalf);
-    //   printf("%f %f\n",-tbox.zhalf,tbox.zhalf);
-    fprintf(file, "%.12lf %.12lf %.12lf\n", tbox.x, tbox.y, tbox.z);
+    // // printf("nn = %d, n_part = %d, boxsizes: %lf %lf %lf\n", nn, n_part, tbox.x, tbox.y, tbox.z);
+    // fprintf(fp_coords, "&%i \n", n_part);
+    // //   printf("%f %f\n",-tbox.xhalf,tbox.xhalf);
+    // //   printf("%f %f\n",-tbox.yhalf,tbox.yhalf);
+    // //   printf("%f %f\n",-tbox.zhalf,tbox.zhalf);
+    // fprintf(fp_coords, "%.12lf %.12lf %.12lf\n", tbox.x, tbox.y, tbox.z);
+
+    //////////////// first print the header that .poly files require ////////////////
+    fprintf(fp_coords, "%d\n", n_particles);
+    fprintf(fp_coords, "0.0\t0.0\t0.0\n");
+    for (int d = 0; d < 9; ++d) { // dimensions of box
+        if (d % 4 == 0) {
+            fprintf(fp_coords, "%lf\t", box[d / 4]);
+        } else {
+            fprintf(fp_coords, "0.000000\t");
+        }
+        if (d % 3 == 2)
+            fprintf(fp_coords, "\n");
+    }
+    /////////////////////////////////////////////////////////////////////////////////
 
     // printf("defining sorta ");
     int* sorta = malloc(sizeof(int) * nn);
@@ -678,32 +702,56 @@ void save_cluss(int* cluss, int* size, int big, int nn)
 
     // printf("saving to files\n");
     // if (dontsave == 0) {
-    for (i = 0; i < n_part; i++) {
+    
+    // for (i = 0; i < n_part; i++) {
+    //     if (cluss[i] && size[cluss[i]] > 2) {
+    //         int rnk = rank[cluss[i]];
+    //         if (rnk > 0)
+    //             rnk = ((rnk - 1) % 25) + 1;
+    //         char ch = 'a' + rnk;
+    //         //          char ch = 'a' + (numconn[i]);
+    //         fprintf(file, "%c %lf %lf %lf %lf ", ch, part[i].x, part[i].y, part[i].z, part[i].d);
+    //         // fprintf(file, "%s\n", part[i].str);
+    //     } else {
+    //         char ch = 'a';
+    //         //          char ch = 'a' + (numconn[i]);
+    //         fprintf(file, "%c %lf %lf %lf %lf ", ch, part[i].x, part[i].y, part[i].z, part[i].d / 10);
+    //         // fprintf(file, "%s\n", part[i].str);
+    //     }
+    //     for (int d1 = 0; d1 < NDIM; d1++) {
+    //         for (int d2 = 0; d2 < NDIM; d2++) {
+    //             fprintf(file, "%lf\t", mm[i].m[d1][d2]);
+    //         }
+    //     }
+    //     fprintf(file, "10 %lf\n", Phi); // 10 is for slanted cubes
+    // }
+    // } // if (dontsave == 0)
+
+    //////////////// then print the rest of the particles to this file ////////////////
+    for (int n = 0; n < n_particles; ++n) {
+        // We use pointers to loop over the x, y, z members of the vec3_t type.
+        double* pgarbage = &(rr[n].x);
+        for (int d = 0; d < NDIM; ++d)
+            fprintf(fp_coords, "%lf\t", *(pgarbage + d)); // the position of the center of cube
+        // now the size of the cube, edge length == 0.1 if it is not part of a cluster:
         if (cluss[i] && size[cluss[i]] > 2) {
-            int rnk = rank[cluss[i]];
-            if (rnk > 0)
-                rnk = ((rnk - 1) % 25) + 1;
-            char ch = 'a' + rnk;
-            //          char ch = 'a' + (numconn[i]);
-            fprintf(file, "%c %lf %lf %lf %lf ", ch, part[i].x, part[i].y, part[i].z, part[i].d);
-            // fprintf(file, "%s\n", part[i].str);
+            fprintf(fp_coords, "%lf ", part[i].d);
         } else {
-            char ch = 'a';
-            //          char ch = 'a' + (numconn[i]);
-            fprintf(file, "%c %lf %lf %lf %lf ", ch, part[i].x, part[i].y, part[i].z, part[i].d / 10);
-            // fprintf(file, "%s\n", part[i].str);
+            fprintf(fp_coords, "%lf ", part[i].d / 10);
         }
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
-                fprintf(file, "%lf\t", mm[i].m[d1][d2]);
+                fprintf(fp_coords, "%lf\t", mm[n].m[d1][d2]);
             }
         }
-        fprintf(file, "10 %lf\n", Phi); // 10 is for slanted cubes
+        fprintf(fp_coords, "10 %lf %d\n", Phi, rank[cluss[i]]);
+        // 10 is for slanted cubes, Phi is slant angle, rank gives color corresponding to its cluster
     }
-    // } // if (dontsave == 0)
-    fprintf(datafile, "%lf  %d  %d\n", percentage, numclus, maxsize);
-    fclose(file);
-    fclose(datafile);
+    ///////////////////////////////////////////////////////////////////////////////////
+    // and lastly print the three data points to the "ndata"
+    fprintf(fp_nums, "%lf  %d  %d\n", percentage, numclus, maxsize);
+    fclose(fp_coords);
+    fclose(fp_nums);
     free(sorta);
     free(rank);
 }
@@ -712,7 +760,7 @@ void save_cluss(int* cluss, int* size, int big, int nn)
  *             CALC_CLUSTERS
  * Find clusters of bonded particles
  ***********************************************/
-void calc_clusters(int* conn, compl_t* orderp)
+void calc_clusters(int* conn, compl_t* orderp, int step)
 {
     int* cluss = malloc(sizeof(int) * n_part);
     int* size = malloc(sizeof(int) * n_part);
@@ -763,9 +811,11 @@ void calc_clusters(int* conn, compl_t* orderp)
     }
 
     // printf("save_cluss\n");
-    if (dontsave == 0) {
+    /* if (dontsave == 0) {
         save_cluss(cluss, size, big, cn);
-    }
+    } */
+    save_cluss(cluss, size, big, cn, step);
+
     percentage = tcs / (double)n_part;
     maxsize = big;
     numclus = cn - 1;
@@ -778,7 +828,7 @@ void calc_clusters(int* conn, compl_t* orderp)
 /************************************************
  *             WRITE_DATA2
  ***********************************************/
-void write_data2(int step, char datafolder_name[128])
+/* void write_data2(int step, char datafolder_name[128])
 {
     char buffer[128];
     strcpy(buffer, datafolder_name);
@@ -801,19 +851,19 @@ void write_data2(int step, char datafolder_name[128])
     }
     for (int n = 0; n < n_particles; ++n) {
         // We use pointers to loop over the x, y, z members of the vec3_t type.
-        double* pgarbage = &(r[n].x);
+        double* pgarbage = &(rr[n].x);
         for (int d = 0; d < NDIM; ++d)
             fprintf(fp, "%lf\t", *(pgarbage + d)); // the position of the center of cube
         fprintf(fp, "1\t"); // Edge_Length == 1
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
-                fprintf(fp, "%lf\t", m[n].m[d1][d2]);
+                fprintf(fp, "%lf\t", mm[n].m[d1][d2]);
             }
         }
         fprintf(fp, "10 %lf\n", Phi); // 10 is for slanted cubes.
     }
     fclose(fp);
-}
+} */
 
 /************************************************
  *             MAIN
@@ -828,7 +878,7 @@ int crystal(int step)
     strcat(buffer, labelstring);
     char datafolder_name[128] = "";
     // replace all %d, %lf in buffer with values and put in datafolder_name
-    sprintf(datafolder_name, buffer, CubesPerDim, packing_fraction, BetaP, Phi);
+    sprintf(datafolder_name, buffer, CubesPerDim, packing_fraction, BetaP_hack, Phi);
 
     // Now 
 
@@ -862,7 +912,7 @@ int crystal(int step)
     
     order = calc_order();
     connections = calc_conn(order);
-    calc_clusters(connections, order);
+    calc_clusters(connections, order, step);
     free(order);
     free(connections);
     free(part);

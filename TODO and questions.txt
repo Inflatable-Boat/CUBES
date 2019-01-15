@@ -1,5 +1,7 @@
 TODO:
 ================================================================================================
+- TODO: BetaP in crystal_v4.c has been hacked together. Fix this.
+
 - make nice fluids for pressures 6-9 (go as high as possible) and differing angles (see notes):
 	##make v3 do: stop volume moves after reaching desired pf, i.e. make it do NVT
 	- make v3 do: do one run and save inside a file at which snapshots/after how many
