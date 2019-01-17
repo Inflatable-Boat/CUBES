@@ -1,0 +1,24 @@
+#!/bin/sh
+/usr/bin/time -o times/v5_a57 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.57079632679489 > logs/v5_16_a57 &
+/usr/bin/time -o times/v5_a47 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.47062890563334 > logs/v5_16_a47 &
+/usr/bin/time -o times/v5_a37 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.36943840600457 > logs/v5_16_a37 &
+/usr/bin/time -o times/v5_a27 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.26610367277950 > logs/v5_16_a27 &
+/usr/bin/time -o times/v5_a16 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.15927948072741 > logs/v5_16_a16 &
+
+/usr/bin/time -o times/v5_a57 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.57079632679489 > logs/v5_16_a57 &
+/usr/bin/time -o times/v5_a47 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.47062890563334 > logs/v5_16_a47 &
+/usr/bin/time -o times/v5_a37 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.36943840600457 > logs/v5_16_a37 &
+/usr/bin/time -o times/v5_a27 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.26610367277950 > logs/v5_16_a27 &
+/usr/bin/time -o times/v5_a16 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.15927948072741 > logs/v5_16_a16 &
+
+/usr/bin/time -o times/v5_a57 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.57079632679489 > logs/v5_16_a57 &
+/usr/bin/time -o times/v5_a47 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.47062890563334 > logs/v5_16_a47 &
+/usr/bin/time -o times/v5_a37 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.36943840600457 > logs/v5_16_a37 &
+/usr/bin/time -o times/v5_a27 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.26610367277950 > logs/v5_16_a27 &
+/usr/bin/time -o times/v5_a16 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.15927948072741 > logs/v5_16_a16 &
+
+/usr/bin/time -o times/v5_a57 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.57079632679489 > logs/v5_16_a57 &
+/usr/bin/time -o times/v5_a47 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.47062890563334 > logs/v5_16_a47 &
+/usr/bin/time -o times/v5_a37 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.36943840600457 > logs/v5_16_a37 &
+/usr/bin/time -o times/v5_a27 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.26610367277950 > logs/v5_16_a27 &
+/usr/bin/time -o times/v5_a16 -f "%E, %P\n" ./v5_read_g_of_r c 10 500001 0.50 10.0 1.15927948072741 > logs/v5_16_a16 &

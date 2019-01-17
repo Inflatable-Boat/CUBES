@@ -29,14 +29,8 @@ double obnd_cuttoff = 0.0; //Order to be in the same cluster (0.0 for all touchi
 
 //////////////////////////////////////////////////////////////// my additions
 extern const char labelstring[];
-// e.g. sl10pf0.50p08.0a1.25:
-// 10 CubesPerDim, pack_frac 0.50, pressure 8.0, angle 1.25
-/* const char usage_string[] = "usage: program.exe CubesPerDim \
-mc_steps packing_fraction BetaP Phi\n"; */
 extern int CubesPerDim;
 extern int mc_steps;
-extern double packing_fraction;
-double BetaP_hack = 1.0; // TODO: fix this
 extern double Phi;
 extern int n_particles;
 extern double box[NDIM];
@@ -625,12 +619,12 @@ void save_cluss(int* cluss, int* size, int big, int nn, int step)
     strcat(buffer, labelstring); // datafolder/v4_%...
 
     char nums_filename[128] = "";
-    sprintf(nums_filename, buffer, CubesPerDim, packing_fraction, BetaP_hack, Phi);
+    sprintf(nums_filename, buffer, CubesPerDim, Phi);
     strcat(nums_filename, "/ndata"); // datafolder/v4_.../ndata
 
     char coords_filename[128] = "";
     strcat(buffer, "/clustcoords_step%07d.poly"); // datafolder/v4_%.../clust%...poly
-    sprintf(coords_filename, buffer, CubesPerDim, packing_fraction, BetaP_hack, Phi, step); // datafolder/v4_.../clust...poly
+    sprintf(coords_filename, buffer, CubesPerDim, Phi, step); // datafolder/v4_.../clust...poly
 
     // printf("coords_filename = %s\nnums_filename = %s\n", coords_filename, nums_filename);
 
@@ -702,7 +696,7 @@ void save_cluss(int* cluss, int* size, int big, int nn, int step)
 
     // printf("saving to files\n");
     // if (dontsave == 0) {
-    
+
     // for (i = 0; i < n_part; i++) {
     //     if (cluss[i] && size[cluss[i]] > 2) {
     //         int rnk = rank[cluss[i]];
@@ -734,19 +728,20 @@ void save_cluss(int* cluss, int* size, int big, int nn, int step)
         for (int d = 0; d < NDIM; ++d)
             fprintf(fp_coords, "%lf\t", *(pgarbage + d)); // the position of the center of cube
         // now the size of the cube, edge length == 0.1 if it is not part of a cluster:
-        if (cluss[i] && size[cluss[i]] > 2) {
-            fprintf(fp_coords, "%lf ", part[i].d);
+        if (cluss[n] && size[cluss[n]] > 2) {
+            fprintf(fp_coords, "%lf ", part[n].d);
         } else {
-            fprintf(fp_coords, "%lf ", part[i].d / 10);
+            fprintf(fp_coords, "%lf ", part[n].d / 10);
         }
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
                 fprintf(fp_coords, "%lf\t", mm[n].m[d1][d2]);
             }
         }
-        fprintf(fp_coords, "10 %lf %d\n", Phi, rank[cluss[i]]);
+        fprintf(fp_coords, "10 %lf %d\n", Phi, rank[cluss[n]]);
         // 10 is for slanted cubes, Phi is slant angle, rank gives color corresponding to its cluster
     }
+
     ///////////////////////////////////////////////////////////////////////////////////
     // and lastly print the three data points to the "ndata"
     fprintf(fp_nums, "%lf  %d  %d\n", percentage, numclus, maxsize);
@@ -819,51 +814,11 @@ void calc_clusters(int* conn, compl_t* orderp, int step)
     percentage = tcs / (double)n_part;
     maxsize = big;
     numclus = cn - 1;
-    printf("% i clusters, Max size: %i, Percentage of crystalline particles %f\n", numclus, big, percentage);
+    printf("%i clusters, Max size: %i, %% crystalline particles: %f\n", numclus, big, percentage);
 
     free(cluss);
     free(size);
 }
-
-/************************************************
- *             WRITE_DATA2
- ***********************************************/
-/* void write_data2(int step, char datafolder_name[128])
-{
-    char buffer[128];
-    strcpy(buffer, datafolder_name);
-    strcat(buffer, "/clustcoords_step%07d.poly");
-
-    char datafile[128];
-    sprintf(datafile, buffer, step); // replace %07d with step and put in output_file.
-    
-    FILE* fp = fopen(datafile, "w");
-    fprintf(fp, "%d\n", n_particles);
-    fprintf(fp, "0.0\t0.0\t0.0\n");
-    for (int d = 0; d < 9; ++d) { // dimensions of box
-        if (d % 4 == 0) {
-            fprintf(fp, "%lf\t", box[d / 4]);
-        } else {
-            fprintf(fp, "0.000000\t");
-        }
-        if (d % 3 == 2)
-            fprintf(fp, "\n");
-    }
-    for (int n = 0; n < n_particles; ++n) {
-        // We use pointers to loop over the x, y, z members of the vec3_t type.
-        double* pgarbage = &(rr[n].x);
-        for (int d = 0; d < NDIM; ++d)
-            fprintf(fp, "%lf\t", *(pgarbage + d)); // the position of the center of cube
-        fprintf(fp, "1\t"); // Edge_Length == 1
-        for (int d1 = 0; d1 < NDIM; d1++) {
-            for (int d2 = 0; d2 < NDIM; d2++) {
-                fprintf(fp, "%lf\t", mm[n].m[d1][d2]);
-            }
-        }
-        fprintf(fp, "10 %lf\n", Phi); // 10 is for slanted cubes.
-    }
-    fclose(fp);
-} */
 
 /************************************************
  *             MAIN
@@ -878,9 +833,7 @@ int crystal(int step)
     strcat(buffer, labelstring);
     char datafolder_name[128] = "";
     // replace all %d, %lf in buffer with values and put in datafolder_name
-    sprintf(datafolder_name, buffer, CubesPerDim, packing_fraction, BetaP_hack, Phi);
-
-    // Now 
+    sprintf(datafolder_name, buffer, CubesPerDim, Phi);
 
     // int load(tpart_t** pp, int* np, int close):
     tpart_t* p;
@@ -909,7 +862,7 @@ int crystal(int step)
     init_cells();
     init_nblist();
     // end load particles
-    
+
     order = calc_order();
     connections = calc_conn(order);
     calc_clusters(connections, order, step);

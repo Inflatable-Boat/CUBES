@@ -1,19 +1,13 @@
 TODO:
 ================================================================================================
-- TODO: BetaP in crystal_v4.c has been hacked together. Fix this.
+- make g(r) (nice for thesis) to find density-dependent first-shell-radius
+
+- make orientational order parameter code
 
 - make nice fluids for pressures 6-9 (go as high as possible) and differing angles (see notes):
 	##make v3 do: stop volume moves after reaching desired pf, i.e. make it do NVT
 	- make v3 do: do one run and save inside a file at which snapshots/after how many
 	  runs we find 0.4x (for x = 0, 1, ... , 9) and 0.50
-
-- make v4 do: v3 + snapshots for clustervisualization
-	- Note: I will put the datafiles in the same datafolder, but call them clustcoord...poly
-
-- make the clusters visible in normal visualization format, call this program visualize3
-
-
-##make write_data2 to write data in the format for order_parameter
 
 - make output file name(s) readable from command line
 
@@ -22,6 +16,12 @@ TODO:
 
 
 ------------------------------------------------------------------------------------------------
+##make write_data2 to write data in the format for order_parameter
+= make v4 do: v3 + snapshots for clustervisualization
+	- Note: I will put the datafiles in the same datafolder, but call them clustcoord...poly
+= make the clusters visible in normal visualization format, call this program visualize3
+	= note: not visualize3, just visualize. Will alias this to show now.
+= TODO: BetaP in crystal_v4.c has been hacked together. Fix this.
 = make crystal_modified.c work
 	= Segmentation fault (core dumped)
 = make read_data2 to read from .poly files (i.e. to make it able to read the files it makes)
