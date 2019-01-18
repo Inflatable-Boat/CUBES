@@ -39,7 +39,10 @@ TODO:
 
 Notes:
 ================================================================================================
+- v7 is just v5 but prints density next to 'count' in g%07d.txt every step too.
+
 - v6 is just v4 but with the colors fixed (hopefully)
+	- finally fixed (I think)
 
 - slant angles we wish to study: arccos[x] (for x = 0.0, 0.1, ... , 0.4), in radians:
 	1.57079632679490, 1.47062890563334, 1.36943840600457, 1.26610367277950, 1.15927948072741
