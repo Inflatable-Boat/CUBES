@@ -45,6 +45,7 @@ const char usage_string[] = "usage: program.exe (r for read / c for create) \
 
 const int output_steps = 100;
 const double g_of_r_cutoff = 5;
+int counter_for_g;
 
 /* Simulation variables */
 // TODO: use malloc and pointers instead of global variables?
@@ -165,11 +166,11 @@ int main(int argc, char* argv[])
 
     char buffer2[128] = "densities/";
     strcat(buffer2, labelstring);
-    char density_filename[128] = "";
-    // replace all %d, %lf in buffer2 with values and put in density_filename
-    sprintf(density_filename, buffer2, CubesPerDim, packing_fraction, BetaP, Phi);
+    char num_density_filename[128] = "";
+    // replace all %d, %lf in buffer2 with values and put in num_density_filename
+    sprintf(num_density_filename, buffer2, CubesPerDim, packing_fraction, BetaP, Phi);
 
-    // FILE* fp_density = fopen(density_filename, "w");
+    // FILE* fp_num_density = fopen(num_density_filename, "w");
 
     int mov_accepted = 0, vol_accepted = 0, rot_accepted = 0;
     int mov_attempted = 0, vol_attempted = 0, rot_attempted = 0;
@@ -217,7 +218,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    // fclose(fp_density); // densities/...
+    // fclose(fp_num_density); // densities/...
 
     return 0;
 }
@@ -794,8 +795,9 @@ void write_data(int step, char datafolder_name[128])
     sprintf(datafile, buffer, step / 100); // replace %07d with step and put in output_file.
 
     FILE* fp_g = fopen(datafile, "w");
+    fprintf(fp_g, "%d\n", counter_for_g);
     for (int i = 0; i < NBINS; i++) {
-        fprintf(fp_g, "%lf\n", gof[i]);
+        fprintf(fp_g, "%lf ", gof[i]);
     }
     fclose(fp_g);
 
@@ -836,6 +838,7 @@ void write_data(int step, char datafolder_name[128])
 
 void sample_g_of_r(void)
 {
+    counter_for_g = 0;
     for (int i = 0; i < NBINS; i++) {
         gof[i] = 0;
     }
@@ -864,16 +867,19 @@ void sample_g_of_r(void)
         }
     }
 
+    counter_for_g = count;
+
     // normalize
-    double density = n_particles * ParticleVolume / (box[0] * box[1] * box[2]);
+    double num_density = n_particles / (box[0] * box[1] * box[2]);
     double thickness = g_of_r_cutoff / NBINS;
     for (int i = 0; i < NBINS; i++) {
         double dist = (i + 0.5) * thickness;
         double area = 4 * M_PI * dist * dist;
         double volume_of_this_shell = area * thickness;
-        double expected_number = density * volume_of_this_shell;
+        double expected_number = num_density * volume_of_this_shell;
         gof[i] /= expected_number; // normalize by distance
-        gof[i] /= count; // and normalize by number
+        // gof[i] /= count; // and normalize by number
+        gof[i] /= n_particles; // and normalize by number
     }
 }
 
