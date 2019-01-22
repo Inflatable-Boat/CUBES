@@ -1,10 +1,10 @@
 #include "math_3d.h"
 #include "mt19937.h"
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h> // malloc(), free
 #include <time.h> // time()
-#include <stdbool.h>
-#include "test2.c"
+// #include "test2.c"
 
 inline static double ran(double low, double high)
 {
@@ -32,6 +32,10 @@ inline static double ran(double low, double high)
 
 const char labelstring[] = "v1_%02dpf%04.2lfp%04.1lfa%04.2lf"; */
 
+/* int compare_test(const void* a, const void* b)
+{
+    return -(*(int*)a - *(int*)b);
+} */
 
 int main(int argc, char* argv[])
 {
@@ -81,13 +85,13 @@ int main(int argc, char* argv[])
     printf("aap     = %ld\naap + 1 = %ld\n", aap, aap + 1);
 
     free(aap); */
-/*     int aap = 0;
+    /*     int aap = 0;
     double noot = 0.1 / aap;
     if(noot < 0.4)
         printf("inf < 0.4\n");
     if(noot > 0.6)
         printf("inf > 0.6\n"); */
-/*     for(int random = 0; random < 6; random++)
+    /*     for(int random = 0; random < 6; random++)
         if(random & 1)
             printf("%d\n", random); //1 3 5*/
 
@@ -151,7 +155,7 @@ int main(int argc, char* argv[])
     /* if (strcmp(argv[1], "3") == 0) {
         printf("aap\n");
     } */
-    
+
     /* char string[64] = "";
     strcat(string, "dit en zo: %02d %4.2lf\n"); // dit gaat helemaal naar de tering
     sprintf(string, string, 8, 612321423234315675675676523.3324328);
@@ -170,7 +174,7 @@ int main(int argc, char* argv[])
 
     // printf("%s\n", buffer);
     // write(buffer);
-    
+
     /* int aap = 1, noot = 0, mies = -1;
     printf("%d, %d, %d becomes\n%d, %d, %d\n", aap, noot, mies, ~aap, ~noot, ~mies);
     for (int i = 31; i >= 0; i--) {
@@ -202,14 +206,87 @@ int main(int argc, char* argv[])
     printf("aap is %lf\n", aap); // 0.1
     printf("aap is now %lf\n", (aap+=0.1) - 0.1); // 0.1
     printf("aap is %lf\n", aap); // 0.2 */
-    
+
     /* aap = 3;
     add_one_to_aap();
     printf("%d\n", aap); */
 
+/* #define N 6
+    int* aap = malloc(sizeof(int) * N);
+    int noot[N] = { 5, 1, 1, 1, 8, 4 }; //, 2, 1, 7, 8};
+    for (int i = 0; i < N; i++) {
+        aap[i] = noot[i];
+    }
+
+    qsort(noot, sizeof(noot) / sizeof(noot[0]), sizeof(noot[0]), compare_test);
+
+    for (int i = 0; i < N; i++) {
+        printf("aap[%d] = %d, noot[%d] = %d\n", i, aap[i], i, noot[i]);
+    }
+
+    int* mies = malloc(sizeof(int) * N);
+    for(int i=0;i<N;i++) mies[i]=-1;
+    int* wim = malloc(sizeof(int) * N);
+    for (int i = 0; i < N; i++) {
+        int j;
+        for (j = 0; noot[j] != aap[i]; j++)
+            ;
+        bool not_encountered_yet;
+        label:
+        not_encountered_yet = true;
+        for (int k = 0; k < N && not_encountered_yet; k++) {
+            not_encountered_yet = (mies[k] != j);
+        }
+        if (not_encountered_yet) {
+            mies[i] = j;
+        } else {
+            j++;
+            goto label;
+        }
+    }
+    for (int i = 0; i < N; i++) {
+        int j;
+        for (j = 0; mies[j] != i; j++)
+            ;
+        wim[i] = j;
+    }
+
+    int cmpr(const void* a, const void* b)
+    {
+        return -aap[*((int*)a)] + aap[*((int*)b)];
+    }
+    int* zus = malloc(sizeof(int) * N);
+    for (int i = 0; i < N; i++) {
+        zus[i] = i;
+    }
+    qsort(zus, N, sizeof(int), &cmpr);
+    int* jet = malloc(sizeof(int) * N);
+        for (int i = 0; i < N; i++) {
+        int bha;
+        for (bha = 0; zus[bha] != i; bha++)
+            ;
+        jet[i] = bha;
+    }
+
+    for (int i = 0; i < N; i++) {
+        printf("aap[%d] = %d, noot[%d] = %d, mies[%d] = %d, wim[%d] = %d, zus[%d] = %d, \
+jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet[i]);
+    }
+
+    free(aap);
+    free(mies);
+    free(wim);
+    free(zus);
+    free(jet); */
+
+    /*
+    aap[0] = 5, noot[0] = 8, mies[0] = 1, wim[0] = 4, zus[0] = 4, jet[0] = 1
+    aap[1] = 1, noot[1] = 5, mies[1] = 3, wim[1] = 0, zus[1] = 0, jet[1] = 3
+    aap[2] = 1, noot[2] = 4, mies[2] = 4, wim[2] = 5, zus[2] = 5, jet[2] = 4
+    aap[3] = 1, noot[3] = 1, mies[3] = 5, wim[3] = 1, zus[3] = 1, jet[3] = 5
+    aap[4] = 8, noot[4] = 1, mies[4] = 0, wim[4] = 2, zus[4] = 2, jet[4] = 0
+    aap[5] = 4, noot[5] = 1, mies[5] = 2, wim[5] = 3, zus[5] = 3, jet[5] = 2
+    */
 
     return 0;
 }
-
-
-

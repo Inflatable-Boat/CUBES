@@ -1,12 +1,17 @@
 TODO:
 ================================================================================================
-- make g(r) (nice for thesis) to find density-dependent first-shell-radius
-
 - make orientational order parameter code
+
+- make standalone positional, orientational order param code
+	- only print cluster snapshot every ~1000 steps
+
+- write latex on positional, orientational order param code
+
+- make v8 do: not crush, but slowly increase pressure
 
 - make nice fluids for pressures 6-9 (go as high as possible) and differing angles (see notes):
 	##make v3 do: stop volume moves after reaching desired pf, i.e. make it do NVT
-	- make v3 do: do one run and save inside a file at which snapshots/after how many
+	= make v5 do: do one run and save inside a file at which snapshots/after how many
 	  runs we find 0.4x (for x = 0, 1, ... , 9) and 0.50
 
 - make output file name(s) readable from command line
@@ -16,6 +21,10 @@ TODO:
 
 
 ------------------------------------------------------------------------------------------------
+= make g(r) (nice for thesis) to find density-dependent first-shell-radius
+	= max -> 1st minimum
+	= first shell ~ 2 * edge length
+
 ##make write_data2 to write data in the format for order_parameter
 = make v4 do: v3 + snapshots for clustervisualization
 	- Note: I will put the datafiles in the same datafolder, but call them clustcoord...poly
@@ -39,6 +48,9 @@ TODO:
 
 Notes:
 ================================================================================================
+- v9 is read coordsstep (from v6) and make position clust coords (read from cmd line
+	every how many 100 steps to make an pos_coordsstep%07d.poly)
+
 - v7 is just v5 but prints density next to 'count' in g%07d.txt every step too.
 
 - v6 is just v4 but with the colors fixed (hopefully)
