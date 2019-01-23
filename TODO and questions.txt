@@ -48,8 +48,13 @@ TODO:
 
 Notes:
 ================================================================================================
-- v9 is read coordsstep (from v6) and make position clust coords (read from cmd line
-	every how many 100 steps to make an pos_coordsstep%07d.poly)
+- bond length 2 is waaaay too large
+- v9 is read coordsstep (from v6) and make (p)osition or (o)rientation clust coords (read from
+	cmd line every how many 100 steps to make an pos_coordsstep%07d.poly.)
+	- v9 usage: program datafolder_name output_per p/o
+		explanation: look for coords_step%07d in datafolder/datafolder_name until
+		none more can be found. Output clust_pos_... or clust_orient_... every
+		output_per files found. do pos. ordering for p, orient. ordering for o.
 
 - v7 is just v5 but prints density next to 'count' in g%07d.txt every step too.
 

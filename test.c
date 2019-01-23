@@ -37,6 +37,8 @@ const char labelstring[] = "v1_%02dpf%04.2lfp%04.1lfa%04.2lf"; */
     return -(*(int*)a - *(int*)b);
 } */
 
+// static char chars[128] = "";
+
 int main(int argc, char* argv[])
 {
     dsfmt_seed(time(NULL));
@@ -287,6 +289,19 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
     aap[4] = 8, noot[4] = 1, mies[4] = 0, wim[4] = 2, zus[4] = 2, jet[4] = 0
     aap[5] = 4, noot[5] = 1, mies[5] = 2, wim[5] = 3, zus[5] = 3, jet[5] = 2
     */
+
+    /* int aap = 0;
+    for (int i = 0; i < 100; i++) {
+        if (++aap >= 10) {
+            printf("YEAH ");
+            aap = 0;
+        }
+        printf("%d\n", i);
+    } */
+
+    /* if (argc < 2) return 1;
+    sscanf(argv[1], "%s", chars);
+    printf("chars = %s\n", chars); */
 
     return 0;
 }
