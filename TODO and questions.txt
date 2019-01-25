@@ -1,9 +1,11 @@
 TODO:
 ================================================================================================
 - make orientational order parameter code
+	- understand orientational order param code
 
-- make standalone positional, orientational order param code
-	- only print cluster snapshot every ~1000 steps
+= make standalone positional, orientational order param code
+	= only print cluster snapshot every ~1000 steps
+	- make switch statements to enable doing both pos. and orient. at the same time.
 
 - write latex on positional, orientational order param code
 
@@ -13,6 +15,7 @@ TODO:
 	##make v3 do: stop volume moves after reaching desired pf, i.e. make it do NVT
 	= make v5 do: do one run and save inside a file at which snapshots/after how many
 	  runs we find 0.4x (for x = 0, 1, ... , 9) and 0.50
+
 
 - make output file name(s) readable from command line
 
@@ -120,7 +123,8 @@ Since overlap seems to occur right at the boundary of the box, maybe something f
 
 Questions:
 ================================================================================================
-
+- 3 axes of cube well-defined (i.e. the normals/edges). What about 3 axes of slanted cube?
+	should we go with the normals or edges?
 
 ------------------------------------------------------------------------------------------------
 = Ask Frank:

@@ -303,5 +303,32 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
     sscanf(argv[1], "%s", chars);
     printf("chars = %s\n", chars); */
 
+    /* int aap = 3;
+    int* noot = &aap;
+    int* mies = noot;
+    printf("aap = %d\n", aap); // 3
+    *noot = *noot + 3;
+    printf("aap = %d\n", aap); // 6
+    *noot += 3;
+    printf("aap = %d\n", aap); // 9
+    *mies += 3;
+    printf("aap = %d\n", aap); // 12 */
+    
+    /* enum aap{a, b, c, d} noot;
+    noot = b;
+    switch(noot){
+        case a:
+            printf("a\n");
+            break;
+        case b:
+            printf("b\n"); // b
+        case c:
+            printf("c\n"); // c
+            break;
+        case d:
+            printf("d\n");
+            break;
+    } */
+
     return 0;
 }

@@ -232,7 +232,7 @@ double minpow(int m)
 // TODO: choose the normal axes or box-edge aligned axes?
 void orient_order(int l, int i, compl_t* res, int axis)
 {
-    vec3_t dir = m4_mul_dir(ruud_m[i], Normal[axis]);
+    vec3_t dir = v3_norm(m4_mul_dir(ruud_m[i], Normal[axis]));
     double fc, p, f, s, r, sp, spp, c, cp, cpp;
     double z;
     int m = 0;
@@ -243,9 +243,9 @@ void orient_order(int l, int i, compl_t* res, int axis)
         si = 0;
         co = 1;
     } else {
-        double dxy = 1.0 / sqrt(dir.x * dir.x + dir.y * dir.y);
-        si = dir.y * dxy;
-        co = dir.x * dxy;
+        double norm = 1.0 / sqrt(dir.x * dir.x + dir.y * dir.y);
+        si = dir.x > 0 ? dir.y * norm : -dir.y * norm;
+        co = fabs(dir.x) * norm;
     }
 
     //for m=0
@@ -984,8 +984,8 @@ int parse_commandline(int argc, char* argv[])
     } else if (strcmp(argv[3], "o") == 0 || strcmp(argv[3], "orient") == 0 || strcmp(argv[3], "orientation") == 0) {
         printf("doing orientational ordering\n");
         is_pos = false;
-        printf("not implemented yet\n");
-        return -1;
+        // printf("not implemented yet\n");
+        // return -1;
         return 0;
     } else {
         printf("reading last argument failed\n");
