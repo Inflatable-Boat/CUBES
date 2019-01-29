@@ -28,7 +28,7 @@ int nbnd_cuttoff = 4; //Number of correlated bonds for a crystalline particle
 double obnd_cuttoff = 0.0; //Order to be in the same cluster (0.0 for all touching clusters 0.9 to see defects)
 
 //////////////////////////////////////////////////////////////// my additions
-const char usage_string[] = "usage: program.exe datafolder output_per (p/pos or o/orient) \n";
+const char usage_string[] = "usage: program.exe datafolder output_per (t/transl or o/orient) \n";
 static double Phi;
 static int output_per;
 static int n_particles;
@@ -39,7 +39,10 @@ static vec3_t Normal[3];
 static double SinPhi;
 static double CosPhi;
 static double ParticleVolume;
-bool is_pos = true;
+// bool is_pos = true;
+typedef enum { transl = 1,
+    orient = 2 } order_mode_enum_t;
+order_mode_enum_t order_mode;
 static char datafolder_name[128];
 //////////////////////////////////////////////////////////////// end of my additions
 
@@ -232,7 +235,7 @@ double minpow(int m)
 // TODO: choose the normal axes or box-edge aligned axes?
 void orient_order(int l, int i, compl_t* res, int axis)
 {
-    vec3_t dir = m4_mul_dir(ruud_m[i], Normal[axis]);
+    vec3_t dir = v3_norm(m4_mul_dir(ruud_m[i], Normal[axis]));
     double fc, p, f, s, r, sp, spp, c, cp, cpp;
     double z;
     int m = 0;
@@ -303,10 +306,10 @@ void orient_order(int l, int i, compl_t* res, int axis)
 }
 
 /************************************************
- *             POS_ORDER
+ *             TRANSL_ORDER
  * Calculate q for a pair of particles
  ***********************************************/
-void pos_order(int l, bndT_t* bnd, compl_t* res1, compl_t* res2)
+void transl_order(int l, bndT_t* bnd, compl_t* res1, compl_t* res2)
 {
     double fc, p, f, s, r, sp, spp, c, cp, cpp;
     double z;
@@ -462,6 +465,7 @@ void update_nblist(void)
  *             INIT_NBLIST
  * Initialize the neighbor list
  ***********************************************/
+// mallocs blist, numconn, blist[i].bnd
 void init_nblist(void)
 {
     int p;
@@ -478,6 +482,7 @@ void init_nblist(void)
  *             INIT_CELLS
  * Initialize the cell list
  ***********************************************/
+// mallocs cells
 void init_cells(void)
 {
     n_cells = 0;
@@ -593,6 +598,8 @@ void init_box(double x_box, double y_box, double z_box)
  *             CONVERT_DATA
  * converts data from my type to this file's weird type
  ***********************************************/
+// mallocs part,
+// indirect malloc cells, blist, numconn, blist[i].bnd
 int convert_data()
 {
     // n_part = particlestocount = n_particles;
@@ -616,6 +623,7 @@ int convert_data()
  *             CALC_ORIENT_ORDER
  * Calculate i_4 for all particles
  ***********************************************/
+// mallocs (return value) orderp
 compl_t* calc_orient_order(void)
 {
     compl_t *q1, *q2, *q3;
@@ -627,9 +635,9 @@ compl_t* calc_orient_order(void)
         q1 = (orderp + i * (2 * l + 1) + l);
         q2 = (orderp + (i + 1) * (2 * l + 1) + l); // temporary place for q2, q3
         q3 = (orderp + (i + 2) * (2 * l + 1) + l); // will be overwritten next loop
-        
+
         // the folling gives order vectors i_{4,m} corresponding to the three particle axes
-        // and stores them in q1, q2, q3. Next we have to add q2, q3 to q1 and normalize 
+        // and stores them in q1, q2, q3. Next we have to add q2, q3 to q1 and normalize
         orient_order(l, i, q1, 0);
         orient_order(l, i, q2, 1);
         orient_order(l, i, q3, 2);
@@ -648,10 +656,11 @@ compl_t* calc_orient_order(void)
 }
 
 /************************************************
- *             CALC_POS_ORDER
+ *             CALC_TRANSL_ORDER
  * Calculate q_4 for all particles
  ***********************************************/
-compl_t* calc_pos_order(void)
+// mallocs (return value) orderp
+compl_t* calc_transl_order(void)
 {
     int i, j, m;
     compl_t *q1, *q2;
@@ -664,7 +673,7 @@ compl_t* calc_pos_order(void)
         for (j = 0; j < blist[i].n; j++) {
             if (blist[i].bnd[j].n > i) {
                 q2 = (orderp + blist[i].bnd[j].n * (2 * l + 1) + l);
-                pos_order(l, &(blist[i].bnd[j]), q1, q2);
+                transl_order(l, &(blist[i].bnd[j]), q1, q2);
             }
         }
     }
@@ -684,6 +693,7 @@ compl_t* calc_pos_order(void)
  *             CALC_CONN
  * Find crystalline bonds between particles
  ***********************************************/
+// mallocs (return value) conn
 int* calc_conn(compl_t* orderp) //calculates "connected" particles
 {
     int i, j, z, np = 0;
@@ -713,23 +723,31 @@ int* calc_conn(compl_t* orderp) //calculates "connected" particles
  * Output snapshot in which clusters are colored
  * Fluid particles printed small
  ***********************************************/
-void save_cluss(int step, int* cluss, int* size, int big, int nn)
+void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode)
 {
     int i;
 
     char buffer[128] = "datafolder/";
+    char dfn[128] = "datafolder/";
     strcat(buffer, datafolder_name);
-    if (is_pos) {
-        strcat(buffer, "/clust_pos_coords%07d.poly");
-    } else {
+    strcat(dfn, datafolder_name);
+    if (mode == transl) {
+        strcat(buffer, "/clust_transl_coords%07d.poly");
+        strcat(dfn, "/v9_transl");
+    } else if (mode == orient) {
         strcat(buffer, "/clust_orient_coords%07d.poly");
+        strcat(dfn, "/v9_orient");
+    } else {
+        printf("invalid mode in save_cluss: %d\n", mode);
+        exit(3);
     }
+
     char fn[128] = "";
     sprintf(fn, buffer, step);
-    char dfn[128] = "datafolder/";
-    strcat(dfn, datafolder_name);
-    strcat(dfn, "/npos");
 
+    if (!step) { // if first step
+        remove(dfn); // remove the data-for-each-step-file
+    }
     FILE* data_file;
     if ((data_file = fopen(dfn, "a")) == NULL) {
         printf("couldn't open clust_file dfn = %s\n", dfn);
@@ -793,6 +811,7 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn)
                 fprintf(clust_file, "%lf ", ruud_m[i].m[d1][d2]);
             }
         }
+        // 10 = slanted cube, phi = angle, rnk = color
         fprintf(clust_file, "10 %lf %d\n", Phi, rnk);
     }
     fclose(clust_file);
@@ -804,7 +823,7 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn)
  *             CALC_CLUSTERS
  * Find clusters of bonded particles
  ***********************************************/
-void calc_clusters(int step, int* conn, compl_t* orderp)
+void calc_clusters(int step, int* conn, compl_t* orderp, int mode)
 {
     int* cluss = malloc(sizeof(int) * n_particles);
     int* size = malloc(sizeof(int) * n_particles);
@@ -856,7 +875,7 @@ void calc_clusters(int step, int* conn, compl_t* orderp)
 
     // printf("save_cluss\n");
     // if (dontsave == 0) {
-    save_cluss(step, cluss, size, big, cn);
+    save_cluss(step, cluss, size, big, cn, mode);
     // }
     percentage = tcs / (double)n_particles;
     maxsize = big;
@@ -966,7 +985,7 @@ int parse_commandline(int argc, char* argv[])
         return 3;
     }
     if (EOF == sscanf(argv[1], "%s", datafolder_name)) {
-        printf("reading Phi has failed\n");
+        printf("reading datafolder_name has failed\n");
         return 1;
     }
     if (EOF == sscanf(argv[2], "%d", &output_per)) {
@@ -977,15 +996,19 @@ int parse_commandline(int argc, char* argv[])
         printf("0 < output_per < 101\n");
         return 2;
     }
-    if (strcmp(argv[3], "p") == 0 || strcmp(argv[3], "pos") == 0 || strcmp(argv[3], "position") == 0) {
-        printf("doing positionional ordering\n");
-        is_pos = true;
+    if (strcmp(argv[3], "t") == 0 || strcmp(argv[3], "transl") == 0 || strcmp(argv[3], "translation") == 0
+        || strcmp(argv[3], "p") == 0 || strcmp(argv[3], "pos") == 0 || strcmp(argv[3], "position") == 0) {
+        printf("doing translational ordering\n");
+        order_mode = transl;
         return 0;
     } else if (strcmp(argv[3], "o") == 0 || strcmp(argv[3], "orient") == 0 || strcmp(argv[3], "orientation") == 0) {
         printf("doing orientational ordering\n");
-        is_pos = false;
-        printf("not implemented yet\n");
-        return -1;
+        order_mode = orient;
+        return 0;
+    } else if (strcmp(argv[3], "a") == 0 || strcmp(argv[3], "all") == 0
+        || strcmp(argv[3], "b") == 0 || strcmp(argv[3], "both") == 0) {
+        printf("doing both translational and orientational ordering\n");
+        order_mode = transl | orient;
         return 0;
     } else {
         printf("reading last argument failed\n");
@@ -1000,7 +1023,6 @@ int parse_commandline(int argc, char* argv[])
  ***********************************************/
 int main(int argc, char** argv)
 {
-    // int f = 0, i = 0;
     compl_t* order = NULL;
     int* connections = NULL;
 
@@ -1010,13 +1032,6 @@ int main(int argc, char** argv)
     };
 
     printf("datafolder_name: %s\n", datafolder_name);
-    char buffer2[128] = "";
-    if (is_pos) {
-        strcat(buffer2, "/npos");
-    } else {
-        strcat(buffer2, "/norient");
-    }
-    remove(buffer2);
     char buffer[128] = "datafolder/";
     strcat(buffer, datafolder_name);
     strcat(buffer, "/coords_step%07d.poly");
@@ -1037,19 +1052,23 @@ int main(int argc, char** argv)
             return 2;
         }
 
-        convert_data();
-        // printf("calculating order\n");
-        if (is_pos) {
-            order = calc_pos_order();
-        } else {
-            order = calc_orient_order();
+        convert_data(); // mallocs part, indirectly cells, blist, numconn, blist[i].bnd
+
+        if (order_mode & transl) {
+            order = calc_transl_order(); // mallocs order
+            connections = calc_conn(order); // mallocs connections
+            calc_clusters(step, connections, order, transl); // and save
+            free(order);
+            free(connections);
         }
-        // printf("calculating connections\n");
-        connections = calc_conn(order);
-        // printf("calculating clusters\n");
-        calc_clusters(step, connections, order); // and save
-        free(order);
-        free(connections);
+        if (order_mode & orient) {
+            order = calc_orient_order(); // mallocs order
+            connections = calc_conn(order); // mallocs connections
+            calc_clusters(step, connections, order, orient); // and save
+            free(order);
+            free(connections);
+        }
+
         free(part);
         free(cells);
         free(numconn);

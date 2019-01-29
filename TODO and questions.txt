@@ -1,7 +1,15 @@
 TODO:
 ================================================================================================
+
+
 - make orientational order parameter code
 	- understand orientational order param code
+	- test orient. o.p. in limits where it should be 0 (random) and 1 (perfect order)
+
+- check orientational order parameter axes as:
+	v: normals of slanted cube
+	v: normals of unslanted cube
+	v: edges of slanted cube 
 
 = make standalone positional, orientational order param code
 	= only print cluster snapshot every ~1000 steps
@@ -24,6 +32,7 @@ TODO:
 
 
 ------------------------------------------------------------------------------------------------
+= also show density in snapshot
 = make g(r) (nice for thesis) to find density-dependent first-shell-radius
 	= max -> 1st minimum
 	= first shell ~ 2 * edge length
@@ -51,18 +60,23 @@ TODO:
 
 Notes:
 ================================================================================================
-- bond length 2 is waaaay too large
-- v9 is read coordsstep (from v6) and make (p)osition or (o)rientation clust coords (read from
-	cmd line every how many 100 steps to make an pos_coordsstep%07d.poly.)
-	- v9 usage: program datafolder_name output_per p/o
+##v11 is v10 but with edges as direction rather than normals
+##v12 is v10 but with normals as if they are not from slanted cubes
+##v13 is v10 but with cos(theta) = dir.x * norm instead of fabs(dir.x) * norm
+- bond length 2 is waaaay too large for transl. o.p.
+- v9 is read coordsstep (from e.g. v6) and make (p)osition or (o)rientation or (b)oth or (a)ll 
+	clust coords (read from	cmd line every how many 100 steps to make an pos_coordsstep%07d.poly.)
+	- v9 usage: program datafolder_name output_per p/o/b/a
 		explanation: look for coords_step%07d in datafolder/datafolder_name until
 		none more can be found. Output clust_pos_... or clust_orient_... every
-		output_per files found. do pos. ordering for p, orient. ordering for o.
+		output_per files found. do pos. ordering for p, orient. ordering for o. or both (b) or all (a)
 
 - v7 is just v5 but prints density next to 'count' in g%07d.txt every step too.
-
 - v6 is just v4 but with the colors fixed (hopefully)
-	- finally fixed (I think)
+	= finally fixed
+- v5 is g_of_r_maker, it simulates a new system and fprints the # of neighbours it counts
+	and the histogram for each step
+- v4 is v3 but uses crystal_v4.c to also save the clusters
 
 - slant angles we wish to study: arccos[x] (for x = 0.0, 0.1, ... , 0.4), in radians:
 	1.57079632679490, 1.47062890563334, 1.36943840600457, 1.26610367277950, 1.15927948072741
@@ -72,6 +86,8 @@ Notes:
 	Because they start at the same time, their seed is the same, so each simulation is
 	exactly the same! Just save the snapshot when we have reached a higher packing fraction.
 	Implementing this idea in v3_read_crush.c
+- v3 is as above, start low pf., do 10k steps, then set pressure to 10k. Record when density
+	reachers 0.40, 0.41, ... , 0.50
 ------------------------------------------------------------------------------------------------
 - v2_read_crush.c will start at low density and crush it to the specified density, i.e.
   put pressure to 10000 until the desired density is reached, making a snapshot at that moment.
@@ -123,10 +139,13 @@ Since overlap seems to occur right at the boundary of the box, maybe something f
 
 Questions:
 ================================================================================================
-- 3 axes of cube well-defined (i.e. the normals/edges). What about 3 axes of slanted cube?
-	should we go with the normals or edges?
+- Should we expand e.g. a cube heightmap in spherical harmonics to see what the coefficients
+	for the spherical harmonics are, to find nice cubic symmetry?
 
 ------------------------------------------------------------------------------------------------
+= 3 axes of cube well-defined (i.e. the normals/edges). What about 3 axes of slanted cube?
+	should we go with the normals or edges?
+	= to be decided
 = Ask Frank:
 	= What is typedef struct {double nz; double si; double co ;int n;}bndT;
 		= a bond between two particles (i.e. they are close enough to each other,

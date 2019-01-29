@@ -39,6 +39,11 @@ const char labelstring[] = "v1_%02dpf%04.2lfp%04.1lfa%04.2lf"; */
 
 // static char chars[128] = "";
 
+/* void my_write(char* aap)
+{
+    printf("my_write says: %s\n", aap);
+} */
+
 int main(int argc, char* argv[])
 {
     dsfmt_seed(time(NULL));
@@ -328,6 +333,30 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
         case d:
             printf("d\n");
             break;
+    } */
+
+    // char aap[128] = "aap";
+    // my_write(aap); // my_write says: aap
+
+    /* enum {a=1, b=2, c=4} aap;
+    aap = a | b;
+    if (aap & a) {
+        printf("a\n"); // yes
+    }
+    if (aap & b) {
+        printf("b\n"); // yes
+    }
+    if (aap & (a | b)) {
+        printf("a&b\n"); // yes
+    }
+    if (aap == (a | b)) {
+        printf("a&b\n"); // yes
+    }
+    if (aap & c) {
+        printf("c\n"); // no
+    }
+    if (aap & (a | c)) {
+        printf("a | c\n"); // yes
     } */
 
     return 0;
