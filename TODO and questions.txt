@@ -1,23 +1,24 @@
+Key:
+- is an item
+##is a cancelled item
+= is a done item
+
 TODO:
 ================================================================================================
-
+================================================================================================
 
 - make orientational order parameter code
 	- understand orientational order param code
 	- test orient. o.p. in limits where it should be 0 (random) and 1 (perfect order)
 
 - check orientational order parameter axes as:
-	v: normals of slanted cube
+	v9: normals of slanted cube
 	v: normals of unslanted cube
 	v: edges of slanted cube 
 
-= make standalone positional, orientational order param code
-	= only print cluster snapshot every ~1000 steps
-	- make switch statements to enable doing both pos. and orient. at the same time.
-
 - write latex on positional, orientational order param code
 
-- make v8 do: not crush, but slowly increase pressure
+- make a simulation which does not crush, but slowly increases pressure
 
 - make nice fluids for pressures 6-9 (go as high as possible) and differing angles (see notes):
 	##make v3 do: stop volume moves after reaching desired pf, i.e. make it do NVT
@@ -25,13 +26,19 @@ TODO:
 	  runs we find 0.4x (for x = 0, 1, ... , 9) and 0.50
 
 
-- make output file name(s) readable from command line
+
 
 - make readme of visualization tool, explain how h_slc_cl_read.c works?
 
 
 
 ------------------------------------------------------------------------------------------------
+= make output file name(s) readable from command line
+	= done in v8
+= make standalone positional, orientational order param code
+	= only print cluster snapshot every ~1000 steps
+	= make switch statements to enable doing both pos. and orient. at the same time.
+	= DONE, is v9
 = also show density in snapshot
 = make g(r) (nice for thesis) to find density-dependent first-shell-radius
 	= max -> 1st minimum
@@ -60,6 +67,10 @@ TODO:
 
 Notes:
 ================================================================================================
+================================================================================================
+- v8 might detect overlap but that is due to precision errors when printing coordinate files,
+	these have "only" six decimal places.
+
 ##v11 is v10 but with edges as direction rather than normals
 ##v12 is v10 but with normals as if they are not from slanted cubes
 ##v13 is v10 but with cos(theta) = dir.x * norm instead of fabs(dir.x) * norm
@@ -70,7 +81,9 @@ Notes:
 		explanation: look for coords_step%07d in datafolder/datafolder_name until
 		none more can be found. Output clust_pos_... or clust_orient_... every
 		output_per files found. do pos. ordering for p, orient. ordering for o. or both (b) or all (a)
-
+- v8 is read a coord file and continue an nvt or npt simulation.
+	usage: nvt datafolder/<input> step_number mc_steps datafolder/<output>\n\
+	usage2 (not implemented yet): program.exe npt BetaP datafolder/<input> step_number datafolder/<output>";
 - v7 is just v5 but prints density next to 'count' in g%07d.txt every step too.
 - v6 is just v4 but with the colors fixed (hopefully)
 	= finally fixed
@@ -82,6 +95,7 @@ Notes:
 	1.57079632679490, 1.47062890563334, 1.36943840600457, 1.26610367277950, 1.15927948072741
 	in degrees:   90, 84.26,            78.46,            72.54,            66.42.
 	(0.5, 60 degrees, 1.04719755119660 we will not do due to six-fold symmetry possibility)
+
 - OOPS, I don't need 16 programs running and letting them stop at different packing fractions!
 	Because they start at the same time, their seed is the same, so each simulation is
 	exactly the same! Just save the snapshot when we have reached a higher packing fraction.
@@ -138,6 +152,7 @@ Since overlap seems to occur right at the boundary of the box, maybe something f
 
 
 Questions:
+================================================================================================
 ================================================================================================
 - Should we expand e.g. a cube heightmap in spherical harmonics to see what the coefficients
 	for the spherical harmonics are, to find nice cubic symmetry?

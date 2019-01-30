@@ -43,6 +43,20 @@ const char labelstring[] = "v1_%02dpf%04.2lfp%04.1lfa%04.2lf"; */
 {
     printf("my_write says: %s\n", aap);
 } */
+/* int aap_with_arg(int aap) // needs arg or error
+{
+    return aap + 1;
+}
+
+int aap_without_arg() // can give arg, no error
+{
+    return 3;
+}
+
+int aap_with_void(void) // needs 0 args or error
+{
+    return 4;
+} */
 
 int main(int argc, char* argv[])
 {
@@ -218,7 +232,7 @@ int main(int argc, char* argv[])
     add_one_to_aap();
     printf("%d\n", aap); */
 
-/* #define N 6
+    /* #define N 6
     int* aap = malloc(sizeof(int) * N);
     int noot[N] = { 5, 1, 1, 1, 8, 4 }; //, 2, 1, 7, 8};
     for (int i = 0; i < N; i++) {
@@ -318,7 +332,7 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
     printf("aap = %d\n", aap); // 9
     *mies += 3;
     printf("aap = %d\n", aap); // 12 */
-    
+
     /* enum aap{a, b, c, d} noot;
     noot = b;
     switch(noot){
@@ -358,6 +372,12 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
     if (aap & (a | c)) {
         printf("a | c\n"); // yes
     } */
+    /* printf("%d ", aap_with_arg(1)); // ok, 2
+    printf("%d ", aap_without_arg(10)); // ok, 3
+    printf("%d\n", aap_with_void(20)); // error */
+
+    /* if (NULL) printf("if NULL\n");
+    if (!NULL) printf("if !NULL\n"); // !NULL */
 
     return 0;
 }

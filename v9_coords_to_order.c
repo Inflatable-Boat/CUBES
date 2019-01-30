@@ -55,12 +55,12 @@ typedef struct {
     double si;
     double co;
     int n;
-} bndT_t;
+} bnd_t;
 typedef struct {
     int n;
-    bndT_t* bnd;
-} blistT_t;
-blistT_t* blist;
+    bnd_t* bnd;
+} blist_t;
+blist_t* blist;
 int* numconn;
 double xsize, ysize, zsize;
 
@@ -309,7 +309,7 @@ void orient_order(int l, int i, compl_t* res, int axis)
  *             TRANSL_ORDER
  * Calculate q for a pair of particles
  ***********************************************/
-void transl_order(int l, bndT_t* bnd, compl_t* res1, compl_t* res2)
+void transl_order(int l, bnd_t* bnd, compl_t* res1, compl_t* res2)
 {
     double fc, p, f, s, r, sp, spp, c, cp, cpp;
     double z;
@@ -396,7 +396,7 @@ int coords2cell(double x, double y, double z)
 void update_nblistp(int p)
 {
     int i, j, c, cellp, id;
-    bndT_t* bnd;
+    bnd_t* bnd;
     double d, dxy, dx, dy, dz;
     cellp = part[p].cell;
     blist[p].n = 0;
@@ -469,10 +469,10 @@ void update_nblist(void)
 void init_nblist(void)
 {
     int p;
-    blist = (blistT_t*)malloc(sizeof(blistT_t) * n_particles);
+    blist = (blist_t*)malloc(sizeof(blist_t) * n_particles);
     numconn = (int*)malloc(sizeof(int) * n_particles);
     for (p = n_particles - 1; p >= 0; p--) {
-        blist[p].bnd = (bndT_t*)malloc(sizeof(bndT_t) * MAX_NEIGHBORS);
+        blist[p].bnd = (bnd_t*)malloc(sizeof(bnd_t) * MAX_NEIGHBORS);
         numconn[p] = 0;
         update_nblistp(p);
     }
