@@ -28,7 +28,8 @@ int nbnd_cuttoff = 4; //Number of correlated bonds for a crystalline particle
 double obnd_cuttoff = 0.0; //Order to be in the same cluster (0.0 for all touching clusters 0.9 to see defects)
 
 //////////////////////////////////////////////////////////////// my additions
-const char usage_string[] = "usage: program.exe datafolder output_per (t/transl or o/orient) \n";
+const char usage_string[] = "usage: program.exe datafolder output_per\
+(t/transl or o/orient or b/both) (sl_norm or unsl_norm or edge)\n";
 static double Phi;
 static int output_per;
 static int n_particles;
@@ -41,9 +42,12 @@ static double CosPhi;
 static double ParticleVolume;
 // bool is_pos = true;
 typedef enum { transl = 1,
-    orient = 2 } order_mode_enum_t;
+    orient = 2,
+    axes_slanted_normals = 4,
+    axes_unslanted_normals = 8,
+    axes_edges = 16 } order_mode_enum_t;
 order_mode_enum_t order_mode;
-static char datafolder_name[128];
+static char datafolder_name[256];
 //////////////////////////////////////////////////////////////// end of my additions
 
 typedef struct {
@@ -234,7 +238,35 @@ double minpow(int m)
  ***********************************************/
 void orient_order(int l, int i, compl_t* res, int axis)
 {
-    vec3_t dir = v3_norm(m4_mul_dir(ruud_m[i], Normal[axis]));
+    vec3_t dir;// = v3_norm(m4_mul_dir(ruud_m[i], Normal[axis]));
+    if (order_mode & axes_slanted_normals) {
+        // take the normal of the slanted cube and rotate it
+        dir = m4_mul_dir(ruud_m[i], Normal[axis]);
+    } else if (order_mode & axes_unslanted_normals) {
+        // we need to construct the new vector. we do it using pointers:
+        dir = vec3(0, 0, 0);
+        // now set the axis-th member of dir to 1 in the ugliest way possible
+        *(&(dir.x) + axis) = 1.;
+        // now we have constructed the vector, rotate it
+        dir = m4_mul_dir(ruud_m[i], dir);
+    } else if (order_mode & axes_edges) {
+        // we need to construct an edge of the cube
+        if (axis == 0) {
+            dir = vec3(1, 0, 0);
+        } else if (axis == 1) {
+            dir = vec3(0, 1, 0);
+        } else if (axis == 2) {
+            dir = vec3(CosPhi, 0, SinPhi);
+        } else {
+        printf("this message shouldn't be visible 2\n");
+        exit(6);
+        }
+        // now we have constructed the vector, rotate it
+        dir = m4_mul_dir(ruud_m[i], dir);
+    } else {
+        printf("this message shouldn't be visible 1\n");
+        exit(5);
+    }
     double fc, p, f, s, r, sp, spp, c, cp, cpp;
     double z;
     int m = 0;
@@ -716,22 +748,38 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode)
 {
     int i;
 
-    char buffer[128] = "datafolder/";
-    char dfn[128] = "datafolder/";
+    char buffer[256] = "datafolder/";
+    char dfn[256] = "datafolder/";
     strcat(buffer, datafolder_name);
     strcat(dfn, datafolder_name);
-    if (mode == transl) {
-        strcat(buffer, "/clust_transl_coords%07d.poly");
-        strcat(dfn, "/v9_transl");
-    } else if (mode == orient) {
-        strcat(buffer, "/clust_orient_coords%07d.poly");
-        strcat(dfn, "/v9_orient");
+    if (mode & transl) {
+        strcat(buffer, "/clust_transl");
+        strcat(dfn, "/v10_transl");
+    } else if (mode & orient) {
+        strcat(buffer, "/clust_orient");
+        strcat(dfn, "/v10_orient");
+        if (order_mode & axes_slanted_normals) {
+            strcat(dfn, "_sl_normals");
+            strcat(buffer, "_sl_normals");
+        } else if (order_mode & axes_unslanted_normals) {
+            strcat(dfn, "_unsl_normals");
+            strcat(buffer, "_unsl_normals");
+        } else if (order_mode & axes_edges) {
+            strcat(dfn, "_edges");
+            strcat(buffer, "_edges");
+        } else {
+            printf("invalid axes order_mode in save_cluss: %d", order_mode);
+            printf(" mode: %d\n", mode);
+            exit(4);
+        }
     } else {
-        printf("invalid mode in save_cluss: %d\n", mode);
+        printf("invalid order_mode in save_cluss: %d", order_mode);
+        printf(" mode: %d\n", mode);
         exit(3);
     }
+    strcat(buffer, "_coords%07d.poly");
 
-    char fn[128] = "";
+    char fn[256] = "";
     sprintf(fn, buffer, step);
 
     if (!step) { // if first step
@@ -967,8 +1015,8 @@ int read_data2(char* init_file, int is_not_first_time)
 /// If something goes wrong, return != 0
 int parse_commandline(int argc, char* argv[])
 {
-    if (argc != 4) {
-        printf("need 3 arguments:\n");
+    if (argc != 5) {
+        printf("need 4 arguments:\n");
         return 3;
     }
     if (EOF == sscanf(argv[1], "%s", datafolder_name)) {
@@ -983,23 +1031,39 @@ int parse_commandline(int argc, char* argv[])
         printf("0 < output_per < 101\n");
         return 2;
     }
+
     if (strcmp(argv[3], "t") == 0 || strcmp(argv[3], "transl") == 0 || strcmp(argv[3], "translation") == 0
         || strcmp(argv[3], "p") == 0 || strcmp(argv[3], "pos") == 0 || strcmp(argv[3], "position") == 0) {
         printf("doing translational ordering\n");
         order_mode = transl;
-        return 0;
     } else if (strcmp(argv[3], "o") == 0 || strcmp(argv[3], "orient") == 0 || strcmp(argv[3], "orientation") == 0) {
         printf("doing orientational ordering\n");
         order_mode = orient;
-        return 0;
-    } else if (strcmp(argv[3], "a") == 0 || strcmp(argv[3], "all") == 0
-        || strcmp(argv[3], "b") == 0 || strcmp(argv[3], "both") == 0) {
+    } else if (strcmp(argv[3], "b") == 0 || strcmp(argv[3], "both") == 0) {
         printf("doing both translational and orientational ordering\n");
         order_mode = transl | orient;
-        return 0;
+    } else if (strcmp(argv[3], "a") == 0 || strcmp(argv[3], "all") == 0) {
+        printf("all not yet implemented\n");
+        return 3;
     } else {
-        printf("reading last argument failed\n");
+        printf("reading third argument failed\n");
         return 1;
+    }
+
+    if (order_mode & orient) {
+        if (strcmp(argv[4], "sl_norm") == 0 || strcmp(argv[4], "slanted_normals") == 0) {
+            printf("taking slanted normals as axes for orientational ordering\n");
+            order_mode |= axes_slanted_normals;
+        } else if (strcmp(argv[4], "unsl_norm") == 0 || strcmp(argv[4], "unslanted_normals") == 0) {
+            printf("taking unslanted normals as axes for orientational ordering\n");
+            order_mode |= axes_unslanted_normals;
+        } else if (strcmp(argv[4], "edge") == 0 || strcmp(argv[4], "edges") == 0) {
+            printf("taking (slanted) cube edges as axes for orientational ordering\n");
+            order_mode |= axes_edges;
+        } else {
+            printf("reading fourth argument failed\n");
+            return 1;
+        }
     }
 
     return 0; // no exceptions, run the program
@@ -1019,13 +1083,13 @@ int main(int argc, char** argv)
     };
 
     printf("datafolder_name: %s\n", datafolder_name);
-    char buffer[128] = "datafolder/";
+    char buffer[256] = "datafolder/";
     strcat(buffer, datafolder_name);
     strcat(buffer, "/coords_step%07d.poly");
 
     // int loop_count = 0;
     for (int step = 0; step <= 5000000; step += 100) {
-        char datafile_name[128] = "";
+        char datafile_name[256] = "";
         // replace all %d, %lf in buffer with values and put in datafile_name
         sprintf(datafile_name, buffer, step);
         // printf("datafile_name: %s\n", datafile_name);

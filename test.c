@@ -379,5 +379,15 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
     /* if (NULL) printf("if NULL\n");
     if (!NULL) printf("if !NULL\n"); // !NULL */
 
+    /* vec3_t aap = vec3(0,0,0);
+    printf("aap.x = %lf\n", aap.x); // 0
+    printf("aap.y = %lf\n", aap.y); // 0
+    printf("aap.z = %lf\n", aap.z); // 0
+    // add one to the second member of aap in the ugliest way possible
+    *(&(aap.x) + 1) += 1;
+    printf("aap.x = %lf\n", aap.x); // 0
+    printf("aap.y = %lf\n", aap.y); // 1
+    printf("aap.z = %lf\n", aap.z); // 0 */
+
     return 0;
 }

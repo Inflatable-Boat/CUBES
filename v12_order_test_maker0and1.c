@@ -30,15 +30,11 @@
 
 /* Initialization variables */
 // to be read from the command line
-static int mc_steps;
 static int StepNumber; // the stepnumber the init file should be read from
-// static double packing_fraction;
-static double BetaP = 1;
+
 static double Phi; // angle of slanted cube
 
-const char usage_string[] = "usage: program.exe datafolder/<input> StepNumber";
-
-const int output_steps = 100;
+const char usage_string[] = "usage: program.exe datafolder/<input> StepNumber datafolder/<output>\n";
 
 /* Simulation variables */
 static vec3_t r[N]; // position of center of cube
@@ -53,12 +49,10 @@ static double SinPhi; // Since Phi doesn't change, it's faster to calculate only
 
 /* Functions */
 inline static double ran(double low, double high);
-inline static int pos_mod_i(int a, int b);
-inline static double pos_mod_f(double a, double b);
 
 int parse_commandline(int argc, char* argv[]);
 void read_data(char* init_file);
-void write_data(char init_file_name[], int expected_order);
+void write_data(char buffer[], int expected_order);
 
 /* Main */
 
@@ -71,13 +65,34 @@ int main(int argc, char* argv[])
         return 1;
     };
 
-    // orient the cubes all the same way and write this file to ...1
+    // orient the cubes all the same way and write this file to ...100.poly
     for (int i = 0; i < n_particles; i++) {
         m[i] = m4_identity();
     }
-    write_data(argv[2], 1);
+    write_data(argv[3], 1);
 
-    // now orient each cubes randomly and write this file to ...0
+    // now rotate each particle around random box edge axes a few times,
+    // this should still give perfect symmetry. write this to ...200.poly
+    for (int i = 0; i < n_particles; i++) {
+        for (int j = 0; j < 12; j++) {
+            vec3_t axis = vec3(1, 0, 0);
+            int random = (int)ran(0, 6);
+            if (random < 2) {
+                axis = vec3(0, 0, 1);
+            } else if (random < 4) {
+                axis = vec3(0, 1, 0);
+            } else {
+                axis = vec3(1, 0, 0);
+            }
+            if (random & 1) {
+                axis = v3_muls(axis, -1);
+            }
+            m[i] = m4_mul(m4_rotation(M_PI / 2, axis), m[i]);
+        }
+    }
+    write_data(argv[3], 2);
+
+    // now orient each cubes randomly and write this file to ...000.poly
     for (int i = 0; i < n_particles; i++) {
         for (int rot = 0; rot < 24; rot++) {
             // choose a random axis (by picking points randomly in a ball)
@@ -94,7 +109,7 @@ int main(int argc, char* argv[])
             m[i] = m4_mul(rot_mx, m[i]);
         }
     }
-    write_data(argv[2], 0);
+    write_data(argv[3], 0);
 
     return 0;
 }
@@ -115,9 +130,11 @@ void read_data(char* init_folder)
     char init_file_with_path[128] = "datafolder/";
     strcat(init_file_with_path, init_folder);
     strcat(init_file_with_path, "/coords_step%07d.poly");
+    // printf("init_folder: %s\ninit_file_with_path: %s\n", init_folder, init_file_with_path);
 
-    char final_init_folder[128] = "";
+    char final_init_folder[255] = "";
     sprintf(final_init_folder, init_file_with_path, StepNumber);
+    // printf("final: %s\n", final_init_folder);
 
     FILE* pFile = fopen(final_init_folder, "r");
     if (NULL == pFile) {
@@ -198,16 +215,16 @@ void read_data(char* init_folder)
     Normal[2].z = 1.; // normal on z-dir
 }
 
-void write_data(char init_file_name[], int expected_order)
+void write_data(char buffer[], int expected_order)
 {
     char init_file_with_path[128] = "datafolder/";
-    strcat(init_file_with_path, init_file_name);
-    strcat(init_file_with_path, "/v10_order_%d.poly");
+    strcat(init_file_with_path, buffer);
+    strcat(init_file_with_path, "/coords_step%07d.poly");
 
-    char buffer[128] = "";
-    sprintf(buffer, init_file_with_path, expected_order);
+    char buffer2[128] = "";
+    sprintf(buffer2, init_file_with_path, 100 * expected_order);
     
-    FILE* fp = fopen(buffer, "w");
+    FILE* fp = fopen(buffer2, "w");
     fprintf(fp, "%d\n", n_particles);
     fprintf(fp, "0.0\t0.0\t0.0\n");
     for (int d = 0; d < 9; ++d) { // dimensions of box
@@ -239,8 +256,8 @@ void write_data(char init_file_name[], int expected_order)
 /// If something goes wrong, return != 0
 int parse_commandline(int argc, char* argv[])
 {
-    if (argc != 3) {
-        printf("need 2 arguments:\n");
+    if (argc != 4) {
+        printf("need 3 arguments:\n");
         return 3;
     }
     if (EOF == sscanf(argv[2], "%d", &StepNumber)) {
@@ -248,8 +265,24 @@ int parse_commandline(int argc, char* argv[])
         return 1;
     };
 
-    printf("reading file datafolder/%s...\n", argv[1]);
+    printf("reading file datafolder/%s/coords_step%07d.poly...\n", argv[1], StepNumber);
     read_data(argv[1]);
+
+    // argv[3] is output_datafolder
+    char datafolder_name[128] = "datafolder/";
+    strcat(datafolder_name, argv[3]);
+#ifdef _WIN32
+    mkdir("v12");
+    mkdir(datafolder_name);
+#elif __linux__
+    // Linux needs me to set rights, this gives rwx to me and just r to all others.
+    mkdir("v12", S_IRWXU | S_IRGRP | S_IROTH);
+    mkdir(datafolder_name, S_IRWXU | S_IRGRP | S_IROTH);
+#elif
+    printf("Please use Linux or Windows\n");
+    exit(3);
+#endif
+
 
     return 0; // no exceptions, run the program
 }

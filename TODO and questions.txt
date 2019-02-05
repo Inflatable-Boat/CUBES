@@ -6,17 +6,12 @@ Key:
 TODO:
 ================================================================================================
 ================================================================================================
-
-- make orientational order parameter code
-	- understand orientational order param code
-	- test orient. o.p. in limits where it should be 0 (random) and 1 (perfect order)
-
-- check orientational order parameter axes as:
-	v9: normals of slanted cube
-	v: normals of unslanted cube
-	v: edges of slanted cube 
+- make histograms of order param data (#nearest neighbours, q4.q4, frac xtalline cubes, etc.)
 
 - write latex on positional, orientational order param code
+
+- somehow write transl_order and orient_order as the same function, because there is a lot of
+	duplicate code in v10.
 
 - make a simulation which does not crush, but slowly increases pressure
 
@@ -25,14 +20,22 @@ TODO:
 	= make v5 do: do one run and save inside a file at which snapshots/after how many
 	  runs we find 0.4x (for x = 0, 1, ... , 9) and 0.50
 
-
-
-
 - make readme of visualization tool, explain how h_slc_cl_read.c works?
 
 
 
+
+
 ------------------------------------------------------------------------------------------------
+= make orientational order parameter code (done in v9)
+	= understand orientational order param code
+	= test orient. o.p. in limits where it should be 0 (random) and 1 (perfect order)
+		= done with v12 and v10
+= check orientational order parameter axes as:
+	= v9: normals of slanted cube
+	##v10: normals of unslanted cube
+	##v11: edges of slanted cube
+	= v10: command line option for all of the above
 = make output file name(s) readable from command line
 	= done in v8
 = make standalone positional, orientational order param code
@@ -68,12 +71,25 @@ TODO:
 Notes:
 ================================================================================================
 ================================================================================================
+	Currently (2019-01-30) in use:
+	v1: simulate normally
+	v8: simulate NVT, starting from a coord file
+	v9: read all coord files from a datafolder and give orient. or transl. order data
+		note: orient with normals of slanted cube
+
 - v8 might detect overlap but that is due to precision errors when printing coordinate files,
 	these have "only" six decimal places.
+
+- v12 is a quick test maker which reads a coordinate file and spits out the same coordinate file,
+ 	but with (1) each cube in the standard orientation
+		 (2) then rotate each cube about x, y, or z-axis a few times
+		 (3) then rotate every cube around a random axis a few times
 
 ##v11 is v10 but with edges as direction rather than normals
 ##v12 is v10 but with normals as if they are not from slanted cubes
 ##v13 is v10 but with cos(theta) = dir.x * norm instead of fabs(dir.x) * norm
+- v10 is v9 but with extra functionality: it can choose whether to use:
+	slanted normals, unslanted normals, or edges of the slanted cube.
 - bond length 2 is waaaay too large for transl. o.p.
 - v9 is read coordsstep (from e.g. v6) and make (p)osition or (o)rientation or (b)oth or (a)ll 
 	clust coords (read from	cmd line every how many 100 steps to make an pos_coordsstep%07d.poly.)
