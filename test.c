@@ -389,5 +389,12 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
     printf("aap.y = %lf\n", aap.y); // 1
     printf("aap.z = %lf\n", aap.z); // 0 */
 
+    /* double aap[1000];
+    memset(aap, 0, 1000 * sizeof(double)); // necessary
+    printf("i\taap[i]\n");
+    for (int i = 0; i < 1000; i++) {
+        printf("%d\t%lf\n", i, aap[i]);
+    } */
+
     return 0;
 }
