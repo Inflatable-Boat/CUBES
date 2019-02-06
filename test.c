@@ -11,6 +11,11 @@ inline static double ran(double low, double high)
     return (high - low) * dsfmt_genrand() + low;
 }
 
+typedef struct {
+    double re;
+    double im;
+} compl_t;
+
 /* void write(char datafolder_name[128])
 {
     char buffer[128];
@@ -395,6 +400,17 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
     for (int i = 0; i < 1000; i++) {
         printf("%d\t%lf\n", i, aap[i]);
     } */
+    
+    // two pointers to one object test
+    /* compl_t aap;
+    aap.re = 1; aap.im = 2;
+    printf("aap = %4.2lf + %4.2lfi\n", aap.re, aap.im); // aap = 1.00 + 2.00i
+    compl_t *pnoot = &aap;
+    compl_t *pmies = pnoot;
+    pnoot->re = 3;
+    printf("aap = %4.2lf + %4.2lfi\n", aap.re, aap.im); // aap = 3.00 + 2.00i
+    pmies->im = 4;
+    printf("aap = %4.2lf + %4.2lfi\n", aap.re, aap.im); // aap = 3.00 + 4.00i */
 
     return 0;
 }

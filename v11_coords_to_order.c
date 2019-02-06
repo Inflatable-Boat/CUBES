@@ -28,7 +28,7 @@ int nbnd_cuttoff = 4; //Number of correlated bonds for a crystalline particle
 double obnd_cuttoff = 0.0; //Order to be in the same cluster (0.0 for all touching clusters 0.9 to see defects)
 
 //////////////////////////////////////////////////////////////// my additions
-const char usage_string[] = "usage: program.exe datafolder output_per\
+const char usage_string[] = "usage: program.exe datafolder output_per \
 (t/transl or o/orient or b/both) (sl_norm or unsl_norm or edge)\n";
 static double Phi;
 static int output_per;
@@ -40,7 +40,6 @@ static vec3_t Normal[3];
 static double SinPhi;
 static double CosPhi;
 static double ParticleVolume;
-// bool is_pos = true;
 typedef enum { transl = 1,
     orient = 2,
     axes_slanted_normals = 4,
@@ -238,7 +237,7 @@ double minpow(int m)
  ***********************************************/
 void orient_order(int l, int i, compl_t* res, int axis)
 {
-    vec3_t dir;// = v3_norm(m4_mul_dir(ruud_m[i], Normal[axis]));
+    vec3_t dir; // = v3_norm(m4_mul_dir(ruud_m[i], Normal[axis]));
     if (order_mode & axes_slanted_normals) {
         // take the normal of the slanted cube and rotate it
         dir = m4_mul_dir(ruud_m[i], Normal[axis]);
@@ -258,8 +257,8 @@ void orient_order(int l, int i, compl_t* res, int axis)
         } else if (axis == 2) {
             dir = vec3(CosPhi, 0, SinPhi);
         } else {
-        printf("this message shouldn't be visible 2\n");
-        exit(6);
+            printf("this message shouldn't be visible 2\n");
+            exit(6);
         }
         // now we have constructed the vector, rotate it
         dir = m4_mul_dir(ruud_m[i], dir);
@@ -568,7 +567,7 @@ void init_cells(void)
         j = coords2cell(part[i].x, part[i].y, part[i].z);
         if (cells[j].n + 1 >= MAX_PART_CELL) {
             printf("ERROR: Too many particles in a cell!\n");
-            exit(666);
+            exit(7);
         }
         cells[j].particles[cells[j].n] = i;
         part[i].cell = j;
@@ -667,7 +666,7 @@ compl_t* calc_orient_order(void)
             (q1 + m)->im += (q2 + m)->im + (q3 + m)->im;
         }
         //normalize vector
-        double temp = 1.0 / sqrt(dotprod(q1, q1, l));
+        double temp = 1.0 / sqrt(dotprod(q1 - l, q1 - l, l));
         for (int m = -l; m < l; m++) {
             (q1 + m)->re *= temp;
             (q1 + m)->im *= temp;
@@ -806,7 +805,7 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
             nb_hist[blist[i].n]++;
         }
         double oneovern_particles = 1.0 / n_particles;
-        for (int i = 0; i < n_particles; i++) {
+        for (int i = 0; i <= MAX_NEIGHBORS; i++) {
             nb_hist[i] *= oneovern_particles;
         }
         for (int i = 0; i <= MAX_NEIGHBORS; i++) {
@@ -818,17 +817,60 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
     // now we make and print the |q_4|^2 histogram.
     // note: prints fraction of cubes with this |q_4|^2
     {
+        int problem1 = 1314; int problem2 = 6920;
+        compl_t *q1 = (orderp + problem1 * (2 * l + 1));
+        compl_t *q2 = (orderp + problem2 * (2 * l + 1));
+        printf("|i_4|^2 of %d: %lf\n", problem1, dotprod(orderp + problem1 * (2*l+1), orderp + problem1 * (2*l+1), l));
+        printf("|i_4|^2 of %d using q1: %lf\n", problem1, dotprod(q1, q1, l));
+        printf("|i_4| of %d using q1: %lf\n", problem1, sqrt(dotprod(q1, q1, l)));
+        {
+            double temp = 1.0 / sqrt(dotprod(q1, q1, l));
+            printf("temp = %lf\n", temp);
+            for (int m = -l; m <= l; m++) {
+                (q1 + l + m)->re *= temp;
+                (q1 + l + m)->im *= temp;
+            }
+            printf("|i_4| of %d: %lf\n", problem1, sqrt(dotprod(orderp + problem1 * (2*l+1), orderp + problem1 * (2*l+1), l)));
+            printf("|i_4| of %d using q1: %lf\n", problem1, sqrt(dotprod(q1, q1, l)));
+            // for (int m = -l; m <= l; m++) {
+            //     (orderp + problem1 * (2 * l + 1) + l)->re *= temp;
+            //     (orderp + problem1 * (2 * l + 1) + l)->im *= temp;
+            // }
+
+        }
+
+        printf("|i_4| of %d: %lf\n", problem2, dotprod(orderp + problem2 * (2*l+1) + l, orderp + problem2 * (2*l+1) + l, l));
+
+        exit(0);
         const int NBINS = 100;
         double q4_hist[NBINS];
         memset(q4_hist, 0, NBINS * sizeof(double));
+        int count = 0;
         for (int i = 0; i < n_particles; i++) {
-            q4_hist[(int) (NBINS * dotprod(orderp + i * (2 * l + 1), orderp + i * (2 * l + 1), l))]++;
+            // printf("particle i: %d\n", i);
+            for (int j = 0; j < blist[i].n; j++) {
+                // printf("j = %d ", j);
+                if (blist[i].bnd[j].n > i) {
+                    // printf("yes blist.bnd.n > %d\n", i);
+                    double order = dotprod(orderp + i * (2 * l + 1),
+                        orderp + blist[i].bnd[j].n * (2 * l + 1), l);
+                    // printf("order = %lf\n", order);
+                        
+                    if (order > 3 || order < -3) {
+                        printf("unexpected order dotprod between %d and %d: %lf\nExiting.\n", i, blist[i].bnd[j].n, order);
+                        exit(7);
+                    }
+                    q4_hist[(int) (NBINS * (order + 3) / 6.)]++;
+                    count++;
+                }
+            }
         }
-        double oneovern_particles = 1.0 / n_particles;
-        for (int i = 0; i < n_particles; i++) {
-            q4_hist[i] *= oneovern_particles;
+        double oneovercount = 1.0 / count;
+        for (int i = 0; i < NBINS; i++) {
+            q4_hist[i] *= oneovercount;
         }
-        for (int i = 0; i <= NBINS; i++) {
+        fprintf(data_file, "%d ", count);
+        for (int i = 0; i < NBINS; i++) {
             fprintf(data_file, "%lf ", q4_hist[i]);
         }
         fprintf(data_file, "\n");
@@ -959,7 +1001,7 @@ void calc_clusters(int step, int* conn, compl_t* orderp, int mode)
     numclus = cn - 1;
     save_cluss(step, cluss, size, big, cn, mode, orderp);
     printf("% i clusters, Max size: %i, Percentage of crystalline particles %f\n", numclus, big, percentage);
-    
+
     // final point where data starts getting freed
     free(cluss);
     free(size);
@@ -1126,7 +1168,7 @@ int main(int argc, char** argv)
         return 1;
     };
 
-    printf("datafolder_name: %s\n", datafolder_name);
+    // printf("datafolder_name: %s\n", datafolder_name);
     char buffer[256] = "datafolder/";
     strcat(buffer, datafolder_name);
     strcat(buffer, "/coords_step%07d.poly");

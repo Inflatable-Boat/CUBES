@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/a.out",
-            "args": ["1000","0.90", "10","1.2661036727795"],
+            "args": ["v12_a1.27", "1", "t", "sl_norm"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
