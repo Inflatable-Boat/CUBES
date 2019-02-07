@@ -412,5 +412,24 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
     pmies->im = 4;
     printf("aap = %4.2lf + %4.2lfi\n", aap.re, aap.im); // aap = 3.00 + 4.00i */
 
+// #define groottevan sizeof
+// #define dubbel double
+
+//     printf("grootte van dubbel: %d\n", groottevan(dubbel));
+
+    /* compl_t aap;
+    printf("size of compl_t = %ld\n", sizeof(aap)); // 16
+    compl_t *noot = &aap;
+    printf("address of aap = %p\n", noot);
+    printf("address of aap + 1 = %p\n", noot + 1); // + 16 */
+
+    /* printf("int sz = %ld\n", sizeof(int)); // 4
+    printf("short sz = %ld\n", sizeof(short)); // 2
+    printf("long sz = %ld\n", sizeof(long)); // 8
+    printf("long long sz = %ld\n", sizeof(long long)); // 4
+    printf("float sz = %ld\n", sizeof(float)); // 4
+    printf("double sz = %ld\n", sizeof(double)); // 8
+    printf("long double sz = %ld\n", sizeof(long double)); // 16 */
+
     return 0;
 }

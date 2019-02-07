@@ -390,6 +390,7 @@ void transl_order(int l, bnd_t* bnd, compl_t* res1, compl_t* res2)
  *             DOTPROD
  * Dot product
  ***********************************************/
+// expects pointer to the start of vectors
 double dotprod(compl_t* vec1, compl_t* vec2, int l)
 {
     double res = 0;
@@ -650,7 +651,7 @@ compl_t* calc_orient_order(void)
     const int l = 4;
     // allocate two spaces too many to make place for q2, q3
     compl_t* orderp = (compl_t*)malloc(sizeof(compl_t) * (n_particles + 2) * (l * 2 + 1));
-    memset(orderp, (int)0.0, sizeof(compl_t) * n_particles * (l * 2 + 1));
+    memset(orderp, (int)0.0, sizeof(compl_t) * (n_particles + 2) * (l * 2 + 1));
     for (int i = 0; i < n_particles; i++) {
         q1 = (orderp + i * (2 * l + 1) + l);
         q2 = (orderp + (i + 1) * (2 * l + 1) + l); // temporary place for q2, q3
@@ -667,7 +668,7 @@ compl_t* calc_orient_order(void)
         }
         //normalize vector
         double temp = 1.0 / sqrt(dotprod(q1 - l, q1 - l, l));
-        for (int m = -l; m < l; m++) {
+        for (int m = -l; m <= l; m++) {
             (q1 + m)->re *= temp;
             (q1 + m)->im *= temp;
         }
@@ -759,14 +760,14 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
         strcat(buffer, "/clust_orient");
         strcat(buffern, "/v11_orient");
         if (order_mode & axes_slanted_normals) {
-            strcat(buffern, "_sl_normals");
             strcat(buffer, "_sl_normals");
+            strcat(buffern, "_sl_normals");
         } else if (order_mode & axes_unslanted_normals) {
-            strcat(buffern, "_unsl_normals");
             strcat(buffer, "_unsl_normals");
+            strcat(buffern, "_unsl_normals");
         } else if (order_mode & axes_edges) {
-            strcat(buffern, "_edges");
             strcat(buffer, "_edges");
+            strcat(buffern, "_edges");
         } else {
             printf("invalid axes order_mode in save_cluss: %d", order_mode);
             printf(" mode: %d\n", mode);
@@ -817,31 +818,30 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
     // now we make and print the |q_4|^2 histogram.
     // note: prints fraction of cubes with this |q_4|^2
     {
-        int problem1 = 1314; int problem2 = 6920;
-        compl_t *q1 = (orderp + problem1 * (2 * l + 1));
-        compl_t *q2 = (orderp + problem2 * (2 * l + 1));
+        // DEBUG
+        /* int problem1 = 1314; //int problem2 = 6920;
+        compl_t *q1 = (orderp + problem1 * (2 * l + 1) + l);
+        // compl_t *q2 = (orderp + problem2 * (2 * l + 1) + l);
         printf("|i_4|^2 of %d: %lf\n", problem1, dotprod(orderp + problem1 * (2*l+1), orderp + problem1 * (2*l+1), l));
-        printf("|i_4|^2 of %d using q1: %lf\n", problem1, dotprod(q1, q1, l));
-        printf("|i_4| of %d using q1: %lf\n", problem1, sqrt(dotprod(q1, q1, l)));
+        printf("|i_4|^2 of %d using q1: %lf\n", problem1, dotprod(q1 - l, q1 - l, l));
+        printf("|i_4| of %d using q1: %lf\n", problem1, sqrt(dotprod(q1 - l, q1 - l, l)));
         {
-            double temp = 1.0 / sqrt(dotprod(q1, q1, l));
+            double temp = 1.0 / sqrt(dotprod(q1 - l, q1 - l, l));
             printf("temp = %lf\n", temp);
             for (int m = -l; m <= l; m++) {
-                (q1 + l + m)->re *= temp;
-                (q1 + l + m)->im *= temp;
+                (q1 + m)->re *= temp;
+                (q1 + m)->im *= temp;
             }
             printf("|i_4| of %d: %lf\n", problem1, sqrt(dotprod(orderp + problem1 * (2*l+1), orderp + problem1 * (2*l+1), l)));
-            printf("|i_4| of %d using q1: %lf\n", problem1, sqrt(dotprod(q1, q1, l)));
+            printf("|i_4| of %d using q1: %lf\n", problem1, sqrt(dotprod(q1 - l, q1 - l, l)));
             // for (int m = -l; m <= l; m++) {
             //     (orderp + problem1 * (2 * l + 1) + l)->re *= temp;
             //     (orderp + problem1 * (2 * l + 1) + l)->im *= temp;
             // }
 
         }
-
-        printf("|i_4| of %d: %lf\n", problem2, dotprod(orderp + problem2 * (2*l+1) + l, orderp + problem2 * (2*l+1) + l, l));
-
-        exit(0);
+        exit(0); */
+        // ENDEBUG
         const int NBINS = 100;
         double q4_hist[NBINS];
         memset(q4_hist, 0, NBINS * sizeof(double));
@@ -856,11 +856,11 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
                         orderp + blist[i].bnd[j].n * (2 * l + 1), l);
                     // printf("order = %lf\n", order);
                         
-                    if (order > 3 || order < -3) {
+                    if (order > 1.00001 || order < -1.00001) {
                         printf("unexpected order dotprod between %d and %d: %lf\nExiting.\n", i, blist[i].bnd[j].n, order);
                         exit(7);
                     }
-                    q4_hist[(int) (NBINS * (order + 3) / 6.)]++;
+                    q4_hist[(int) (NBINS * (order + 1) * 0.5)]++;
                     count++;
                 }
             }

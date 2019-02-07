@@ -7,6 +7,8 @@ TODO:
 ================================================================================================
 ================================================================================================
 - make histograms of order param data (#nearest neighbours, q4.q4, frac xtalline cubes, etc.)
+	- doing in v11.
+		- make separate file for each step
 
 - write latex on positional, orientational order param code
 
@@ -84,10 +86,12 @@ Notes:
  	but with (1) each cube in the standard orientation
 		 (2) then rotate each cube about x, y, or z-axis a few times
 		 (3) then rotate every cube around a random axis a few times
+- v11 is v10 but which also makes #neighbours histogram and |q_4|^2 histogram
 
 ##v11 is v10 but with edges as direction rather than normals
 ##v12 is v10 but with normals as if they are not from slanted cubes
 ##v13 is v10 but with cos(theta) = dir.x * norm instead of fabs(dir.x) * norm
+
 - v10 is v9 but with extra functionality: it can choose whether to use:
 	slanted normals, unslanted normals, or edges of the slanted cube.
 - bond length 2 is waaaay too large for transl. o.p.
