@@ -818,30 +818,6 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
     // now we make and print the |q_4|^2 histogram.
     // note: prints fraction of cubes with this |q_4|^2
     {
-        // DEBUG
-        /* int problem1 = 1314; //int problem2 = 6920;
-        compl_t *q1 = (orderp + problem1 * (2 * l + 1) + l);
-        // compl_t *q2 = (orderp + problem2 * (2 * l + 1) + l);
-        printf("|i_4|^2 of %d: %lf\n", problem1, dotprod(orderp + problem1 * (2*l+1), orderp + problem1 * (2*l+1), l));
-        printf("|i_4|^2 of %d using q1: %lf\n", problem1, dotprod(q1 - l, q1 - l, l));
-        printf("|i_4| of %d using q1: %lf\n", problem1, sqrt(dotprod(q1 - l, q1 - l, l)));
-        {
-            double temp = 1.0 / sqrt(dotprod(q1 - l, q1 - l, l));
-            printf("temp = %lf\n", temp);
-            for (int m = -l; m <= l; m++) {
-                (q1 + m)->re *= temp;
-                (q1 + m)->im *= temp;
-            }
-            printf("|i_4| of %d: %lf\n", problem1, sqrt(dotprod(orderp + problem1 * (2*l+1), orderp + problem1 * (2*l+1), l)));
-            printf("|i_4| of %d using q1: %lf\n", problem1, sqrt(dotprod(q1 - l, q1 - l, l)));
-            // for (int m = -l; m <= l; m++) {
-            //     (orderp + problem1 * (2 * l + 1) + l)->re *= temp;
-            //     (orderp + problem1 * (2 * l + 1) + l)->im *= temp;
-            // }
-
-        }
-        exit(0); */
-        // ENDEBUG
         const int NBINS = 100;
         double q4_hist[NBINS];
         memset(q4_hist, 0, NBINS * sizeof(double));
@@ -860,6 +836,10 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
                         printf("unexpected order dotprod between %d and %d: %lf\nExiting.\n", i, blist[i].bnd[j].n, order);
                         exit(7);
                     }
+                    if (order >= 1)
+                        order = 0.999999; // to avoid rounding errors in the next step
+                    if (order <= -1)
+                        order = -0.999999;
                     q4_hist[(int) (NBINS * (order + 1) * 0.5)]++;
                     count++;
                 }
