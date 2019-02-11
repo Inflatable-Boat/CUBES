@@ -8,7 +8,7 @@ TODO:
 ================================================================================================
 - make histograms of order param data (#nearest neighbours, q4.q4, frac xtalline cubes, etc.)
 	- doing in v11.
-		- make separate file for each step
+		##make separate file for each step
 
 - write latex on positional, orientational order param code
 
@@ -78,6 +78,14 @@ Notes:
 	v8: simulate NVT, starting from a coord file
 	v9: read all coord files from a datafolder and give orient. or transl. order data
 		note: orient with normals of slanted cube
+	Currently (2019-02-11) in use:
+	v1: simulate normally
+	v8: simulate NVT, starting from a coord file
+	v11: make order param data + histograms 
+	v13: slowly increase pressure
+
+- v13 is just v6 but don't immediately create the crystal order parameter, and slowly increases
+	pressure, i.e. BetaP += 5 every 10k steps
 
 - v8 might detect overlap but that is due to precision errors when printing coordinate files,
 	these have "only" six decimal places.
@@ -93,7 +101,7 @@ Notes:
 ##v13 is v10 but with cos(theta) = dir.x * norm instead of fabs(dir.x) * norm
 
 - v10 is v9 but with extra functionality: it can choose whether to use:
-	slanted normals, unslanted normals, or edges of the slanted cube.
+	slanted normals, unslanted normals, or edges of the slanted cube. (sl_norm/unsl_norm/edge)
 - bond length 2 is waaaay too large for transl. o.p.
 - v9 is read coordsstep (from e.g. v6) and make (p)osition or (o)rientation or (b)oth or (a)ll 
 	clust coords (read from	cmd line every how many 100 steps to make an pos_coordsstep%07d.poly.)
