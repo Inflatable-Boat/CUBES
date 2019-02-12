@@ -6,6 +6,10 @@ Key:
 TODO:
 ================================================================================================
 ================================================================================================
+- make v14 (extra histograms) see paper
+
+- make output_steps readable from commandline
+
 - make histograms of order param data (#nearest neighbours, q4.q4, frac xtalline cubes, etc.)
 	- doing in v11.
 		##make separate file for each step
@@ -15,8 +19,6 @@ TODO:
 - somehow write transl_order and orient_order as the same function, because there is a lot of
 	duplicate code in v10.
 
-- make a simulation which does not crush, but slowly increases pressure
-
 - make nice fluids for pressures 6-9 (go as high as possible) and differing angles (see notes):
 	##make v3 do: stop volume moves after reaching desired pf, i.e. make it do NVT
 	= make v5 do: do one run and save inside a file at which snapshots/after how many
@@ -24,11 +26,14 @@ TODO:
 
 - make readme of visualization tool, explain how h_slc_cl_read.c works?
 
+- make this todo in markdown format
 
 
 
 
 ------------------------------------------------------------------------------------------------
+= make a simulation which does not crush, but slowly increases pressure
+	= done in v13
 = make orientational order parameter code (done in v9)
 	= understand orientational order param code
 	= test orient. o.p. in limits where it should be 0 (random) and 1 (perfect order)
@@ -84,6 +89,11 @@ Notes:
 	v11: make order param data + histograms 
 	v13: slowly increase pressure
 
+
+- vtemp is temporary (duh) v1 but saves snapshot every 200 steps
+
+- v14 is just v11 but with q4 dot neighbours averaged per cube hist and #nghbr Xtalline hist
+
 - v13 is just v6 but don't immediately create the crystal order parameter, and slowly increases
 	pressure, i.e. BetaP += 5 every 10k steps
 
@@ -95,10 +105,6 @@ Notes:
 		 (2) then rotate each cube about x, y, or z-axis a few times
 		 (3) then rotate every cube around a random axis a few times
 - v11 is v10 but which also makes #neighbours histogram and |q_4|^2 histogram
-
-##v11 is v10 but with edges as direction rather than normals
-##v12 is v10 but with normals as if they are not from slanted cubes
-##v13 is v10 but with cos(theta) = dir.x * norm instead of fabs(dir.x) * norm
 
 - v10 is v9 but with extra functionality: it can choose whether to use:
 	slanted normals, unslanted normals, or edges of the slanted cube. (sl_norm/unsl_norm/edge)

@@ -858,6 +858,41 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
         fprintf(data_file, "\n");
     }
 
+    // now we make and print the |q_4|^2 histogram, averaged per particle.
+    // note: prints fraction of cubes with this |q_4|^2
+    {
+        const int NBINS = 100;
+        double q4_hist[NBINS];
+        memset(q4_hist, 0, NBINS * sizeof(double));
+        for (int i = 0; i < n_particles; i++) {
+            // printf("particle i: %d\n", i);
+            double order = 0;
+            for (int j = 0; j < blist[i].n; j++) {
+                // printf("j = %d ", j);
+                order += dotprod(orderp + i * (2 * l + 1),
+                    orderp + blist[i].bnd[j].n * (2 * l + 1), l);
+                // printf("order = %lf\n", order);
+            }
+            if (order > 1.00001 || order < -1.00001) {
+                printf("unexpected order of particle %d: %lf\nExiting.\n", i, order);
+                exit(7);
+            }
+            if (order >= 1)
+                order = 0.999999; // to avoid rounding errors in the next step
+            if (order <= -1)
+                order = -0.999999;
+            q4_hist[(int) (NBINS * (order + 1) * 0.5)]++;
+        }
+        double oneovern_particles = 1.0 / n_particles;
+        for (int i = 0; i < NBINS; i++) {
+            q4_hist[i] *= oneovern_particles;
+        }
+        for (int i = 0; i < NBINS; i++) {
+            fprintf(data_file, "%lf ", q4_hist[i]);
+        }
+        fprintf(data_file, "\n");
+    }
+
     fclose(data_file);
 
     FILE* clust_file;

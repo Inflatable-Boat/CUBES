@@ -41,7 +41,7 @@ const char labelstring[] = "v13_%02da%04.2lf";
 const char usage_string[] = "usage: program.exe (c for create) \
 (# cubes per dim) mc_steps Phi\n";
 
-const int output_steps = 200;
+const int output_steps = 400;
 const int fluids_steps = 10000; // increase pressure every this number of steps
 
 /* Simulation variables */
