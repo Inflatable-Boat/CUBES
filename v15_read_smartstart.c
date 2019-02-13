@@ -36,13 +36,13 @@ static double packing_fraction;
 static double BetaP;
 static double Phi; // angle of slanted cube
 
-const char labelstring[] = "vtemp_%02dpf%04.2lfp%04.1lfa%04.2lf";
+const char labelstring[] = "v1_%02dpf%04.2lfp%04.1lfa%04.2lf";
 // e.g. sl10pf0.50p08.0a1.25:
 // 10 CubesPerDim, pack_frac 0.50, pressure 8.0, angle 1.25
 const char usage_string[] = "usage: program.exe (r for read / c for create) \
 (readfile / # cubes per dim) mc_steps packing_fraction BetaP Phi\n";
 
-const int output_steps = 200;
+int output_steps = 100;
 
 /* Simulation variables */
 // TODO: use malloc and pointers instead of global variables?

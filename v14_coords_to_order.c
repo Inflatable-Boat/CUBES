@@ -28,10 +28,11 @@ int nbnd_cuttoff = 4; //Number of correlated bonds for a crystalline particle
 double obnd_cuttoff = 0.0; //Order to be in the same cluster (0.0 for all touching clusters 0.9 to see defects)
 
 //////////////////////////////////////////////////////////////// my additions
-const char usage_string[] = "usage: program.exe datafolder output_per \
+const char usage_string[] = "usage: program.exe datafolder read_per output_per \
 (t/transl or o/orient or b/both) (sl_norm or unsl_norm or edge)\n";
 static double Phi;
 static int output_per;
+static int read_per;
 static int n_particles;
 static double ruud_box[3];
 static vec3_t ruud_r[N]; // position of center of cube
@@ -757,10 +758,10 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
     strcat(buffern, datafolder_name);
     if (mode & transl) {
         strcat(buffer, "/clust_transl");
-        strcat(buffern, "/v11_transl");
+        strcat(buffern, "/v14_transl");
     } else if (mode & orient) {
         strcat(buffer, "/clust_orient");
-        strcat(buffern, "/v11_orient");
+        strcat(buffern, "/v14_orient");
         if (order_mode & axes_slanted_normals) {
             strcat(buffer, "_sl_normals");
             strcat(buffern, "_sl_normals");
@@ -804,7 +805,7 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
         double nb_hist[MAX_NEIGHBORS + 1];
         memset(nb_hist, 0, (MAX_NEIGHBORS + 1) * sizeof(double));
         for (int i = 0; i < n_particles; i++) {
-            // blist[index].n is the # of neighbours of particle n
+            // blist[i].n is the # of neighbours of particle i
             nb_hist[blist[i].n]++;
         }
         double oneovern_particles = 1.0 / n_particles;
@@ -813,6 +814,27 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
         }
         for (int i = 0; i <= MAX_NEIGHBORS; i++) {
             fprintf(data_file, "%lf ", nb_hist[i]);
+        }
+        fprintf(data_file, "\n");
+    }
+
+    // now make and print the histogram of number of crystalline neighbours to file
+    // note: prints fraction of cubes with this amount of neighbours
+    {
+        // make local scope to avoid clutter of random variables
+        // make a histogram of number of neighbours:
+        double xtal_nb_hist[MAX_NEIGHBORS + 1];
+        memset(xtal_nb_hist, 0, (MAX_NEIGHBORS + 1) * sizeof(double));
+        for (int i = 0; i < n_particles; i++) {
+            // numconn[i].n is the # of crystalline neighbours of particle i
+            xtal_nb_hist[numconn[i]]++;
+        }
+        double oneovern_particles = 1.0 / n_particles;
+        for (int i = 0; i <= MAX_NEIGHBORS; i++) {
+            xtal_nb_hist[i] *= oneovern_particles;
+        }
+        for (int i = 0; i <= MAX_NEIGHBORS; i++) {
+            fprintf(data_file, "%lf ", xtal_nb_hist[i]);
         }
         fprintf(data_file, "\n");
     }
@@ -862,8 +884,8 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
     // note: prints fraction of cubes with this |q_4|^2
     {
         const int NBINS = 100;
-        double q4_hist[NBINS];
-        memset(q4_hist, 0, NBINS * sizeof(double));
+        double avg_q4_hist[NBINS];
+        memset(avg_q4_hist, 0, NBINS * sizeof(double));
         for (int i = 0; i < n_particles; i++) {
             // printf("particle i: %d\n", i);
             double order = 0;
@@ -873,6 +895,7 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
                     orderp + blist[i].bnd[j].n * (2 * l + 1), l);
                 // printf("order = %lf\n", order);
             }
+            order /= blist[i].n; // take the average
             if (order > 1.00001 || order < -1.00001) {
                 printf("unexpected order of particle %d: %lf\nExiting.\n", i, order);
                 exit(7);
@@ -881,14 +904,14 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
                 order = 0.999999; // to avoid rounding errors in the next step
             if (order <= -1)
                 order = -0.999999;
-            q4_hist[(int) (NBINS * (order + 1) * 0.5)]++;
+            avg_q4_hist[(int) (NBINS * (order + 1) * 0.5)]++;
         }
         double oneovern_particles = 1.0 / n_particles;
         for (int i = 0; i < NBINS; i++) {
-            q4_hist[i] *= oneovern_particles;
+            avg_q4_hist[i] *= oneovern_particles;
         }
         for (int i = 0; i < NBINS; i++) {
-            fprintf(data_file, "%lf ", q4_hist[i]);
+            fprintf(data_file, "%lf ", avg_q4_hist[i]);
         }
         fprintf(data_file, "\n");
     }
@@ -1118,34 +1141,42 @@ int read_data2(char* init_file, int is_not_first_time)
 /// If something goes wrong, return != 0
 int parse_commandline(int argc, char* argv[])
 {
-    if (argc != 5) {
-        printf("need 4 arguments:\n");
+    if (argc != 6) {
+        printf("need 5 arguments:\n");
         return 3;
     }
     if (EOF == sscanf(argv[1], "%s", datafolder_name)) {
         printf("reading datafolder_name has failed\n");
         return 1;
     }
-    if (EOF == sscanf(argv[2], "%d", &output_per)) {
+    if (EOF == sscanf(argv[2], "%d", &read_per)) {
+        printf("reading read_per has failed\n");
+        return 1;
+    }
+    if (EOF == sscanf(argv[3], "%d", &output_per)) {
         printf("reading output_per has failed\n");
         return 1;
+    }
+    if (read_per <= 0 || read_per > 1000) {
+        printf("0 < read_per < 1001\n");
+        return 2;
     }
     if (output_per <= 0 || output_per > 100) {
         printf("0 < output_per < 101\n");
         return 2;
     }
 
-    if (strcmp(argv[3], "t") == 0 || strcmp(argv[3], "transl") == 0 || strcmp(argv[3], "translation") == 0
-        || strcmp(argv[3], "p") == 0 || strcmp(argv[3], "pos") == 0 || strcmp(argv[3], "position") == 0) {
+    if (strcmp(argv[4], "t") == 0 || strcmp(argv[4], "transl") == 0 || strcmp(argv[4], "translation") == 0
+        || strcmp(argv[4], "p") == 0 || strcmp(argv[4], "pos") == 0 || strcmp(argv[4], "position") == 0) {
         printf("doing translational ordering\n");
         order_mode = transl;
-    } else if (strcmp(argv[3], "o") == 0 || strcmp(argv[3], "orient") == 0 || strcmp(argv[3], "orientation") == 0) {
+    } else if (strcmp(argv[4], "o") == 0 || strcmp(argv[4], "orient") == 0 || strcmp(argv[4], "orientation") == 0) {
         printf("doing orientational ordering\n");
         order_mode = orient;
-    } else if (strcmp(argv[3], "b") == 0 || strcmp(argv[3], "both") == 0) {
+    } else if (strcmp(argv[4], "b") == 0 || strcmp(argv[4], "both") == 0) {
         printf("doing both translational and orientational ordering\n");
         order_mode = transl | orient;
-    } else if (strcmp(argv[3], "a") == 0 || strcmp(argv[3], "all") == 0) {
+    } else if (strcmp(argv[4], "a") == 0 || strcmp(argv[4], "all") == 0) {
         printf("all not yet implemented\n");
         return 3;
     } else {
@@ -1154,13 +1185,13 @@ int parse_commandline(int argc, char* argv[])
     }
 
     if (order_mode & orient) {
-        if (strcmp(argv[4], "sl_norm") == 0 || strcmp(argv[4], "slanted_normals") == 0) {
+        if (strcmp(argv[5], "sl_norm") == 0 || strcmp(argv[5], "slanted_normals") == 0) {
             printf("taking slanted normals as axes for orientational ordering\n");
             order_mode |= axes_slanted_normals;
-        } else if (strcmp(argv[4], "unsl_norm") == 0 || strcmp(argv[4], "unslanted_normals") == 0) {
+        } else if (strcmp(argv[5], "unsl_norm") == 0 || strcmp(argv[5], "unslanted_normals") == 0) {
             printf("taking unslanted normals as axes for orientational ordering\n");
             order_mode |= axes_unslanted_normals;
-        } else if (strcmp(argv[4], "edge") == 0 || strcmp(argv[4], "edges") == 0) {
+        } else if (strcmp(argv[5], "edge") == 0 || strcmp(argv[5], "edges") == 0) {
             printf("taking (slanted) cube edges as axes for orientational ordering\n");
             order_mode |= axes_edges;
         } else {
@@ -1191,7 +1222,7 @@ int main(int argc, char** argv)
     strcat(buffer, "/coords_step%07d.poly");
 
     // int loop_count = 0;
-    for (int step = 0; step <= 5000000; step += 100) {
+    for (int step = 0; step <= 5000000; step += read_per) {
         char datafile_name[256] = "";
         // replace all %d, %lf in buffer with values and put in datafile_name
         sprintf(datafile_name, buffer, step);

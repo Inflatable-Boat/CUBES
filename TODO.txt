@@ -6,9 +6,10 @@ Key:
 TODO:
 ================================================================================================
 ================================================================================================
-- make v14 (extra histograms) see paper
-
 - make output_steps readable from commandline
+	= done in v14
+	= done in v13
+	= done in v15
 
 - make histograms of order param data (#nearest neighbours, q4.q4, frac xtalline cubes, etc.)
 	- doing in v11.
@@ -26,12 +27,14 @@ TODO:
 
 - make readme of visualization tool, explain how h_slc_cl_read.c works?
 
-- make this todo in markdown format
+
 
 
 
 
 ------------------------------------------------------------------------------------------------
+= make v14 (extra histograms) see paper
+##make this todo in markdown format
 = make a simulation which does not crush, but slowly increases pressure
 	= done in v13
 = make orientational order parameter code (done in v9)
@@ -77,35 +80,38 @@ TODO:
 
 Notes:
 ================================================================================================
-================================================================================================
-	Currently (2019-01-30) in use:
-	v1: simulate normally
+================================================================================================	
+		Currently (2019-02-13) in use:
 	v8: simulate NVT, starting from a coord file
-	v9: read all coord files from a datafolder and give orient. or transl. order data
-		note: orient with normals of slanted cube
-	Currently (2019-02-11) in use:
+	v13: slowly increase pressure
+	v14: make order param data + extra histograms + read_per implemented
+	v15: v1, but with output_steps read from cmdline, and try to resolve overlap by scaling to 
+	     optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap
+	     also read output_steps
+		Currently (2019-02-11) in use:
 	v1: simulate normally
 	v8: simulate NVT, starting from a coord file
 	v11: make order param data + histograms 
 	v13: slowly increase pressure
+		Currently (2019-01-30) in use:
+	v1: simulate normally
+	v8: simulate NVT, starting from a coord file
+	v9: read all coord files from a datafolder and give orient. or transl. order data
+		note: orient with normals of slanted cube
 
+By the way, the official name of our slanted cube is a "right rhombic prism"
 
-- vtemp is temporary (duh) v1 but saves snapshot every 200 steps
-
+- v15 is just v1 but with output_steps read from cmdline + try to resolve overlap by scaling to 
+  slightly under optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap.
+##vtemp is temporary (duh) v1 but saves snapshot every 200 steps
 - v14 is just v11 but with q4 dot neighbours averaged per cube hist and #nghbr Xtalline hist
-
 - v13 is just v6 but don't immediately create the crystal order parameter, and slowly increases
 	pressure, i.e. BetaP += 5 every 10k steps
-
-- v8 might detect overlap but that is due to precision errors when printing coordinate files,
-	these have "only" six decimal places.
-
 - v12 is a quick test maker which reads a coordinate file and spits out the same coordinate file,
  	but with (1) each cube in the standard orientation
 		 (2) then rotate each cube about x, y, or z-axis a few times
 		 (3) then rotate every cube around a random axis a few times
 - v11 is v10 but which also makes #neighbours histogram and |q_4|^2 histogram
-
 - v10 is v9 but with extra functionality: it can choose whether to use:
 	slanted normals, unslanted normals, or edges of the slanted cube. (sl_norm/unsl_norm/edge)
 - bond length 2 is waaaay too large for transl. o.p.
@@ -118,7 +124,8 @@ Notes:
 - v8 is read a coord file and continue an nvt or npt simulation.
 	usage: nvt datafolder/<input> step_number mc_steps datafolder/<output>\n\
 	usage2 (not implemented yet): program.exe npt BetaP datafolder/<input> step_number datafolder/<output>";
-- v7 is just v5 but prints density next to 'count' in g%07d.txt every step too.
+- v8 might detect overlap but that is due to precision errors when printing coordinate files,
+	these have "only" six decimal places.- v7 is just v5 but prints density next to 'count' in g%07d.txt every step too.
 - v6 is just v4 but with the colors fixed (hopefully)
 	= finally fixed
 - v5 is g_of_r_maker, it simulates a new system and fprints the # of neighbours it counts

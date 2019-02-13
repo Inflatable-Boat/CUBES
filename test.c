@@ -431,5 +431,59 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
     printf("double sz = %ld\n", sizeof(double)); // 8
     printf("long double sz = %ld\n", sizeof(long double)); // 16 */
 
+    /* FILE *fp = fopen("tmptest.txt","w");
+    fprintf(fp, "%le\n", 100000000.); // 1.000000e+08
+    fprintf(fp, "%le\n", 10000000.); // 1.000000e+07
+    fprintf(fp, "%le\n", 1000000.); // 1.000000e+06
+    fprintf(fp, "%le\n", 100000.); // 1.000000e+05
+    fprintf(fp, "%le\n", 10000.); // 1.000000e+04
+    fprintf(fp, "%le\n", 1000.); // 1.000000e+03
+    fprintf(fp, "%le\n", 100.); // 1.000000e+02
+    fprintf(fp, "%le\n", 10.); // 1.000000e+01
+    fprintf(fp, "%le\n", 1.); // 1.000000e+00
+    fprintf(fp, "%le\n", 0.1); // 1.000000e-01
+    fprintf(fp, "%le\n", 0.01); // 1.000000e-02
+    fprintf(fp, "%le\n", 0.001); // 1.000000e-03
+    fprintf(fp, "%le\n", 0.0001); // 1.000000e-04
+    fprintf(fp, "%le\n", 0.00001); // 1.000000e-05
+    fprintf(fp, "%le\n", 0.000001); // 1.000000e-06
+    fprintf(fp, "%le\n", 0.0000001); // 1.000000e-07
+    fprintf(fp, "%le\n", 0.00000001); // 1.000000e-08
+    fprintf(fp, "%lg\n", 100000000.); // 1e+08
+    fprintf(fp, "%lg\n", 10000000.); // 1e+07
+    fprintf(fp, "%lg\n", 1000000.); // 1e+06
+    fprintf(fp, "%lg\n", 100000.); // 100000
+    fprintf(fp, "%lg\n", 10000.); // 10000
+    fprintf(fp, "%lg\n", 1000.); // 1000
+    fprintf(fp, "%lg\n", 100.); // 100
+    fprintf(fp, "%lg\n", 10.); // 10
+    fprintf(fp, "%lg\n", 1.); // 1
+    fprintf(fp, "%lg\n", 0.1); // 0.1
+    fprintf(fp, "%lg\n", 0.01); // 0.01
+    fprintf(fp, "%lg\n", 0.001); // 0.001
+    fprintf(fp, "%lg\n", 0.0001); // 0.0001
+    fprintf(fp, "%lg\n", 0.00001); // 1e-05
+    fprintf(fp, "%lg\n", 0.000001); // 1e-06
+    fprintf(fp, "%lg\n", 0.0000001); // 1e-07
+    fprintf(fp, "%lg\n", 0.00000001); // 1e-08
+    fprintf(fp, "%lg\n", 123450000.); // 1.2345e+08
+    fprintf(fp, "%lg\n", 12345000.); // 1.2345e+07
+    fprintf(fp, "%lg\n", 1234500.); // 1.2345e+06
+    fprintf(fp, "%lg\n", 123450.); // 123450
+    fprintf(fp, "%lg\n", 12345.); // 12345
+    fprintf(fp, "%lg\n", 1000.); // 1000
+    fprintf(fp, "%lg\n", 100.); // 100
+    fprintf(fp, "%lg\n", 10.); // 10
+    fprintf(fp, "%lg\n", 1.); // 1
+    fprintf(fp, "%lg\n", 0.1); // 0.1
+    fprintf(fp, "%lg\n", 0.01); // 0.01
+    fprintf(fp, "%lg\n", 0.001); // 0.001
+    fprintf(fp, "%lg\n", 0.00012345); // 0.00012345
+    fprintf(fp, "%lg\n", 0.000012345); // 1.2345e-05
+    fprintf(fp, "%lg\n", 0.0000012345); // 1.2345e-06
+    fprintf(fp, "%lg\n", 0.00000012345); // 1.2345e-07
+    fprintf(fp, "%lg\n", 0.000000012345); // 1.2345e-08
+    fprintf(fp, "%lg\n", 0.000000012345123123123123123); // 1.23451e-08 */
+
     return 0;
 }

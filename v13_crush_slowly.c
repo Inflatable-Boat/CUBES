@@ -39,9 +39,9 @@ const char labelstring[] = "v13_%02da%04.2lf";
 // e.g. sl10a1.25:
 // 10 CubesPerDim, angle 1.25
 const char usage_string[] = "usage: program.exe (c for create) \
-(# cubes per dim) mc_steps Phi\n";
+(# cubes per dim) mc_steps Phi output_steps\n";
 
-const int output_steps = 400;
+int output_steps = 100;
 const int fluids_steps = 10000; // increase pressure every this number of steps
 
 /* Simulation variables */
@@ -193,7 +193,7 @@ int main(int argc, char* argv[])
                 vol_attempted++;
                 vol_accepted += change_volume();
             }
-        }
+        } // n
 
         if (step % output_steps == 0) {
             double density = n_particles * ParticleVolume / (box[0] * box[1] * box[2]);
@@ -214,25 +214,27 @@ int main(int argc, char* argv[])
             mov_attempted = rot_attempted = vol_attempted = 0;
             mov_accepted = rot_accepted = vol_accepted = 0;
             write_data(step, fp_density, datafolder_name);
-            if (step % fluids_steps == 0) {
-                if (is_overlap()) {
-                    printf("Found overlap in this step!\n");
-                }
-                BetaP += 5;
+        } // step % output_steps
+        if (step % fluids_steps == 0) {
+            if (is_overlap()) {
+                printf("Found overlap in this step!\n");
             }
-            if (step > fluids_steps) {
-                if (density >= pack_frac_check) {
-                    printf("packing fraction reached %lf at step %d\n", pack_frac_check, step);
-                    printf("saving this step number to file %s\n", pack_frac_string);
-                    fprintf(fp_stepnumbers, "%d\n", step);
+            BetaP += 5;
+        }
+        if (step > fluids_steps) {
+            double density = n_particles * ParticleVolume / (box[0] * box[1] * box[2]);
+            if (density >= pack_frac_check) {
+                printf("packing fraction reached %lf at step %d\n", pack_frac_check, step);
+                printf("saving this step number to file %s\n", pack_frac_string);
+                fprintf(fp_stepnumbers, "%d\n", step);
+                fflush(fp_stepnumbers); // write everytime we have one, otherwise it waits too long
 
-                    pack_frac_check += 0.01;
-                    if (pack_frac_check > 0.5505)
-                        return 0;
-                }
+                pack_frac_check += 0.01;
+                if (pack_frac_check > 0.5505)
+                    return 0;
             }
         }
-    }
+    } // step
 
     fclose(fp_density); // densities/...
     fclose(fp_stepnumbers); // datafolder/.../stepnumbers
@@ -914,8 +916,8 @@ void remove_overlap(void)
 /// If something goes wrong, return != 0
 int parse_commandline(int argc, char* argv[])
 {
-    if (argc != 5) {
-        printf("need 4 arguments:\n");
+    if (argc != 6) {
+        printf("need 5 arguments:\n");
         return 3;
     }
     if (EOF == sscanf(argv[3], "%d", &mc_steps)) {
@@ -926,12 +928,20 @@ int parse_commandline(int argc, char* argv[])
         printf("reading Phi has failed\n");
         return 1;
     };
+    if (EOF == sscanf(argv[5], "%d", &output_steps)) {
+        printf("reading output_steps has failed\n");
+        return 1;
+    };
     if (mc_steps < 100) {
         printf("mc_steps > 99\n");
         return 2;
     }
     if (Phi <= 0 || Phi > M_PI / 2) {
         printf("0 < Phi < 1.57079632679\n");
+        return 2;
+    }
+    if (output_steps < 20 || output_steps > 1000) {
+        printf("20 <= output_steps <= 1000\n");
         return 2;
     }
 
