@@ -919,7 +919,7 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
     fclose(data_file);
 
     FILE* clust_file;
-    if ((step % (100 * output_per)) == 0) {
+    if ((step % (output_per)) == 0) {
         if ((clust_file = fopen(fn, "w")) == NULL) {
             printf("couldn't open clust_file fn = %s\n", fn);
             exit(-2);
@@ -1161,10 +1161,20 @@ int parse_commandline(int argc, char* argv[])
         printf("0 < read_per < 1001\n");
         return 2;
     }
-    if (output_per <= 0 || output_per > 100) {
-        printf("0 < output_per < 101\n");
+    if (output_per <= 0 || output_per > 1000) {
+        printf("0 < output_per < 1001\n");
         return 2;
     }
+
+    if (output_per < read_per) {
+        printf("\nWARNING\n\noutput_per < read_per, this is not what you want. Exiting\n");
+        return 4;
+    }
+    if (output_per % read_per != 0) {
+        printf("warning, output_per %% read_per != 0, \
+you want to print at other intervals than possible. Exiting\n");
+        return 5;
+    } 
 
     if (strcmp(argv[4], "t") == 0 || strcmp(argv[4], "transl") == 0 || strcmp(argv[4], "translation") == 0
         || strcmp(argv[4], "p") == 0 || strcmp(argv[4], "pos") == 0 || strcmp(argv[4], "position") == 0) {

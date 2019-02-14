@@ -36,11 +36,11 @@ static double packing_fraction;
 static double BetaP;
 static double Phi; // angle of slanted cube
 
-const char labelstring[] = "v1_%02dpf%04.2lfp%04.1lfa%04.2lf";
+const char labelstring[] = "v15_%02dpf%04.2lfp%04.1lfa%04.2lf";
 // e.g. sl10pf0.50p08.0a1.25:
 // 10 CubesPerDim, pack_frac 0.50, pressure 8.0, angle 1.25
 const char usage_string[] = "usage: program.exe (r for read / c for create) \
-(readfile / # cubes per dim) mc_steps packing_fraction BetaP Phi\n";
+(readfile / # cubes per dim) mc_steps output_steps packing_fraction BetaP Phi\n";
 
 int output_steps = 100;
 
@@ -78,11 +78,13 @@ void scale(double scale_factor);
 // initialization
 int parse_commandline(int argc, char* argv[]);
 void read_data2(char* init_file);
-void create_system();
+void create_system(void);
 void set_packing_fraction(void);
 void set_random_orientation(void);
 void remove_overlap(void);
+void remove_overlap_smart(void);
 void initialize_cell_list(void);
+vec3_t random_cube_axis(void);
 
 // mc steps
 // int move_particle(void);
@@ -115,7 +117,7 @@ int main(int argc, char* argv[])
     if (IsCreated) {
         set_packing_fraction();
         set_random_orientation(); // to stop pushing to rhombic phase
-        remove_overlap(); // due to too high a packing fraction or rotation
+        remove_overlap_smart(); // due to too high a packing fraction or rotation
     } else {
         if (is_overlap()) {
             printf("\n\n\tWARNING\n\n\nThe read file contains overlap.\n\
@@ -506,7 +508,7 @@ void read_data2(char* init_file)
 
 /// This function creates the initial configuration of the system.
 /// It also initializes SinPhi, CosPhi, Normal, ParticleVolume, r, and m (rot. mx.).
-void create_system()
+void create_system(void)
 {
     // initialize n_particles
     n_particles = CubesPerDim * CubesPerDim * CubesPerDim;
@@ -782,8 +784,10 @@ int rotate_particle(void)
 
 void write_data(int step, FILE* fp_density, char datafolder_name[128])
 {
-    fprintf(fp_density, "%lf\n", n_particles * ParticleVolume / (box[0] * box[1] * box[2]));
-    fflush(fp_density); // write the densities everytime we have one, otherwise it waits for ~400 lines
+    if(fp_density) {
+        fprintf(fp_density, "%lf\n", n_particles * ParticleVolume / (box[0] * box[1] * box[2]));
+        fflush(fp_density); // write the densities everytime we have one, otherwise it waits for ~400 lines
+    }
 
     char buffer[128];
     strcpy(buffer, datafolder_name);
@@ -796,7 +800,7 @@ void write_data(int step, FILE* fp_density, char datafolder_name[128])
     // strcat(datafile, "/coords_step%07d.poly");
     // sprintf(datafile, datafile, step); // replace %07d with step and put in output_file.
     // THIS GOES WRONG
-    
+
     FILE* fp = fopen(datafile, "w");
     fprintf(fp, "%d\n", n_particles);
     fprintf(fp, "0.0\t0.0\t0.0\n");
@@ -825,16 +829,45 @@ void write_data(int step, FILE* fp_density, char datafolder_name[128])
     fclose(fp);
 }
 
+// will not set packing fraction higher than 0.95 * the "optimal" packing fraction,
+// pow(1.0 + 0.5 * CosPhi, -3.0).
 void set_packing_fraction(void)
 {
     double volume = 1.0;
     for (int d = 0; d < NDIM; ++d)
         volume *= box[d];
 
-    double target_volume = (n_particles * ParticleVolume) / packing_fraction;
+    double optimal_packing_fraction = pow(1.0 + 0.5 * CosPhi, -3.0) * 0.95;
+    
+    if (packing_fraction > optimal_packing_fraction) { // then this is not gonna happen boy
+        printf("packing fraction %5.3lf entered, \
+> %5.3lf (optimal pf the way we do it)\nSetting initial pf to %5.2lf\n",
+            packing_fraction, optimal_packing_fraction, optimal_packing_fraction);
+        // packing_fraction = optimal_packing_fraction;
+        // * 0.99 to prevent rounding errors from screwing us over
+    }
+    double target_pf = packing_fraction < optimal_packing_fraction ? packing_fraction : optimal_packing_fraction;
+    double target_volume = (n_particles * ParticleVolume) / (target_pf);
     double scale_factor = pow(target_volume / volume, 1. / NDIM); // the . of 1. is important, otherwise 1 / NDIM == 1 / 3 == 0
 
     scale(scale_factor);
+}
+
+vec3_t random_cube_axis(void)
+{
+    vec3_t axis;
+    int random = (int)ran(0, 6);
+    if (random < 2) {
+        axis = vec3(0, 0, 1);
+    } else if (random < 4) {
+        axis = vec3(0, 1, 0);
+    } else {
+        axis = vec3(1, 0, 0);
+    }
+    if (random & 1) {
+        axis = v3_muls(axis, -1);
+    }
+    return axis;
 }
 
 /// After putting the (slanted) cubes at the right position,
@@ -843,20 +876,8 @@ void set_random_orientation(void)
 {
     // first rotate every particle a number of times along one of the box' axes
     for (int i = 0; i < n_particles; i++) {
-        for (int j = 0; j < 12; j++) { // TODO: is this random enough? legit?
-            vec3_t axis = vec3(1, 0, 0);
-            int random = (int)ran(0, 6);
-            if (random < 2) {
-                axis = vec3(0, 0, 1);
-            } else if (random < 4) {
-                axis = vec3(0, 1, 0);
-            } else {
-                axis = vec3(1, 0, 0);
-            }
-            if (random & 1) {
-                axis = v3_muls(axis, -1);
-            }
-            m[i] = m4_mul(m4_rotation(M_PI / 2, axis), m[i]);
+        for (int j = 0; j < 12; j++) {
+            m[i] = m4_mul(m4_rotation(M_PI / 2, random_cube_axis()), m[i]);
         }
     }
 }
@@ -884,30 +905,86 @@ void remove_overlap(void)
     }
 }
 
+/// needs the system to be in at most the optimal density, (1 + 0.5 * CosPhi)^-3.
+void remove_overlap_smart(void)
+{
+    // check if density is below optimal density, this must be the case, otherwise exit
+    if (n_particles * ParticleVolume / (box[0] * box[1] * box[2]) > pow(1.0 + 0.5 * CosPhi, -3.0) * 0.96) {
+        printf("somehow the density still isn't small enough. Exiting\n");
+        exit(4);
+    }
+
+    // we use cell lists, so initialize the cell list here
+    initialize_cell_list();
+
+    int iterations = 1;
+    do {
+        int overlap_list[N] = { 0 }; // I'm told this initializes the rest also to zero
+        int overlaps = 0; // this will count how many overlaps there are
+        for (int i = 0; i < n_particles; i++) {
+            if (is_overlap_from(i)) {
+                overlap_list[i] = 1;
+                overlaps++;
+            }
+        }
+        printf("iteration %d: %d overlaps in the system\n", iterations, overlaps);
+
+        // now try to resolve the overlaps by rotating
+        for (int i = 0; i < n_particles; i++) {
+            if (overlap_list[i]) {
+                mat4_t original_orientation = m[i];
+                bool is_good_rotation = false;
+                for (int j = 0; j < 24; j++) { // try 24 rotations per particle
+                    m[i] = m4_mul(m4_rotation(M_PI / 2, random_cube_axis()), m[i]); // try a random rotation
+                    if (is_overlap_from(i)) {
+                        continue; // try again
+                    } else { // move on to the next particle
+                        // printf("good ");
+                        is_good_rotation = true;
+                        break;
+                    }
+                }
+                if (!is_good_rotation) // rotate back to avoid creating additional overlaps
+                    m[i] = original_orientation;
+            }
+        }
+        iterations++;
+    } while (is_overlap());
+
+    // since we want to try this out first, exit here.
+    // printf("reached end of remove_overlap_smart\n");
+    // exit(0);
+}
+
 /// Put parsing the commandline in a function.
 /// If something goes wrong, return != 0
 int parse_commandline(int argc, char* argv[])
 {
-    if (argc != 7) {
-        printf("need 6 arguments:\n");
+    if (argc != 8) {
+        printf("need 7 arguments:\n");
         return 3;
     }
     if (EOF == sscanf(argv[3], "%d", &mc_steps)) {
         printf("reading mc_steps has failed\n");
         return 1;
     };
-    if (EOF == sscanf(argv[4], "%lf", &packing_fraction)) {
+    if (EOF == sscanf(argv[5], "%lf", &packing_fraction)) {
         printf("reading packing_fraction has failed\n");
         return 1;
     };
-    if (EOF == sscanf(argv[5], "%lf", &BetaP)) {
+    if (EOF == sscanf(argv[6], "%lf", &BetaP)) {
         printf("reading BetaP has failed\n");
         return 1;
     };
-    if (EOF == sscanf(argv[6], "%lf", &Phi)) {
+    if (EOF == sscanf(argv[7], "%lf", &Phi)) {
         printf("reading Phi has failed\n");
         return 1;
     };
+    if (EOF == sscanf(argv[4], "%d", &output_steps)) {
+        printf("reading output_steps has failed\n");
+        return 1;
+    };
+
     if (mc_steps < 100) {
         printf("mc_steps > 99\n");
         return 2;
@@ -924,6 +1001,10 @@ int parse_commandline(int argc, char* argv[])
         printf("0 < Phi < 1.57079632679\n");
         return 2;
     }
+    if (output_steps < 20 || output_steps > 1000) {
+        printf("20 <= output_steps <= 1000\n");
+        return 2;
+    }
 
     // read data from a file or create a system with CubesPerDim cubes per dimension
     if (strcmp(argv[1], "read") == 0 || strcmp(argv[1], "r") == 0) {
@@ -937,7 +1018,7 @@ int parse_commandline(int argc, char* argv[])
             printf("3 < CubesPerDim < 42, integer!\n%s", usage_string);
             return 1;
         }
-        create_system(CubesPerDim);
+        create_system();
         IsCreated = true;
         printf("creating system with %d cubes...\n", n_particles);
     } else {

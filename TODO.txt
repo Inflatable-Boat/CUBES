@@ -3,6 +3,8 @@ Key:
 ##is a cancelled item
 = is a done item
 
+1.57079632679490, 1.47062890563334, 1.36943840600457, 1.26610367277950, 1.15927948072741
+
 TODO:
 ================================================================================================
 ================================================================================================
@@ -10,6 +12,7 @@ TODO:
 	= done in v14
 	= done in v13
 	= done in v15
+	- todo in v8
 
 - make histograms of order param data (#nearest neighbours, q4.q4, frac xtalline cubes, etc.)
 	- doing in v11.
@@ -31,9 +34,11 @@ TODO:
 
 
 
-
 ------------------------------------------------------------------------------------------------
 = make v14 (extra histograms) see paper
+	= check
+= make v15 (v1 + extra cmdline read + smart cubic start)
+	= make smart start + check
 ##make this todo in markdown format
 = make a simulation which does not crush, but slowly increases pressure
 	= done in v13
@@ -195,8 +200,7 @@ Since overlap seems to occur right at the boundary of the box, maybe something f
 Questions:
 ================================================================================================
 ================================================================================================
-- Should we expand e.g. a cube heightmap in spherical harmonics to see what the coefficients
-	for the spherical harmonics are, to find nice cubic symmetry?
+
 
 ------------------------------------------------------------------------------------------------
 = 3 axes of cube well-defined (i.e. the normals/edges). What about 3 axes of slanted cube?
