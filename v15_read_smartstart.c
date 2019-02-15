@@ -174,6 +174,8 @@ int main(int argc, char* argv[])
 
     printf("#Step\tVolume\t acceptances\t\t\t deltas\n");
     for (int step = 0; step <= mc_steps; ++step) {
+        if (step % output_steps == 0)
+            write_data(step, fp_density, datafolder_name);
         for (int n = 0; n < 2 * n_particles + 1; ++n) {
             // Have to randomize order of moves to obey detailed balance
             int temp_ran = (int)ran(0, 2 * n_particles + 2);
@@ -205,7 +207,7 @@ int main(int argc, char* argv[])
             // And reset for the next loop
             mov_attempted = rot_attempted = vol_attempted = 0;
             mov_accepted = rot_accepted = vol_accepted = 0;
-            write_data(step, fp_density, datafolder_name);
+            // write_data(step, fp_density, datafolder_name);
             if (step % 10000 == 0) {
                 if (is_overlap()) {
                     printf("Found overlap in this step!\n");

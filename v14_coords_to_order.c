@@ -826,7 +826,7 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
         double xtal_nb_hist[MAX_NEIGHBORS + 1];
         memset(xtal_nb_hist, 0, (MAX_NEIGHBORS + 1) * sizeof(double));
         for (int i = 0; i < n_particles; i++) {
-            // numconn[i].n is the # of crystalline neighbours of particle i
+            // numconn[i] is the # of crystalline neighbours of particle i
             xtal_nb_hist[numconn[i]]++;
         }
         double oneovern_particles = 1.0 / n_particles;
