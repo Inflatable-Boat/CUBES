@@ -895,7 +895,9 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
                     orderp + blist[i].bnd[j].n * (2 * l + 1), l);
                 // printf("order = %lf\n", order);
             }
-            order /= blist[i].n; // take the average
+            if (blist[i].n) {
+                order /= blist[i].n; // take the average
+            }
             if (order > 1.00001 || order < -1.00001) {
                 printf("unexpected order of particle %d: %lf\nExiting.\n", i, order);
                 exit(7);
@@ -1195,13 +1197,13 @@ you want to print at other intervals than possible. Exiting\n");
     }
 
     if (order_mode & orient) {
-        if (strcmp(argv[5], "sl_norm") == 0 || strcmp(argv[5], "slanted_normals") == 0) {
+        if (strcmp(argv[5], "s") == 0 || strcmp(argv[5], "sl") == 0 || strcmp(argv[5], "sl_norm") == 0 || strcmp(argv[5], "slanted_normals") == 0) {
             printf("taking slanted normals as axes for orientational ordering\n");
             order_mode |= axes_slanted_normals;
-        } else if (strcmp(argv[5], "unsl_norm") == 0 || strcmp(argv[5], "unslanted_normals") == 0) {
+        } else if (strcmp(argv[5], "u") == 0 || strcmp(argv[5], "unsl") == 0 || strcmp(argv[5], "unsl_norm") == 0 || strcmp(argv[5], "unslanted_normals") == 0) {
             printf("taking unslanted normals as axes for orientational ordering\n");
             order_mode |= axes_unslanted_normals;
-        } else if (strcmp(argv[5], "edge") == 0 || strcmp(argv[5], "edges") == 0) {
+        } else if (strcmp(argv[5], "e") == 0 || strcmp(argv[5], "edge") == 0 || strcmp(argv[5], "edges") == 0) {
             printf("taking (slanted) cube edges as axes for orientational ordering\n");
             order_mode |= axes_edges;
         } else {
