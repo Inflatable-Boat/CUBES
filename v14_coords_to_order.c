@@ -869,7 +869,9 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
                 }
             }
         }
-        double oneovercount = 1.0 / count;
+        double oneovercount = 1;
+        if (count)
+            oneovercount = 1.0 / count;
         for (int i = 0; i < NBINS; i++) {
             q4_hist[i] *= oneovercount;
         }
