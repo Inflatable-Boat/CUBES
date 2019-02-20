@@ -969,7 +969,7 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
             if (rnk > 0)
                 rnk = ((rnk - 1) % 25) + 1;
         } else {
-            part[i].d *= 0.1;
+            part[i].d = 0.1;
         }
         fprintf(clust_file, "%lf %lf %lf %lf ", part[i].x, part[i].y, part[i].z, part[i].d);
         for (int d1 = 0; d1 < NDIM; d1++) {

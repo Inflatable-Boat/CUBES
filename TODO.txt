@@ -133,7 +133,8 @@ By the way, the official name of our slanted cube is a "right rhombic prism"
 	usage: nvt datafolder/<input> step_number mc_steps datafolder/<output>\n\
 	usage2 (not implemented yet): program.exe npt BetaP datafolder/<input> step_number datafolder/<output>";
 - v8 might detect overlap but that is due to precision errors when printing coordinate files,
-	these have "only" six decimal places.- v7 is just v5 but prints density next to 'count' in g%07d.txt every step too.
+	these have "only" six decimal places.
+- v7 is just v5 but prints density next to 'count' in g%07d.txt every step too.
 - v6 is just v4 but with the colors fixed (hopefully)
 	= finally fixed
 - v5 is g_of_r_maker, it simulates a new system and fprints the # of neighbours it counts
