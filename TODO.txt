@@ -8,8 +8,11 @@ Key:
 TODO:
 ================================================================================================
 ================================================================================================
+- make option in v14 (order) to not save the snapshots (to conserve space)
+	- will be v18
+
 - do umbrella sampling
-	- will be v16
+	- will be v17
 
 - make output_steps readable from commandline
 	= done in v14
@@ -109,6 +112,7 @@ Notes:
 
 By the way, the official name of our slanted cube is a "right rhombic prism"
 
+- v16 is just v6 but don't save the cluster steps yet (so a cleaner version of v3)
 - v15 is just v1 but with output_steps read from cmdline + try to resolve overlap by scaling to 
   slightly under optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap.
 ##vtemp is temporary (duh) v1 but saves snapshot every 200 steps
