@@ -92,6 +92,14 @@ TODO:
 Notes:
 ================================================================================================
 ================================================================================================	
+		Currently (2019-02-20) in use:
+	v8: simulate NVT, starting from a coord file
+	v13: slowly increase pressure
+	v14: make order param data + extra histograms + read_per implemented
+	v15: v1, but with output_steps read from cmdline, and try to resolve overlap by scaling to 
+	     optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap
+	     also read output_steps
+	v16: v6, but don't save clust snapshots (i.e. v4 but nice)
 		Currently (2019-02-13) in use:
 	v8: simulate NVT, starting from a coord file
 	v13: slowly increase pressure

@@ -48,6 +48,7 @@ const char labelstring[] = "v1_%02dpf%04.2lfp%04.1lfa%04.2lf"; */
 {
     printf("my_write says: %s\n", aap);
 } */
+
 /* int aap_with_arg(int aap) // needs arg or error
 {
     return aap + 1;
@@ -301,7 +302,7 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
 
     free(aap);
     free(mies);
-    free(wim);
+    free(wim); // wim is the same as zus, requires aap and noot (noot is aap sorted)
     free(zus);
     free(jet); */
 
@@ -484,6 +485,12 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
     fprintf(fp, "%lg\n", 0.00000012345); // 1.2345e-07
     fprintf(fp, "%lg\n", 0.000000012345); // 1.2345e-08
     fprintf(fp, "%lg\n", 0.000000012345123123123123123); // 1.23451e-08 */
+
+    int aap = 0;
+    if (EOF == sscanf(argv[1], "%d", &aap)) {
+        printf("bad\n");
+    }
+    printf("aap = % d\n", aap);
 
     return 0;
 }

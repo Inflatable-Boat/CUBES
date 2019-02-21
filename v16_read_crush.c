@@ -35,7 +35,7 @@ int mc_steps;
 double BetaP = 1; // start at one, go to 10000 after fluids_steps = 10000 mc_steps
 double Phi; // angle of slanted cube
 
-const char labelstring[] = "v6_%02da%04.2lf";
+const char labelstring[] = "v16_%02da%04.2lf";
 // e.g. sl10a1.25:
 // 10 CubesPerDim, angle 1.25
 const char usage_string[] = "usage: program.exe (r for read / c for create) \
@@ -229,6 +229,7 @@ int main(int argc, char* argv[])
                     printf("packing fraction reached %lf at step %d\n", pack_frac_check, step);
                     printf("saving this step number to file %s\n", pack_frac_string);
                     fprintf(fp_stepnumbers, "%d\n", step);
+                    fflush(fp_stepnumbers);
 
                     pack_frac_check += 0.01;
                     if (pack_frac_check > 0.5505)
