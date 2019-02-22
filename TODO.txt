@@ -8,8 +8,9 @@ Key:
 TODO:
 ================================================================================================
 ================================================================================================
-- make option in v14 (order) to not save the snapshots (to conserve space)
-	- will be v18
+- do cluster analysis on slow crush (v13)
+
+- do cluster analysis on fast crush (v16)
 
 - do umbrella sampling
 	- will be v17
@@ -18,6 +19,8 @@ TODO:
 	= done in v14
 	= done in v13
 	= done in v15
+	= done in v16
+	= done in v18
 	- todo in v8
 
 - write latex on positional, orientational order param code
@@ -37,6 +40,8 @@ TODO:
 
 
 ------------------------------------------------------------------------------------------------
+= make option in v14 (order) to not save the snapshots (to conserve space)
+	= will be v18
 = make histograms of order param data (#nearest neighbours, q4.q4, frac xtalline cubes, etc.)
 	##doing in v11.
 	= done in v14 by simulating v15
@@ -92,13 +97,19 @@ TODO:
 Notes:
 ================================================================================================
 ================================================================================================	
+		Currently (2019-02-22) in use:
+	v8: simulate NVT, starting from a coord file
+	v13: slowly increase pressure
+	v15: v1, but with output_steps read from cmdline, and try to resolve overlap by scaling to 
+	     optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap
+	v16: v6 (fast crush), but don't save cluster snapshots (v14/v18 does this)
+	v18: make order param data + extra histograms + read_per implemented + save if (!output_per)
 		Currently (2019-02-20) in use:
 	v8: simulate NVT, starting from a coord file
 	v13: slowly increase pressure
 	v14: make order param data + extra histograms + read_per implemented
 	v15: v1, but with output_steps read from cmdline, and try to resolve overlap by scaling to 
 	     optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap
-	     also read output_steps
 	v16: v6, but don't save clust snapshots (i.e. v4 but nice)
 		Currently (2019-02-13) in use:
 	v8: simulate NVT, starting from a coord file
@@ -106,7 +117,6 @@ Notes:
 	v14: make order param data + extra histograms + read_per implemented
 	v15: v1, but with output_steps read from cmdline, and try to resolve overlap by scaling to 
 	     optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap
-	     also read output_steps
 		Currently (2019-02-11) in use:
 	v1: simulate normally
 	v8: simulate NVT, starting from a coord file

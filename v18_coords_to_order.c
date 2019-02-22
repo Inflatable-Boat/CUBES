@@ -29,7 +29,8 @@ double obnd_cuttoff = 0.0; //Order to be in the same cluster (0.0 for all touchi
 
 //////////////////////////////////////////////////////////////// my additions
 const char usage_string[] = "usage: program.exe datafolder read_per output_per \
-((s)ave / (n)osave) (t/transl or o/orient or b/both) (sl_norm or unsl_norm or edge)\n";
+(t/transl or o/orient or b/both) (sl_norm or unsl_norm or edge)\n\
+output_per = 0 means don't save snapshots\n";
 static double Phi;
 static int output_per;
 static int read_per;
@@ -48,7 +49,6 @@ typedef enum { transl = 1,
     axes_edges = 16 } order_mode_enum_t;
 order_mode_enum_t order_mode;
 static char datafolder_name[256];
-static int save;
 //////////////////////////////////////////////////////////////// end of my additions
 
 typedef struct {
@@ -923,6 +923,9 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
 
     fclose(data_file);
 
+    if (output_per == 0) { // 0 means no save
+        return;
+    }
     FILE* clust_file;
     if ((step % (output_per)) == 0) {
         if ((clust_file = fopen(fn, "w")) == NULL) {
@@ -1146,8 +1149,8 @@ int read_data2(char* init_file, int is_not_first_time)
 /// If something goes wrong, return != 0
 int parse_commandline(int argc, char* argv[])
 {
-    if (argc != 7) {
-        printf("need 6 arguments:\n");
+    if (argc != 6) {
+        printf("need 5 arguments:\n");
         return 3;
     }
     if (EOF == sscanf(argv[1], "%s", datafolder_name)) {
@@ -1158,6 +1161,7 @@ int parse_commandline(int argc, char* argv[])
         printf("reading read_per has failed\n");
         return 1;
     }
+    output_per = 0;
     if (EOF == sscanf(argv[3], "%d", &output_per)) {
         printf("reading output_per has failed\n");
         return 1;
@@ -1166,8 +1170,8 @@ int parse_commandline(int argc, char* argv[])
         printf("0 < read_per < 1001\n");
         return 2;
     }
-    if (output_per <= 0 || output_per > 1000) {
-        printf("0 < output_per < 1001\n");
+    if (output_per < 0 || output_per > 1000) {
+        printf("0 <= output_per < 1001\n");
         return 2;
     }
 
@@ -1180,14 +1184,6 @@ int parse_commandline(int argc, char* argv[])
 you want to print at other intervals than possible. Exiting\n");
         return 5;
     } 
-
-    // if (strcmp(argv[4], "s") == 0 || strcmp(argv[4], "save") == 0) {
-    //     printf("saving coord")
-    //     return 3;
-    // } else {
-    //     printf("reading third argument failed\n");
-    //     return 1;
-    // }
 
     if (strcmp(argv[4], "t") == 0 || strcmp(argv[4], "transl") == 0 || strcmp(argv[4], "translation") == 0
         || strcmp(argv[4], "p") == 0 || strcmp(argv[4], "pos") == 0 || strcmp(argv[4], "position") == 0) {
@@ -1265,14 +1261,14 @@ int main(int argc, char** argv)
         if (order_mode & transl) {
             order = calc_transl_order(); // mallocs order
             connections = calc_conn(order); // mallocs connections
-            calc_clusters(step, connections, order, transl); // and save
+            calc_clusters(step, connections, order, transl); // and save if output_per > 0
             free(order);
             free(connections);
         }
         if (order_mode & orient) {
             order = calc_orient_order(); // mallocs order
             connections = calc_conn(order); // mallocs connections
-            calc_clusters(step, connections, order, orient); // and save
+            calc_clusters(step, connections, order, orient); // and save if output_per > 0
             free(order);
             free(connections);
         }

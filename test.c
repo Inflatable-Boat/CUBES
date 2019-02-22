@@ -486,11 +486,11 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
     fprintf(fp, "%lg\n", 0.000000012345); // 1.2345e-08
     fprintf(fp, "%lg\n", 0.000000012345123123123123123); // 1.23451e-08 */
 
-    int aap = 0;
+    /* int aap;
     if (EOF == sscanf(argv[1], "%d", &aap)) {
         printf("bad\n");
     }
-    printf("aap = % d\n", aap);
+    printf("aap = % d\n", aap); */
 
     return 0;
 }
