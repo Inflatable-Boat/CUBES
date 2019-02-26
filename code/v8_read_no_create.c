@@ -42,9 +42,9 @@ const double MARGIN_OF_ERROR = 0.005;
 // e.g. sl10pf0.50p08.0a1.25:
 // 10 CubesPerDim, pack_frac 0.50, pressure 8.0, angle 1.25
 const char usage_string[] = "usage: program.exe \
-nvt density datafolder/<input> StepNumber mc_steps output_steps datafolder/<output>\n\
-usage2 (not implemented yet): program.exe \
-npt BetaP datafolder/<input> StepNumber datafolder/<output>";
+nvt density datafolder/<input> StepNumber mc_steps output_steps datafolder/<output>\n";
+// usage2 (not implemented yet): program.exe
+// npt BetaP datafolder/<input> StepNumber datafolder/<output>\n;
 /* c/create CubesPerDim mc_steps packing_fraction BetaP Phi\n\ */
 
 int output_steps = 100;
