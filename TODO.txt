@@ -15,18 +15,10 @@ TODO:
 - do umbrella sampling
 	- will be v17
 
-- make output_steps readable from commandline
-	= done in v14
-	= done in v13
-	= done in v15
-	= done in v16
-	= done in v18
-	- todo in v8
-
 - write latex on positional, orientational order param code
 
 - somehow write transl_order and orient_order as the same function, because there is a lot of
-	duplicate code in v10.
+	duplicate code in v10 <- v11 <- v14 <- v18.
 
 - make nice fluids for pressures 6-9 (go as high as possible) and differing angles (see notes):
 	##make v3 do: stop volume moves after reaching desired pf, i.e. make it do NVT
@@ -39,7 +31,15 @@ TODO:
 
 
 
-------------------------------------------------------------------------------------------------
+DONE
+================================================================================================
+= make output_steps readable from commandline
+	= done in v14
+	= done in v13
+	= done in v15
+	= done in v16
+	= done in v18
+	= todo in v8
 = make option in v14 (order) to not save the snapshots (to conserve space)
 	= will be v18
 = make histograms of order param data (#nearest neighbours, q4.q4, frac xtalline cubes, etc.)
@@ -94,42 +94,49 @@ TODO:
 
 
 
-Notes:
+Which versions are being used:
 ================================================================================================
-================================================================================================	
-		Currently (2019-02-22) in use:
-	v8: simulate NVT, starting from a coord file
-	v13: slowly increase pressure
-	v15: v1, but with output_steps read from cmdline, and try to resolve overlap by scaling to 
-	     optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap
-	v16: v6 (fast crush), but don't save cluster snapshots (v14/v18 does this)
-	v18: make order param data + extra histograms + read_per implemented + save if (!output_per)
-		Currently (2019-02-20) in use:
-	v8: simulate NVT, starting from a coord file
-	v13: slowly increase pressure
-	v14: make order param data + extra histograms + read_per implemented
-	v15: v1, but with output_steps read from cmdline, and try to resolve overlap by scaling to 
-	     optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap
-	v16: v6, but don't save clust snapshots (i.e. v4 but nice)
-		Currently (2019-02-13) in use:
-	v8: simulate NVT, starting from a coord file
-	v13: slowly increase pressure
-	v14: make order param data + extra histograms + read_per implemented
-	v15: v1, but with output_steps read from cmdline, and try to resolve overlap by scaling to 
-	     optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap
-		Currently (2019-02-11) in use:
-	v1: simulate normally
-	v8: simulate NVT, starting from a coord file
-	v11: make order param data + histograms 
-	v13: slowly increase pressure
-		Currently (2019-01-30) in use:
-	v1: simulate normally
-	v8: simulate NVT, starting from a coord file
-	v9: read all coord files from a datafolder and give orient. or transl. order data
-		note: orient with normals of slanted cube
+================================================================================================
+	Currently (2019-02-22) in use:
+v8: simulate NVT, starting from a coord file
+v13: slowly increase pressure
+v15: v1, but with output_steps read from cmdline, and try to resolve overlap by scaling to 
+     optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap
+v16: v6 (fast crush), but don't save cluster snapshots (v14/v18 does this)
+v18: make order param data + extra histograms + read_per implemented + save if (!output_per)
+	Currently (2019-02-20) in use:
+v8: simulate NVT, starting from a coord file
+v13: slowly increase pressure
+v14: make order param data + extra histograms + read_per implemented
+v15: v1, but with output_steps read from cmdline, and try to resolve overlap by scaling to 
+     optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap
+v16: v6, but don't save clust snapshots (i.e. v4 but nice)
+	Currently (2019-02-13) in use:
+v8: simulate NVT, starting from a coord file
+v13: slowly increase pressure
+v14: make order param data + extra histograms + read_per implemented
+v15: v1, but with output_steps read from cmdline, and try to resolve overlap by scaling to 
+     optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap
+	Currently (2019-02-11) in use:
+v1: simulate normally
+v8: simulate NVT, starting from a coord file
+v11: make order param data + histograms 
+v13: slowly increase pressure
+	Currently (2019-01-30) in use:
+v1: simulate normally
+v8: simulate NVT, starting from a coord file
+v9: read all coord files from a datafolder and give orient. or transl. order data
+	note: orient with normals of slanted cube
 
-By the way, the official name of our slanted cube is a "right rhombic prism"
 
+
+
+
+Version explanation:
+================================================================================================
+================================================================================================
+- v18 is just v14 but if output_steps == 0 we don't save the snapshots, 
+- v17 is just v15 but with umbrella sampling
 - v16 is just v6 but don't save the cluster steps yet (so a cleaner version of v3)
 - v15 is just v1 but with output_steps read from cmdline + try to resolve overlap by scaling to 
   slightly under optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap.
@@ -162,22 +169,32 @@ By the way, the official name of our slanted cube is a "right rhombic prism"
 - v5 is g_of_r_maker, it simulates a new system and fprints the # of neighbours it counts
 	and the histogram for each step
 - v4 is v3 but uses crystal_v4.c to also save the clusters
+- v3 is start low pf., do 10k steps, then set pressure to 10k. Record when density
+	reachers 0.40, 0.41, ... , 0.50
+- v2_read_crush.c will start at low density and crush it to the specified density, i.e.
+  put pressure to 10000 until the desired density is reached, making a snapshot at that moment.
 
+
+
+
+
+Notes:
+================================================================================================
+================================================================================================	
+
+------------------------------------------------------------------------------------------------
+By the way, the official name of our slanted cube is a "right rhombic prism"
+------------------------------------------------------------------------------------------------
 - slant angles we wish to study: arccos[x] (for x = 0.0, 0.1, ... , 0.4), in radians:
 	1.57079632679490, 1.47062890563334, 1.36943840600457, 1.26610367277950, 1.15927948072741
 	in degrees:   90, 84.26,            78.46,            72.54,            66.42.
 	(0.5, 60 degrees, 1.04719755119660 we will not do due to six-fold symmetry possibility)
-
+------------------------------------------------------------------------------------------------
 - OOPS, I don't need 16 programs running and letting them stop at different packing fractions!
 	Because they start at the same time, their seed is the same, so each simulation is
 	exactly the same! Just save the snapshot when we have reached a higher packing fraction.
 	Implementing this idea in v3_read_crush.c
-- v3 is as above, start low pf., do 10k steps, then set pressure to 10k. Record when density
-	reachers 0.40, 0.41, ... , 0.50
 ------------------------------------------------------------------------------------------------
-- v2_read_crush.c will start at low density and crush it to the specified density, i.e.
-  put pressure to 10000 until the desired density is reached, making a snapshot at that moment.
-
 Last meeting:
 - make "nice fluids library" for densities 6-9 (go as high as possible)
 	- do this by making a low density fluid, crushing as fast as possible until reaching

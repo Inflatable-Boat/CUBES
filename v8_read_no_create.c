@@ -42,12 +42,12 @@ const double MARGIN_OF_ERROR = 0.005;
 // e.g. sl10pf0.50p08.0a1.25:
 // 10 CubesPerDim, pack_frac 0.50, pressure 8.0, angle 1.25
 const char usage_string[] = "usage: program.exe \
-nvt density datafolder/<input> StepNumber mc_steps datafolder/<output>\n\
+nvt density datafolder/<input> StepNumber mc_steps output_steps datafolder/<output>\n\
 usage2 (not implemented yet): program.exe \
 npt BetaP datafolder/<input> StepNumber datafolder/<output>";
 /* c/create CubesPerDim mc_steps packing_fraction BetaP Phi\n\ */
 
-const int output_steps = 100;
+int output_steps = 100;
 
 /* Simulation variables */
 // TODO: use malloc and pointers instead of global variables?
@@ -143,7 +143,7 @@ Continuing but returning nonzero exit status as warning\n");
     }
     // ENDEBUG
     char datafolder_name[128] = "datafolder/";
-    strcat(datafolder_name, argv[6]); // argv[6] is the user-given outputfolder name
+    strcat(datafolder_name, argv[7]); // argv[7] is the user-given outputfolder name
 
 // make the folder to store all the data in, if it already exists do nothing.
 #ifdef _WIN32
@@ -803,11 +803,11 @@ bool is_overlap(void)
 /// If something goes wrong, return != 0
 int parse_commandline(int argc, char* argv[])
 {
-    if (argc != 7) {
-        printf("need 6 arguments:\n");
+    if (argc != 8) {
+        printf("need 7 arguments:\n");
         return 3;
     }
-// usage: program.exe nvt datafolder/<input> StepNumber mc_steps datafolder/<output>
+// usage: program.exe nvt datafolder/<input> StepNumber mc_steps output_steps datafolder/<output>
     // read data from a file or create a system with CubesPerDim cubes per dimension
     if (strcmp(argv[1], "nvt") == 0 || strcmp(argv[1], "NVT") == 0) {
         if (EOF == sscanf(argv[2], "%lf", &Density)) {
@@ -845,6 +845,14 @@ int parse_commandline(int argc, char* argv[])
     //     printf("reading output_foldername has failed\n");
     //     return 1;
     // };
+    if (EOF == sscanf(argv[6], "%d", &output_steps)) {
+        printf("reading output_steps has failed\n");
+        return 1;
+    };
+    if (output_steps < 20 || output_steps > 1000) {
+        printf("20 <= output_steps <= 1000\n");
+        return 2;
+    }
 
     if (mc_steps < 100) {
         printf("mc_steps > 99\n");
