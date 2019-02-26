@@ -1,6 +1,6 @@
 /// This file is a test on how included files work
 
-extern int aap;
+/* extern int aap;
 
 int test2(int argc, char* argv[])
 {
@@ -10,5 +10,4 @@ int test2(int argc, char* argv[])
 void add_one_to_aap(void)
 {
     aap++;
-}
-
+} */

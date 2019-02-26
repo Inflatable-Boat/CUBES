@@ -5,7 +5,8 @@
                 "includePath": [
                     "/usr/include",
                     "/usr/local/include",
-                    "${workspaceRoot}"
+                    "${workspaceRoot}",
+                    "/home/ruud/Desktop/code/main/code"
                 ],
                 "defines": [],
                 "intelliSenseMode": "clang-x64",

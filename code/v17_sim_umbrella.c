@@ -1,5 +1,7 @@
 #include "math_3d.h" // https://github.com/arkanis/single-header-file-c-libs/blob/master/math_3d.h
+#include "v17.h"
 #include "mt19937.h" // Mersenne Twister (dsmft_genrand();)
+#include "crystal_coords_v18_for_v17.c" // int biggest_cluster_size(int what_order) returns the largest cluster this step
 #ifdef _WIN32
 #include <direct.h> // mkdir on Windows
 #elif __linux__
@@ -21,51 +23,65 @@
 #define M_E 2.71828182845904523536
 #endif
 
-#define NDIM 3
+/* #define NDIM 3
 #define N 8000 // 20^3 should be plenty for now
 #define NC 16 // max number of cells per direction
 #define MAXPC 64 // max number of particles per cell
 // WARNING!, don't make NC much larger than 32, because
-// WhichCubesInCell is an array of size NC^3, this is already a million at NC == 32.
+// WhichCubesInCell is an array of size MAXPC * NC^3, this is already 2 million at NC == 32. */
 
 /* Initialization variables */
 // many have been made not constant, so that one can enter into the command line:
 // a.exe mc_steps packing_fraction BetaP Phi
-static int mc_steps;
+int mc_steps;
 static double packing_fraction;
 static double BetaP;
-static double Phi; // angle of slanted cube
+double Phi; // angle of slanted cube
 
-const char labelstring[] = "v15_%02dpf%04.2lfp%04.1lfa%04.2lf";
+const char labelstring[] = "v17_%02dpf%04.2lfp%04.1lfa%04.2lf";
 // e.g. sl10pf0.50p08.0a1.25:
 // 10 CubesPerDim, pack_frac 0.50, pressure 8.0, angle 1.25
 const char usage_string[] = "usage: program.exe (r for read / c for create) \
-(readfile / # cubes per dim) mc_steps output_steps packing_fraction BetaP Phi\n";
+(readfile / # cubes per dim) mc_steps output_steps packing_fraction BetaP Phi order_mode\n\
+(transl = 1, sl = 2, unsl = 3, edge = 4)\n";
 
 int output_steps = 100;
 
 /* Simulation variables */
-// TODO: use malloc and pointers instead of global variables?
+
+/* typedef struct {
+    vec3_t r[N]; // position of center of cube
+    mat4_t m[N]; // rotation matrix of cube
+    double CellLength; // The length of a cell
+    int NumCubesInCell[NC][NC][NC]; // how many cubes in each cell
+    int WhichCubesInCell[NC][NC][NC][MAXPC]; // which cubes in each cell
+    int InWhichCellIsThisCube[N]; // (a,b,c) == NC*NC*a + NC*b + c
+    double box[NDIM]; // dimensions of box
+} system_t; */ // v17.h
+
+system_t sim;
+
 static double Delta = 0.05; // delta, deltaV, deltaR are dynamic, i.e. every output_steps steps,
 static double DeltaR = 0.05; // they will be nudged a bit to keep
 static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
 
 static bool IsCreated; // Did we create a system or read a file
 
-static vec3_t r[N]; // position of center of cube
-static mat4_t m[N]; // rotation matrix of cube
-static double CellLength; // The length of a cell
+// static vec3_t r[N]; // position of center of cube
+// static mat4_t m[N]; // rotation matrix of cube
+// static double CellLength; // The length of a cell
 static int CellsPerDim; // number of cells per dimension
-static int NumCubesInCell[NC][NC][NC]; // how many cubes in each cell
-static int WhichCubesInCell[NC][NC][NC][MAXPC]; // which cubes in each cell
-static int InWhichCellIsThisCube[N]; // (a,b,c) == NC*NC*a + NC*b + c
-static double box[NDIM]; // dimensions of box
-static vec3_t Normal[3]; // the normal vector of an unrotated cube. Normal[0] is the normal in the x-dir, etc.
-static int n_particles = 0;
-static int CubesPerDim;
-static double ParticleVolume;
-static double CosPhi; // cos and sin of Phi appear a lot, and are expensive to calculate.
-static double SinPhi; // Since Phi doesn't change, it's faster to calculate only once.
+// static int NumCubesInCell[NC][NC][NC]; // how many cubes in each cell
+// static int WhichCubesInCell[NC][NC][NC][MAXPC]; // which cubes in each cell
+// static int InWhichCellIsThisCube[N]; // (a,b,c) == NC*NC*a + NC*b + c
+// static double box[NDIM]; // dimensions of box
+vec3_t Normal[3]; // the normal vector of an unrotated cube. Normal[0] is the normal in the x-dir, etc.
+int n_particles = 0;
+int CubesPerDim;
+double ParticleVolume;
+double CosPhi; // cos and sin of Phi appear a lot, and are expensive to calculate.
+double SinPhi; // Since Phi doesn't change, it's faster to calculate only once.
+int what_order; // transl = 1, sl = 2, unsl = 3, edge = 4
 
 /* Functions */
 void print_celllists(void);
@@ -129,11 +145,11 @@ int main(int argc, char* argv[])
     }
     initialize_cell_list();
     // DEBUG: print NumCubesInCell, and other cell list numbers.
-    printf("celllength: %lf\nboxsize: %lf\ncellsperdim: %d\n\n", CellLength, box[0], CellsPerDim);
+    printf("celllength: %lf\nboxsize: %lf\ncellsperdim: %d\n\n", sim.CellLength, sim.box[0], CellsPerDim);
     for (int i = 0; i < CellsPerDim; i++) {
         for (int j = 0; j < CellsPerDim; j++) {
             for (int k = 0; k < CellsPerDim; k++) {
-                printf("%2d ", NumCubesInCell[i][j][k]);
+                printf("%2d ", sim.NumCubesInCell[i][j][k]);
             }
             printf("\n");
         }
@@ -172,8 +188,18 @@ int main(int argc, char* argv[])
     int mov_accepted = 0, vol_accepted = 0, rot_accepted = 0;
     int mov_attempted = 0, vol_attempted = 0, rot_attempted = 0;
 
-    printf("#Step\tVolume\t acceptances\t\t\t deltas\n");
+    system_t previous_step;
+    copy_system(previous_step, sim);
+
+    printf("#Step\tVolume\t\t acceptances\t\t deltas\n");
     for (int step = 0; step <= mc_steps; ++step) {
+        // if (step % 2) {
+            // if (ran(0, 2) < 1.) {
+                // printf("go back\n");
+                copy_system(previous_step, sim);
+            // }
+            // copy_system(previous_step, sim);
+        // }
         if (step % output_steps == 0)
             write_data(step, fp_density, datafolder_name);
         for (int n = 0; n < 2 * n_particles + 1; ++n) {
@@ -191,12 +217,14 @@ int main(int argc, char* argv[])
             }
         }
 
+        copy_system(sim, previous_step);
+
         if (step % output_steps == 0) {
             double move_acceptance = (double)mov_accepted / mov_attempted;
             double rotation_acceptance = (double)rot_accepted / rot_attempted;
             double volume_acceptance = (double)vol_accepted / vol_attempted;
             printf("%d\t%.3lf\t %.3lf\t%.3lf\t%.3lf\t %.3lf\t%.3lf\t%.3lf\n",
-                step, box[0] * box[1] * box[2],
+                step, sim.box[0] * sim.box[1] * sim.box[2],
                 move_acceptance,
                 rotation_acceptance,
                 volume_acceptance,
@@ -246,12 +274,12 @@ void scale(double scale_factor)
 {
     for (int n = 0; n < n_particles; ++n) {
         // We use pointers to loop over the x, y, z members of the vec3_t type.
-        double* pgarbage = &(r[n].x);
+        double* pgarbage = &(sim.r[n].x);
         for (int d = 0; d < NDIM; ++d)
             *(pgarbage + d) *= scale_factor;
     }
     for (int d = 0; d < NDIM; ++d)
-        box[d] *= scale_factor;
+        sim.box[d] *= scale_factor;
 }
 
 /// This function returns the offset of the jth vertex (j = 0, ... , 7)
@@ -276,7 +304,7 @@ vec3_t get_offset(int i, int j)
     }
     // offset = v3_muls(offset, Edge_Length); // Edge_Length == 1
 
-    offset = m4_mul_dir(m[i], offset);
+    offset = m4_mul_dir(sim.m[i], offset);
 
     return offset;
 }
@@ -313,16 +341,16 @@ bool is_overlap_between(int i, int j)
 {
     // the next line shouldn't be necessary!
     // if (i == j) return false; // don't check on overlap with yourself!
-    vec3_t r2_r1 = v3_sub(r[i], r[j]); // read as r2 - r1
+    vec3_t r2_r1 = v3_sub(sim.r[i], sim.r[j]); // read as r2 - r1
 
     // We need to apply nearest image convention to r2_r1.
     // We use pointers to loop over the x, y, z members of the vec3_t type.
     double* pdist = &(r2_r1.x);
     for (int d = 0; d < NDIM; d++) {
-        if (*(pdist + d) > 0.5 * box[d])
-            *(pdist + d) -= box[d];
-        if (*(pdist + d) < -0.5 * box[d])
-            *(pdist + d) += box[d];
+        if (*(pdist + d) > 0.5 * sim.box[d])
+            *(pdist + d) -= sim.box[d];
+        if (*(pdist + d) < -0.5 * sim.box[d])
+            *(pdist + d) += sim.box[d];
     }
 
     // If the cubes are more than their circumscribed sphere apart, they couldn't possibly overlap.
@@ -338,8 +366,8 @@ bool is_overlap_between(int i, int j)
     // we find no separation, we may conclude there is overlap.
     vec3_t axes[6 + 9]; // 6 normals of r1 and r2, 9 cross products between edges
     for (int k = 0; k < 3; k++) {
-        axes[k] = m4_mul_dir(m[i], Normal[k]);
-        axes[k + 3] = m4_mul_dir(m[j], Normal[k]);
+        axes[k] = m4_mul_dir(sim.m[i], Normal[k]);
+        axes[k + 3] = m4_mul_dir(sim.m[j], Normal[k]);
     }
 
     // Now load the cross products between edges
@@ -388,7 +416,7 @@ int change_volume(void)
     double dV = ran(-DeltaV, DeltaV);
     double oldvol = 1;
     for (int d = 0; d < NDIM; d++)
-        oldvol *= box[d];
+        oldvol *= sim.box[d];
 
     double newvol = oldvol + dV;
     double scale_factor = pow(newvol / oldvol, 1. / NDIM); // the . of 1. is important, otherwise 1 / NDIM == 1 / 3 == 0
@@ -453,7 +481,7 @@ void read_data2(char* init_file)
 
     for (int d = 0; d < 9; ++d) { // dimensions of box
         if (d % 4 == 0) {
-            if (!fscanf(pFile, "%lf\t", &(box[d / 4]))) {
+            if (!fscanf(pFile, "%lf\t", &(sim.box[d / 4]))) {
                 printf("failed to read dimensions of box\n");
                 exit(2);
             }
@@ -469,13 +497,13 @@ void read_data2(char* init_file)
     bool rf = true; // read flag. if false, something went wrong
     for (int n = 0; n < n_particles; ++n) {
         // We use pointers to loop over the x, y, z members of the vec3_t type.
-        double* pgarbage = &(r[n].x);
+        double* pgarbage = &(sim.r[n].x);
         for (int d = 0; d < NDIM; ++d) // the position of the center of cube
             rf = rf && fscanf(pFile, "%lf\t", (pgarbage + d));
         rf = rf && fscanf(pFile, "%lf\t", &garbagef); // Edge_Length == 1
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
-                rf = rf && fscanf(pFile, "%lf\t", &(m[n].m[d1][d2]));
+                rf = rf && fscanf(pFile, "%lf\t", &(sim.m[n].m[d1][d2]));
             }
         }
         rf = rf && fscanf(pFile, "%lf", &garbagef);
@@ -521,7 +549,7 @@ void create_system(void)
 
     // initialize box
     for (int d = 0; d < NDIM; d++) {
-        box[d] = CubesPerDim; // this will be changed in set_packingfraction
+        sim.box[d] = CubesPerDim; // this will be changed in set_packingfraction
     }
 
     // initialize the particle positions (r) on a simple cubic lattice
@@ -530,7 +558,7 @@ void create_system(void)
         for (int i = 0; i < CubesPerDim; i++) {
             for (int j = 0; j < CubesPerDim; j++) {
                 for (int k = 0; k < CubesPerDim; k++) {
-                    r[index++] = vec3(i + 0.5, j + 0.5, k + 0.5);
+                    sim.r[index++] = vec3(i + 0.5, j + 0.5, k + 0.5);
                 }
             }
         }
@@ -552,9 +580,9 @@ void create_system(void)
     // now initialize the rotation matrices
     for (int i = 0; i < n_particles; i++) {
         for (int temp = 0; temp < 16; temp++)
-            m[i].m[temp % 4][temp / 4] = 0; // everything zero first
+            sim.m[i].m[temp % 4][temp / 4] = 0; // everything zero first
         for (int d = 0; d < NDIM; d++) {
-            m[i].m[d][d] = 1; // 1 on the diagonal
+            sim.m[i].m[d][d] = 1; // 1 on the diagonal
         }
     }
 }
@@ -567,9 +595,9 @@ void initialize_cell_list(void)
     for (int i = 0; i < NC; i++)
         for (int j = 0; j < NC; j++)
             for (int k = 0; k < NC; k++) {
-                NumCubesInCell[i][j][k] = 0;
+                sim.NumCubesInCell[i][j][k] = 0;
                 for (int l = 0; l < MAXPC; l++) {
-                    WhichCubesInCell[i][j][k][l] = -1;
+                    sim.WhichCubesInCell[i][j][k][l] = -1;
                 }
             }
 
@@ -592,28 +620,28 @@ void initialize_cell_list(void)
     // now assign each cube to the cell they are in,
     // and count how many cubes are in each cell.
     for (int i = 0; i < n_particles; i++) {
-        int x = r[i].x / CellLength;
-        int y = r[i].y / CellLength;
-        int z = r[i].z / CellLength;
+        int x = sim.r[i].x / sim.CellLength;
+        int y = sim.r[i].y / sim.CellLength;
+        int z = sim.r[i].z / sim.CellLength;
         // add particle i to WhichCubesInCell at the end of the list
         // and add one to the counter of cubes of this cell (hence the ++)
-        WhichCubesInCell[x][y][z][NumCubesInCell[x][y][z]++] = i;
+        sim.WhichCubesInCell[x][y][z][sim.NumCubesInCell[x][y][z]++] = i;
         // and keep track of in which cell this cube is
-        InWhichCellIsThisCube[i] = NC * NC * x + NC * y + z;
+        sim.InWhichCellIsThisCube[i] = NC * NC * x + NC * y + z;
     }
 }
 
 /// Must be called every succesful volume change, and during initialization
 inline static void update_CellLength(void)
 {
-    CellLength = box[0] / CellsPerDim;
+    sim.CellLength = sim.box[0] / CellsPerDim;
 }
 
 /// This function returns if cube number index overlaps, using cell lists
 bool is_overlap_from(int index)
 {
     bool is_collision = false;
-    int cell = InWhichCellIsThisCube[index];
+    int cell = sim.InWhichCellIsThisCube[index];
     // convert cell number to x, y, z coordinates
     int x = cell / (NC * NC);
     int y = (cell / NC) % NC;
@@ -626,9 +654,9 @@ bool is_overlap_from(int index)
                 int loop_x = pos_mod_i(x + i, CellsPerDim);
                 int loop_y = pos_mod_i(y + j, CellsPerDim);
                 int loop_z = pos_mod_i(z + k, CellsPerDim);
-                int num_cubes = NumCubesInCell[loop_x][loop_y][loop_z];
+                int num_cubes = sim.NumCubesInCell[loop_x][loop_y][loop_z];
                 for (int cube = 0; cube < num_cubes; cube++) {
-                    int index2 = WhichCubesInCell[loop_x][loop_y][loop_z][cube];
+                    int index2 = sim.WhichCubesInCell[loop_x][loop_y][loop_z][cube];
                     // if checking your own cell, do not check overlap with yourself
                     if (index == index2) {
                         continue; // TODO: is this efficient enough?
@@ -656,17 +684,17 @@ int move_particle_cell_list(void)
 {
     // first choose the cube and remember its position
     int index = (int)ran(0., n_particles); // goes from 0 to n_particles - 1
-    vec3_t r_old = r[index];
+    vec3_t r_old = sim.r[index];
 
     // move the cube
     // We use pointers to loop over the x, y, z members of the vec3_t type.
-    double* pgarbage = &(r[index].x);
+    double* pgarbage = &(sim.r[index].x);
     for (int d = 0; d < NDIM; d++) {
         *(pgarbage + d) += ran(-Delta, Delta);
         // periodic boundary conditions happen here, in pos_mod_f. Since delta < box[dim],
         // the following expression will always return a positive number.
         // *(pgarbage + d) = fmodf(*(pgarbage + d) + box[d], box[d]);
-        *(pgarbage + d) = pos_mod_f(*(pgarbage + d), box[d]);
+        *(pgarbage + d) = pos_mod_f(*(pgarbage + d), sim.box[d]);
         // TODO: maybe make faster by only checking on boundary cells
     }
 
@@ -674,7 +702,7 @@ int move_particle_cell_list(void)
 
     // and check for overlaps
     if (is_overlap_from(index)) {
-        r[index] = r_old; // move back
+        sim.r[index] = r_old; // move back
         update_cell_list(index); // and re-update the cell list. // TODO: make more efficient
         return 0; // unsuccesful move
     } else {
@@ -688,24 +716,24 @@ int move_particle_cell_list(void)
 /// If not, update (Num/Which)CubesInCell and InWhichCellIsThisCube.
 void update_cell_list(int index)
 {
-    int cell_old = InWhichCellIsThisCube[index];
+    int cell_old = sim.InWhichCellIsThisCube[index];
     int x_old = cell_old / (NC * NC);
     int y_old = (cell_old / NC) % NC;
     int z_old = cell_old % NC;
-    vec3_t r_new = r[index];
-    int x_new = r_new.x / CellLength;
-    int y_new = r_new.y / CellLength;
-    int z_new = r_new.z / CellLength;
+    vec3_t r_new = sim.r[index];
+    int x_new = r_new.x / sim.CellLength;
+    int y_new = r_new.y / sim.CellLength;
+    int z_new = r_new.z / sim.CellLength;
     if (x_new == CellsPerDim || y_new == CellsPerDim || z_new == CellsPerDim) {
         // DEBUG
         printf("new coordinate is exactly(ish) the box size\n");
-        printf("cube %d moved to (%lf, %lf, %lf), but boxsize is %lf.\n", index, r_new.x, r_new.y, r_new.z, box[0]);
-        printf("CellLength is %lf, so xyz is (%d, %d, %d).\n", CellLength, x_new, y_new, z_new);
-        printf("celllength: %lf\nboxsize: %lf\ncellsperdim: %d\n\n", CellLength, box[0], CellsPerDim);
+        printf("cube %d moved to (%lf, %lf, %lf), but boxsize is %lf.\n", index, r_new.x, r_new.y, r_new.z, sim.box[0]);
+        printf("CellLength is %lf, so xyz is (%d, %d, %d).\n", sim.CellLength, x_new, y_new, z_new);
+        printf("celllength: %lf\nboxsize: %lf\ncellsperdim: %d\n\n", sim.CellLength, sim.box[0], CellsPerDim);
         for (int i = 0; i < CellsPerDim; i++) {
             for (int j = 0; j < CellsPerDim; j++) {
                 for (int k = 0; k < CellsPerDim; k++) {
-                    printf("%2d ", NumCubesInCell[i][j][k]);
+                    printf("%2d ", sim.NumCubesInCell[i][j][k]);
                 }
                 printf("\n");
             }
@@ -722,10 +750,10 @@ void update_cell_list(int index)
         return; // still in same box, don't have to change anything
     } else {
         // update in which cell this cube is
-        InWhichCellIsThisCube[index] = NC * NC * x_new + NC * y_new + z_new;
+        sim.InWhichCellIsThisCube[index] = NC * NC * x_new + NC * y_new + z_new;
         // update WhichCubesInCell, first check at what index the moved cube was
         int cube = 0;
-        while (index != WhichCubesInCell[x_old][y_old][z_old][cube]) {
+        while (index != sim.WhichCubesInCell[x_old][y_old][z_old][cube]) {
             cube++;
             if (cube >= MAXPC) {
                 printf("infinite loop in update_cell_list\n");
@@ -742,11 +770,11 @@ void update_cell_list(int index)
         // now cube contains the index in the cell list
 
         // add the cube to the new cell and add one to the counter (hence ++)
-        WhichCubesInCell[x_new][y_new][z_new][NumCubesInCell[x_new][y_new][z_new]++] = index;
+        sim.WhichCubesInCell[x_new][y_new][z_new][sim.NumCubesInCell[x_new][y_new][z_new]++] = index;
         // and remove the cube in the old cell by replacing it with the last
         // in the list and remove one from the counter (hence --)
-        int last_in_list = WhichCubesInCell[x_old][y_old][z_old][--NumCubesInCell[x_old][y_old][z_old]];
-        WhichCubesInCell[x_old][y_old][z_old][cube] = last_in_list;
+        int last_in_list = sim.WhichCubesInCell[x_old][y_old][z_old][--sim.NumCubesInCell[x_old][y_old][z_old]];
+        sim.WhichCubesInCell[x_old][y_old][z_old][cube] = last_in_list;
         return;
     }
 }
@@ -770,12 +798,12 @@ int rotate_particle(void)
     mat4_t rot_mx = m4_rotation(ran(-DeltaR, DeltaR), rot_axis);
 
     // rotate the particle
-    m[index] = m4_mul(rot_mx, m[index]);
+    sim.m[index] = m4_mul(rot_mx, sim.m[index]);
 
     // and check for overlaps
     if (is_overlap_from(index)) {
         // overlap, rotate back
-        m[index] = m4_mul(m4_invert_affine(rot_mx), m[index]);
+        sim.m[index] = m4_mul(m4_invert_affine(rot_mx), sim.m[index]);
         return 0; // unsuccesful rotation
     } else {
         // no overlap, rotation is accepted!
@@ -787,7 +815,7 @@ int rotate_particle(void)
 void write_data(int step, FILE* fp_density, char datafolder_name[128])
 {
     if(fp_density) {
-        fprintf(fp_density, "%lf\n", n_particles * ParticleVolume / (box[0] * box[1] * box[2]));
+        fprintf(fp_density, "%lf\n", n_particles * ParticleVolume / (sim.box[0] * sim.box[1] * sim.box[2]));
         fflush(fp_density); // write the densities everytime we have one, otherwise it waits for ~400 lines
     }
 
@@ -808,7 +836,7 @@ void write_data(int step, FILE* fp_density, char datafolder_name[128])
     fprintf(fp, "0.0\t0.0\t0.0\n");
     for (int d = 0; d < 9; ++d) { // dimensions of box
         if (d % 4 == 0) {
-            fprintf(fp, "%lf\t", box[d / 4]);
+            fprintf(fp, "%lf\t", sim.box[d / 4]);
         } else {
             fprintf(fp, "0.000000\t");
         }
@@ -817,13 +845,13 @@ void write_data(int step, FILE* fp_density, char datafolder_name[128])
     }
     for (int n = 0; n < n_particles; ++n) {
         // We use pointers to loop over the x, y, z members of the vec3_t type.
-        double* pgarbage = &(r[n].x);
+        double* pgarbage = &(sim.r[n].x);
         for (int d = 0; d < NDIM; ++d)
             fprintf(fp, "%lf\t", *(pgarbage + d)); // the position of the center of cube
         fprintf(fp, "1\t"); // Edge_Length == 1
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
-                fprintf(fp, "%lf\t", m[n].m[d1][d2]);
+                fprintf(fp, "%lf\t", sim.m[n].m[d1][d2]);
             }
         }
         fprintf(fp, "10 %lf\n", Phi); // 10 is for slanted cubes.
@@ -837,7 +865,7 @@ void set_packing_fraction(void)
 {
     double volume = 1.0;
     for (int d = 0; d < NDIM; ++d)
-        volume *= box[d];
+        volume *= sim.box[d];
 
     double optimal_packing_fraction = pow(1.0 + 0.5 * CosPhi, -3.0) * 0.95;
     
@@ -879,7 +907,7 @@ void set_random_orientation(void)
     // first rotate every particle a number of times along one of the box' axes
     for (int i = 0; i < n_particles; i++) {
         for (int j = 0; j < 12; j++) {
-            m[i] = m4_mul(m4_rotation(M_PI / 2, random_cube_axis()), m[i]);
+            sim.m[i] = m4_mul(m4_rotation(M_PI / 2, random_cube_axis()), sim.m[i]);
         }
     }
 }
@@ -903,7 +931,7 @@ void remove_overlap(void)
     while (is_overlap()) {
         scale(1.01); // make the system bigger and check for collisions again
         printf("initial packing fraction lowered to %lf\n",
-            n_particles * ParticleVolume / (box[0] * box[1] * box[2]));
+            n_particles * ParticleVolume / (sim.box[0] * sim.box[1] * sim.box[2]));
     }
 }
 
@@ -911,7 +939,7 @@ void remove_overlap(void)
 void remove_overlap_smart(void)
 {
     // check if density is below optimal density, this must be the case, otherwise exit
-    if (n_particles * ParticleVolume / (box[0] * box[1] * box[2]) > pow(1.0 + 0.5 * CosPhi, -3.0) * 0.96) {
+    if (n_particles * ParticleVolume / (sim.box[0] * sim.box[1] * sim.box[2]) > pow(1.0 + 0.5 * CosPhi, -3.0) * 0.96) {
         printf("somehow the density still isn't small enough. Exiting\n");
         exit(4);
     }
@@ -934,10 +962,10 @@ void remove_overlap_smart(void)
         // now try to resolve the overlaps by rotating
         for (int i = 0; i < n_particles; i++) {
             if (overlap_list[i]) {
-                mat4_t original_orientation = m[i];
+                mat4_t original_orientation = sim.m[i];
                 bool is_good_rotation = false;
                 for (int j = 0; j < 24; j++) { // try 24 rotations per particle
-                    m[i] = m4_mul(m4_rotation(M_PI / 2, random_cube_axis()), m[i]); // try a random rotation
+                    sim.m[i] = m4_mul(m4_rotation(M_PI / 2, random_cube_axis()), sim.m[i]); // try a random rotation
                     if (is_overlap_from(i)) {
                         continue; // try again
                     } else { // move on to the next particle
@@ -947,7 +975,7 @@ void remove_overlap_smart(void)
                     }
                 }
                 if (!is_good_rotation) // rotate back to avoid creating additional overlaps
-                    m[i] = original_orientation;
+                    sim.m[i] = original_orientation;
             }
         }
         iterations++;
@@ -962,12 +990,16 @@ void remove_overlap_smart(void)
 /// If something goes wrong, return != 0
 int parse_commandline(int argc, char* argv[])
 {
-    if (argc != 8) {
-        printf("need 7 arguments:\n");
+    if (argc != 9) {
+        printf("need 8 arguments:\n");
         return 3;
     }
     if (EOF == sscanf(argv[3], "%d", &mc_steps)) {
         printf("reading mc_steps has failed\n");
+        return 1;
+    };
+    if (EOF == sscanf(argv[4], "%d", &output_steps)) {
+        printf("reading output_steps has failed\n");
         return 1;
     };
     if (EOF == sscanf(argv[5], "%lf", &packing_fraction)) {
@@ -982,8 +1014,9 @@ int parse_commandline(int argc, char* argv[])
         printf("reading Phi has failed\n");
         return 1;
     };
-    if (EOF == sscanf(argv[4], "%d", &output_steps)) {
-        printf("reading output_steps has failed\n");
+    what_order = 0;
+    if (EOF == sscanf(argv[8], "%d", &what_order)) {
+        printf("reading what_order has failed\n");
         return 1;
     };
 
@@ -1003,8 +1036,12 @@ int parse_commandline(int argc, char* argv[])
         printf("0 < Phi < 1.57079632679\n");
         return 2;
     }
-    if (output_steps < 20 || output_steps > 1000) {
-        printf("20 <= output_steps <= 1000\n");
+    if (output_steps < 1 || output_steps > 1000) {
+        printf("1 <= output_steps <= 1000\n");
+        return 2;
+    }
+    if (what_order < 1 || what_order > 4) {
+        printf("1 <= what_order <= 4\n(transl = 1, sl = 2, unsl = 3, edge = 4)\n");
         return 2;
     }
 
@@ -1036,13 +1073,13 @@ int parse_commandline(int argc, char* argv[])
 /// NumCubesInCell[][][], WhichCubesInCell[][][][] and InWhichCellIsThisCube[]
 void print_celllists(void)
 {
-    printf("boxsize: %lf", box[0]);
-    printf("\tCellLength: %lf", CellLength);
+    printf("boxsize: %lf", sim.box[0]);
+    printf("\tCellLength: %lf", sim.CellLength);
     printf("\tCellsPerDim: %d\n", CellsPerDim);
 
     printf("InWhichCellIsThisCube:\n");
     for (int i = 0; i < n_particles; i++) {
-        int cell = InWhichCellIsThisCube[i];
+        int cell = sim.InWhichCellIsThisCube[i];
         printf("%d: %d, %d, %d\n", i, cell / (NC * NC), (cell / NC) % NC, cell % NC);
     }
 
@@ -1050,7 +1087,7 @@ void print_celllists(void)
     for (int i = 0; i < CellsPerDim; i++) {
         for (int j = 0; j < CellsPerDim; j++) {
             for (int k = 0; k < CellsPerDim; k++) {
-                printf("%d, %d, %d: %d\n", i, j, k, NumCubesInCell[i][j][k]);
+                printf("%d, %d, %d: %d\n", i, j, k, sim.NumCubesInCell[i][j][k]);
             }
         }
     }
@@ -1060,8 +1097,8 @@ void print_celllists(void)
         for (int j = 0; j < CellsPerDim; j++) {
             for (int k = 0; k < CellsPerDim; k++) {
                 printf("%d, %d, %d: ", i, j, k);
-                for (int l = 0; l < NumCubesInCell[i][j][k]; l++) {
-                    printf("%d ", WhichCubesInCell[i][j][k][l]);
+                for (int l = 0; l < sim.NumCubesInCell[i][j][k]; l++) {
+                    printf("%d ", sim.WhichCubesInCell[i][j][k][l]);
                 }
                 printf("\n");
             }

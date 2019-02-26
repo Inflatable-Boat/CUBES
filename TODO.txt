@@ -15,6 +15,8 @@ TODO:
 - do umbrella sampling
 	- will be v17
 
+- crystal_v17.c: try to make without nested function
+
 - write latex on positional, orientational order param code
 
 - somehow write transl_order and orient_order as the same function, because there is a lot of

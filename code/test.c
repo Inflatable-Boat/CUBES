@@ -37,10 +37,10 @@ typedef struct {
 
 const char labelstring[] = "v1_%02dpf%04.2lfp%04.1lfa%04.2lf"; */
 
-/* int compare_test(const void* a, const void* b)
+int compare_test(const void* a, const void* b)
 {
     return -(*(int*)a - *(int*)b);
-} */
+}
 
 // static char chars[128] = "";
 
@@ -238,9 +238,9 @@ int main(int argc, char* argv[])
     add_one_to_aap();
     printf("%d\n", aap); */
 
-    /* #define N 6
+    /* #define N 10
     int* aap = malloc(sizeof(int) * N);
-    int noot[N] = { 5, 1, 1, 1, 8, 4 }; //, 2, 1, 7, 8};
+    int noot[N] = { 5, 1, 2, 1, 8, 4, 2, 1, 7, 8};
     for (int i = 0; i < N; i++) {
         aap[i] = noot[i];
     }
@@ -288,7 +288,7 @@ int main(int argc, char* argv[])
     }
     qsort(zus, N, sizeof(int), &cmpr);
     int* jet = malloc(sizeof(int) * N);
-        for (int i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++) {
         int bha;
         for (bha = 0; zus[bha] != i; bha++)
             ;
@@ -301,18 +301,22 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
     }
 
     free(aap);
-    free(mies);
-    free(wim); // wim is the same as zus, requires aap and noot (noot is aap sorted)
+    free(mies); // mies is the same as jet, requires aap and noot (noot is aap sorted)
+    free(wim); // wim is the same as zus, requires aap, noot, mies
     free(zus);
     free(jet); */
 
     /*
-    aap[0] = 5, noot[0] = 8, mies[0] = 1, wim[0] = 4, zus[0] = 4, jet[0] = 1
-    aap[1] = 1, noot[1] = 5, mies[1] = 3, wim[1] = 0, zus[1] = 0, jet[1] = 3
-    aap[2] = 1, noot[2] = 4, mies[2] = 4, wim[2] = 5, zus[2] = 5, jet[2] = 4
-    aap[3] = 1, noot[3] = 1, mies[3] = 5, wim[3] = 1, zus[3] = 1, jet[3] = 5
-    aap[4] = 8, noot[4] = 1, mies[4] = 0, wim[4] = 2, zus[4] = 2, jet[4] = 0
-    aap[5] = 4, noot[5] = 1, mies[5] = 2, wim[5] = 3, zus[5] = 3, jet[5] = 2
+    aap[0] = 5, noot[0] = 8, mies[0] = 3, wim[0] = 4, zus[0] = 4, jet[0] = 3
+    aap[1] = 1, noot[1] = 8, mies[1] = 7, wim[1] = 9, zus[1] = 9, jet[1] = 7
+    aap[2] = 2, noot[2] = 7, mies[2] = 5, wim[2] = 8, zus[2] = 8, jet[2] = 5
+    aap[3] = 1, noot[3] = 5, mies[3] = 8, wim[3] = 0, zus[3] = 0, jet[3] = 8
+    aap[4] = 8, noot[4] = 4, mies[4] = 0, wim[4] = 5, zus[4] = 5, jet[4] = 0
+    aap[5] = 4, noot[5] = 2, mies[5] = 4, wim[5] = 2, zus[5] = 2, jet[5] = 4
+    aap[6] = 2, noot[6] = 2, mies[6] = 6, wim[6] = 6, zus[6] = 6, jet[6] = 6
+    aap[7] = 1, noot[7] = 1, mies[7] = 9, wim[7] = 1, zus[7] = 1, jet[7] = 9
+    aap[8] = 7, noot[8] = 1, mies[8] = 2, wim[8] = 3, zus[8] = 3, jet[8] = 2
+    aap[9] = 8, noot[9] = 1, mies[9] = 1, wim[9] = 7, zus[9] = 7, jet[9] = 1
     */
 
     /* int aap = 0;
@@ -491,6 +495,62 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
         printf("bad\n");
     }
     printf("aap = % d\n", aap); */
+
+    /* int n_particles = 10;
+
+    int* conn = malloc(sizeof(int) * n_particles);
+    int* cluss = malloc(sizeof(int) * n_particles);
+    int* size = malloc(sizeof(int) * n_particles);
+
+    int cs, cn = 1, big = 0;
+    const int l = 4;
+
+    void setcluss(int pn)
+    {
+        cluss[pn] = cn;
+        int jj;
+        for (jj = 0; jj < blist[pn].n; jj++) {
+            int tmp = blist[pn].bnd[jj].n;
+            if (conn[tmp] != 0 && cluss[tmp] == 0 && dotprod(orderp + pn * (2 * l + 1), orderp + tmp * (2 * l + 1), l) > obnd_cuttoff) {
+                //0.9 gives nice results 0.6 gives all touching nuclei as one big nuclei
+                cs++;
+                setcluss(tmp);
+            }
+        }
+    }
+
+    // printf("initializing cluss[] and size[] to zero\n");
+    for (int i = 0; i < n_particles; i++) {
+        cluss[i] = 0;
+        size[i] = 0;
+    }
+
+    // printf("loop to setcluss(i) and initialize cn\n");
+    for (int i = 0; i < n_particles; i++) {
+        cs = 0;
+        if (conn[i] == 1 && cluss[i] == 0) {
+            cs++; //has at least size 1;
+            setcluss(i);
+            size[cn] = cs;
+            if (cs > big) {
+                big = cs;
+                // bc = cn;
+            }
+            cn++;
+        }
+    }
+
+    // int tcs = 0;
+    // for (i = 0; i < cn; i++) {
+    //     tcs += size[i];
+    // }
+
+    // percentage = tcs / (double)n_particles;
+    // maxsize = big;
+    // numclus = cn - 1;
+
+    free(cluss); // TODO make this nice
+    free(size); */
 
     return 0;
 }
