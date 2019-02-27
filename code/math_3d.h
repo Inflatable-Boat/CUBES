@@ -339,13 +339,6 @@ static inline mat4_t m4_mul(mat4_t a, mat4_t b) {
 	return result;
 }
 
-#endif // MATH_3D_HEADER
-
-#ifndef MATH_3D_IMPLEMENTATION
-#define MATH_3D_IMPLEMENTATION
-// #endif
-// #ifdef MATH_3D_IMPLEMENTATION // whoever wrote these lines is retarded
-
 /**
  * Creates a matrix to rotate around an axis by a given angle. The axis doesn't
  * need to be normalized.
@@ -626,4 +619,4 @@ void m4_fprintp(FILE* stream, mat4_t matrix, int width, int precision) {
 	}
 }
 
-#endif // MATH_3D_IMPLEMENTATION
+#endif // MATH_3D_HEADER

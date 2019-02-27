@@ -1,28 +1,26 @@
 {
-        "configurations": [
-            {
-                "name": "Linux",
-                "includePath": [
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "/usr/include",
+                "/usr/local/include",
+                "${workspaceRoot}",
+                "/home/ruud/Desktop/code/main/code"
+            ],
+            "defines": [],
+            "intelliSenseMode": "clang-x64",
+            "browse": {
+                "path": [
                     "/usr/include",
                     "/usr/local/include",
-                    "${workspaceRoot}",
-                    "/home/ruud/Desktop/code/main/code"
+                    "${workspaceRoot}"
                 ],
-                "defines": [],
-                "intelliSenseMode": "clang-x64",
-                "browse": {
-                    "path": [
-                        "/usr/include",
-                        "/usr/local/include",
-                        "${workspaceRoot}"
-                    ],
-                    "limitSymbolsToIncludedHeaders": true,
-                    "databaseFilename": ""
-                }
-            },
-            {
-            
-            
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            }
+        },
+        {
             "name": "Win32",
             "intelliSenseMode": "clang-x64",
             "includePath": [
@@ -33,7 +31,9 @@
                 "C:/MinGW/lib/gcc/mingw32/6.3.0/include",
                 "C:/MinGW/include",
                 "C:/MinGW/lib/gcc/mingw32/6.3.0/include-fixed",
-                "C:/Users/Inflatable Boat/Desktop/uni/MS"
+                "C:/Users/Inflatable Boat/Desktop/uni/MS",
+                "${workspaceFolder}",
+                "${workspaceFolder}/code"
             ],
             "defines": [
                 "_DEBUG",

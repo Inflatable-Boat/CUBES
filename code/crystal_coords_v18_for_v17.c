@@ -5,7 +5,7 @@
 // #include <stdbool.h>
 // #include <stdio.h>
 #include <stdlib.h>
-// #include <string.h>
+#include <string.h>
 // #include <time.h>
 // #include <unistd.h>
 #ifdef _WIN32
@@ -54,7 +54,7 @@ extern int n_particles;
 extern vec3_t Normal[3];
 extern double CosPhi;
 extern double SinPhi;
-extern system_t sim;
+extern system_t* sim;
 int order_mode; // transl = 1, sl = 2, unsl = 3, edge = 4
 
 //////////////////////////////////////////////////////////////// end of my additions
@@ -253,14 +253,14 @@ void orient_order(int l, int i, compl_t* res, int axis)
     // order_mode: transl = 1, sl = 2, unsl = 3, edge = 4
     if (order_mode == 2) {
         // take the normal of the slanted cube and rotate it
-        dir = m4_mul_dir(sim.m[i], Normal[axis]);
+        dir = m4_mul_dir(sim->m[i], Normal[axis]);
     } else if (order_mode == 3) {
         // we need to construct the new vector. we do it using pointers:
         dir = vec3(0, 0, 0);
         // now set the axis-th member of dir to 1 in the ugliest way possible
         *(&(dir.x) + axis) = 1.;
         // now we have constructed the vector, rotate it
-        dir = m4_mul_dir(sim.m[i], dir);
+        dir = m4_mul_dir(sim->m[i], dir);
     } else if (order_mode == 4) {
         // we need to construct an edge of the cube
         if (axis == 0) {
@@ -274,7 +274,7 @@ void orient_order(int l, int i, compl_t* res, int axis)
             exit(6);
         }
         // now we have constructed the vector, rotate it
-        dir = m4_mul_dir(sim.m[i], dir);
+        dir = m4_mul_dir(sim->m[i], dir);
     } else {
         printf("this message shouldn't be visible 1\n");
         exit(5);
@@ -639,13 +639,13 @@ int convert_data()
     // n_part = particlestocount = n_particles;
     part = malloc(n_particles * sizeof(tpart_t));
     for (int n = 0; n < n_particles; n++) {
-        part[n].x = sim.r[n].x;
-        part[n].y = sim.r[n].y;
-        part[n].z = sim.r[n].z;
+        part[n].x = sim->r[n].x;
+        part[n].y = sim->r[n].y;
+        part[n].z = sim->r[n].z;
         part[n].c = 'a';
         part[n].d = 1.0;
     }
-    init_box(sim.box[0], sim.box[1], sim.box[2]);
+    init_box(sim->box[0], sim->box[1], sim->box[2]);
 
     bndLengthSq = bndLength * bndLength;
     init_cells();
