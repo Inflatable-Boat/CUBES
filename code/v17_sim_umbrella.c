@@ -1,7 +1,7 @@
 #include "crystal_coords_v18_for_v17.c" // int biggest_cluster_size(int what_order) returns the largest cluster this step
 #include "math_3d.h" // https://github.com/arkanis/single-header-file-c-libs/blob/master/math_3d.h
 #include "mt19937.h" // Mersenne Twister (dsmft_genrand();)
-#include "v17.h"
+#include "17.h"
 #ifdef _WIN32
 #include <direct.h> // mkdir on Windows
 #elif __linux__
@@ -32,23 +32,13 @@ double Phi; // angle of slanted cube
 const char labelstring[] = "v17_%02dpf%04.2lfp%04.1lfa%04.2lf";
 // CubesPerDim, pack_frac, pressure, angle
 const char usage_string[] = "usage: program.exe (r for read / c for create) \
-(readfile / # cubes per dim) mc_steps output_steps packing_fraction BetaP Phi order_mode\n\
-(transl = 1, sl = 2, unsl = 3, edge = 4) target_cluster_size\n";
+(readfile / # cubes per dim) (output_folder / packing_fraction) mc_steps output_steps BetaP Phi order_mode \
+target_cluster_size nvt/npt\norder_mode: transl = 1, sl = 2, unsl = 3, edge = 4\n";
+char output_folder[128] = "";
 
 int output_steps = 100;
 
 /* Simulation variables */
-
-/* typedef struct {
-    vec3_t r[N]; // position of center of cube
-    mat4_t m[N]; // rotation matrix of cube
-    double CellLength; // The length of a cell
-    int NumCubesInCell[NC][NC][NC]; // how many cubes in each cell
-    int WhichCubesInCell[NC][NC][NC][MAXPC]; // which cubes in each cell
-    int InWhichCellIsThisCube[N]; // (a,b,c) == NC*NC*a + NC*b + c
-    double box[NDIM]; // dimensions of box
-} system_t; */
-// v17.h
 
 system_t* sim;
 
@@ -57,15 +47,9 @@ static double DeltaR = 0.05; // they will be nudged a bit to keep
 static double DeltaV = 2.0; // the move and volume acceptance in between 0.4 and 0.6.
 
 static bool IsCreated; // Did we create a system or read a file
+static bool IsNVT;
 
-// static vec3_t r[N]; // position of center of cube
-// static mat4_t m[N]; // rotation matrix of cube
-// static double CellLength; // The length of a cell
 static int CellsPerDim; // number of cells per dimension
-// static int NumCubesInCell[NC][NC][NC]; // how many cubes in each cell
-// static int WhichCubesInCell[NC][NC][NC][MAXPC]; // which cubes in each cell
-// static int InWhichCellIsThisCube[N]; // (a,b,c) == NC*NC*a + NC*b + c
-// static double box[NDIM]; // dimensions of box
 vec3_t Normal[3]; // the normal vector of an unrotated cube. Normal[0] is the normal in the x-dir, etc.
 int n_particles = 0;
 int CubesPerDim;
@@ -132,20 +116,27 @@ int main(int argc, char* argv[])
         remove_overlap_smart(); // due to too high a packing fraction or rotation
     } else {
         if (is_overlap()) {
-            printf("\n\n\tWARNING\n\n\nThe read file contains overlap.\n\
-            Expanding system until no overlap left\n");
-            remove_overlap();
+            printf("\n\n\tWARNING\n\n\nThe read file contains overlap.\nExiting.\n");
+            // Expanding system until no overlap left\n");
+            // remove_overlap();
         } else {
             printf("No overlap detected, continuing simulation.\n");
         }
     }
     initialize_cell_list();
+    sim->clust_size = biggest_cluster_size(what_order);
+    int diff = biggest_cluster_size(what_order) - target_cluster_size;
+    sim->energy = 0.5 * coupling_parameter * diff * diff;
 
     char buffer[128] = "datafolder/";
     strcat(buffer, labelstring);
     char datafolder_name[128] = "";
     // replace all %d, %lf in buffer with values and put in datafolder_name
-    sprintf(datafolder_name, buffer, CubesPerDim, packing_fraction, BetaP, Phi);
+    if (IsCreated) {
+        sprintf(datafolder_name, buffer, CubesPerDim, packing_fraction, BetaP, Phi);
+    } else {
+        sprintf(datafolder_name, "datafolder/%s", output_folder);
+    }
 
 // make the folder to store all the data in, if it already exists do nothing.
 #ifdef _WIN32
@@ -162,13 +153,13 @@ int main(int argc, char* argv[])
     exit(3);
 #endif
 
-    char buffer2[128] = "densities/";
+    /* char buffer2[128] = "densities/";
     strcat(buffer2, labelstring);
     char density_filename[128] = "";
     // replace all %d, %lf in buffer2 with values and put in density_filename
     sprintf(density_filename, buffer2, CubesPerDim, packing_fraction, BetaP, Phi);
 
-    FILE* fp_density = fopen(density_filename, "w");
+    FILE* fp_density = fopen(density_filename, "w"); */
 
     int mov_accepted = 0, vol_accepted = 0, rot_accepted = 0;
     int mov_attempted = 0, vol_attempted = 0, rot_attempted = 0;
@@ -179,7 +170,9 @@ int main(int argc, char* argv[])
     // printf("#Step\tVolume\t\t acceptances\t\t deltas\n");
     for (int step = 0; step <= mc_steps; ++step) {
         if (step % output_steps == 0)
-            write_data(step, fp_density, datafolder_name);
+            // write_data(step, fp_density, datafolder_name);
+            write_data(step, NULL, datafolder_name);
+
         for (int n = 0; n < 2 * n_particles + 1; ++n) {
             // Have to randomize order of moves to obey detailed balance
             int temp_ran = (int)ran(0, 2 * n_particles + 2);
@@ -189,7 +182,7 @@ int main(int argc, char* argv[])
             } else if (temp_ran < 2 * n_particles) {
                 rot_attempted++;
                 rot_accepted += rotate_particle();
-            } else {
+            } else if (!IsNVT) {
                 vol_attempted++;
                 vol_accepted += change_volume();
             }
@@ -245,7 +238,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    fclose(fp_density); // densities/...
+    // fclose(fp_density); // densities/...
 
     free(sim);
 
@@ -588,10 +581,6 @@ void create_system(void)
             sim->m[i].m[d][d] = 1; // 1 on the diagonal
         }
     }
-
-    sim->clust_size = biggest_cluster_size(what_order);
-    int diff = biggest_cluster_size(what_order) - target_cluster_size;
-    sim->energy = 0.5 * coupling_parameter * diff * diff;
 }
 
 /// Initializes CellsPerDim, CellLength,
@@ -765,14 +754,7 @@ void update_cell_list(int index)
             cube++;
             if (cube >= MAXPC) {
                 printf("infinite loop in update_cell_list\n");
-                // DEBUG
-                // printf("in cell %d %d %d, trying to find %d:\n", x_old, y_old, z_old, index);
-                // for (int i = 0; i < NC; i++) {
-                //     printf("%d ", WhichCubesInCell[x_old][y_old][z_old][i]);
-                // }
-                // printf("num of particles: %d\n", NumCubesInCell[x_old][y_old][z_old]);
                 exit(5); // not so infinite anymore eh
-                // ENDEBUG
             }
         }
         // now cube contains the index in the cell list
@@ -833,11 +815,6 @@ void write_data(int step, FILE* fp_density, char datafolder_name[128])
 
     char datafile[128];
     sprintf(datafile, buffer, step); // replace %07d with step and put in output_file.
-    // char datafile[128];
-    // strcpy(datafile, datafolder_name);
-    // strcat(datafile, "/coords_step%07d.poly");
-    // sprintf(datafile, datafile, step); // replace %07d with step and put in output_file.
-    // THIS GOES WRONG
 
     FILE* fp = fopen(datafile, "w");
     fprintf(fp, "%d\n", n_particles);
@@ -998,29 +975,53 @@ void remove_overlap_smart(void)
 /// If something goes wrong, return != 0
 int parse_commandline(int argc, char* argv[])
 {
-    if (argc != 10) {
-        printf("need 9 arguments:\n");
+    if (argc != 11) {
+        printf("need 10 arguments:\n");
         return 3;
     }
 
-    if (EOF == sscanf(argv[3], "%d", &mc_steps)) {
+    if (EOF == sscanf(argv[7], "%lf", &Phi)) {
+        printf("reading Phi has failed\n");
+        return 1;
+    };
+    // read data from a file or create a system with CubesPerDim cubes per dimension
+    if (strcmp(argv[1], "read") == 0 || strcmp(argv[1], "r") == 0) {
+        printf("reading file %s...\n", argv[2]);
+        read_data2(argv[2]);
+        CubesPerDim = 0; //(int)pow(n_particles, 1. / 3.);
+        IsCreated = false;
+    } else if (strcmp(argv[1], "create") == 0 || strcmp(argv[1], "c") == 0) {
+        CubesPerDim = atoi(argv[2]);
+        if (CubesPerDim < 4 || CubesPerDim > 41) {
+            printf("3 < CubesPerDim < 42, integer!\n%s", usage_string);
+            return 1;
+        }
+        create_system();
+        IsCreated = true;
+        printf("creating system with %d cubes...\n", n_particles);
+    } else {
+        printf("error reading first argument: %s\n", argv[1]);
+        return 1;
+    }
+    if (IsCreated) {
+        if (EOF == sscanf(argv[3], "%lf", &packing_fraction)) {
+            printf("reading packing_fraction has failed\n");
+            return 1;
+        }
+    } else { // read ==> give output_folder
+        sscanf(argv[3], "%s", output_folder);
+        printf("saving to datafolder/%s", output_folder);
+    }
+    if (EOF == sscanf(argv[4], "%d", &mc_steps)) {
         printf("reading mc_steps has failed\n");
         return 1;
     };
-    if (EOF == sscanf(argv[4], "%d", &output_steps)) {
+    if (EOF == sscanf(argv[5], "%d", &output_steps)) {
         printf("reading output_steps has failed\n");
-        return 1;
-    };
-    if (EOF == sscanf(argv[5], "%lf", &packing_fraction)) {
-        printf("reading packing_fraction has failed\n");
         return 1;
     };
     if (EOF == sscanf(argv[6], "%lf", &BetaP)) {
         printf("reading BetaP has failed\n");
-        return 1;
-    };
-    if (EOF == sscanf(argv[7], "%lf", &Phi)) {
-        printf("reading Phi has failed\n");
         return 1;
     };
     if (EOF == sscanf(argv[8], "%d", &what_order)) {
@@ -1031,14 +1032,26 @@ int parse_commandline(int argc, char* argv[])
         printf("reading target_cluster_size has failed\n");
         return 1;
     };
+    if (strcmp(argv[10], "npt") == 0 || strcmp(argv[10], "NpT") == 0 || strcmp(argv[10], "NPT") == 0) {
+        printf("doing npt simulation\n");
+        IsNVT = false;
+    } else if (strcmp(argv[10], "nvt") == 0 || strcmp(argv[10], "NVT") == 0) {
+        printf("doing nvt simulation\n");
+        IsNVT = true;
+    } else {
+        printf("error reading 10th argument: %s\n", argv[10]);
+        return 1;
+    }
 
     if (mc_steps < 100) {
         printf("mc_steps > 99\n");
         return 2;
     }
-    if (packing_fraction <= 0 || packing_fraction > 1) {
-        printf("0 < packing_fraction <= 1\n");
-        return 2;
+    if (IsCreated) { // create ==> give starting packing_fraction
+        if (packing_fraction <= 0.01 || packing_fraction > 1) {
+            printf("0.01 < packing_fraction <= 1\n");
+            return 2;
+        }
     }
     if (BetaP <= 0 || BetaP >= 100) {
         printf("0 < BetaP < 100\n");
@@ -1057,26 +1070,6 @@ int parse_commandline(int argc, char* argv[])
         return 2;
     }
 
-    // read data from a file or create a system with CubesPerDim cubes per dimension
-    if (strcmp(argv[1], "read") == 0 || strcmp(argv[1], "r") == 0) {
-        printf("reading file %s...\n", argv[2]);
-        read_data2(argv[2]);
-        CubesPerDim = (int)pow(n_particles, 1. / 3.);
-        IsCreated = false;
-    } else if (strcmp(argv[1], "create") == 0 || strcmp(argv[1], "c") == 0) {
-        CubesPerDim = atoi(argv[2]);
-        if (CubesPerDim < 4 || CubesPerDim > 41) {
-            printf("3 < CubesPerDim < 42, integer!\n%s", usage_string);
-            return 1;
-        }
-        create_system();
-        IsCreated = true;
-        printf("creating system with %d cubes...\n", n_particles);
-    } else {
-        printf("error reading first argument: %s\n", argv[1]);
-        return 1;
-    }
-
     if (target_cluster_size < 1 || target_cluster_size > n_particles) {
         printf("1 <= target_cluster_size <= 4\n");
         return 2;
@@ -1089,6 +1082,7 @@ int parse_commandline(int argc, char* argv[])
     printf("Phi\t\t\t%lf\n", Phi);
     printf("what_order\t\t%d\n", what_order);
     printf("target_cluster_size\t%d\n\n", target_cluster_size);
+    printf("sim\t\t\t%s\n", IsNVT ? "NVT" : "NpT");
 
     return 0; // no exceptions, run the program
 }

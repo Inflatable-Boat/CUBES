@@ -6,7 +6,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "gcc -g -Wall -O3 v11_coords_to_order.c -lm -o a.out",
+            "command": "gcc -g -Wall code/v17_sim_umbrella.c -lm -o a.out",
             "group": {
                 "kind": "build",
                 "isDefault": true

@@ -9,8 +9,7 @@ TODO:
 ================================================================================================
 ================================================================================================
 - do cluster analysis on slow crush (v13)
-
-- do cluster analysis on fast crush (v16)
+	- crush was too fast, increase BetaP by 1 or less each 10k steps, not 5 each 10k steps.
 
 - do umbrella sampling
 	- will be v17
@@ -35,6 +34,7 @@ TODO:
 
 DONE
 ================================================================================================
+= do cluster analysis on fast crush (v16)
 = make output_steps readable from commandline
 	= done in v14
 	= done in v13
@@ -99,6 +99,15 @@ DONE
 Which versions are being used:
 ================================================================================================
 ================================================================================================
+	Currently (2019-02-28) in use:
+v7: g_of_r_maker, prints density next to 'count' in g%07d.txt every step too.
+v13: slowly increase pressure
+v15: v1, but with output_steps read from cmdline, and try to resolve overlap by scaling to 
+     optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap
+v16: v6 (fast crush), but don't save cluster snapshots (v14/v18 does this)
+v17: umbrella sampling, based on v15
+v18: make order param data + extra histograms + read_per implemented + save if (!output_per)
+
 	Currently (2019-02-22) in use:
 v8: simulate NVT, starting from a coord file
 v13: slowly increase pressure
@@ -106,6 +115,7 @@ v15: v1, but with output_steps read from cmdline, and try to resolve overlap by 
      optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap
 v16: v6 (fast crush), but don't save cluster snapshots (v14/v18 does this)
 v18: make order param data + extra histograms + read_per implemented + save if (!output_per)
+
 	Currently (2019-02-20) in use:
 v8: simulate NVT, starting from a coord file
 v13: slowly increase pressure
@@ -113,17 +123,20 @@ v14: make order param data + extra histograms + read_per implemented
 v15: v1, but with output_steps read from cmdline, and try to resolve overlap by scaling to 
      optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap
 v16: v6, but don't save clust snapshots (i.e. v4 but nice)
+
 	Currently (2019-02-13) in use:
 v8: simulate NVT, starting from a coord file
 v13: slowly increase pressure
 v14: make order param data + extra histograms + read_per implemented
 v15: v1, but with output_steps read from cmdline, and try to resolve overlap by scaling to 
      optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap
+
 	Currently (2019-02-11) in use:
 v1: simulate normally
 v8: simulate NVT, starting from a coord file
 v11: make order param data + histograms 
 v13: slowly increase pressure
+
 	Currently (2019-01-30) in use:
 v1: simulate normally
 v8: simulate NVT, starting from a coord file
