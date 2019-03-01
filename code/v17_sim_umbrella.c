@@ -29,11 +29,11 @@ static double packing_fraction;
 static double BetaP;
 double Phi; // angle of slanted cube
 
-const char labelstring[] = "v17_%02dpf%04.2lfp%04.1lfa%04.2lf";
-// CubesPerDim, pack_frac, pressure, angle
+const char labelstring[] = "v17_%02d_pf%04.2lf_p%04.1lf_a%04.2lf_o%c_t%04d_%s_c%5.3lf";
+// CubesPerDim, pack_frac, pressure, angle, order_mode, target cl.sz., npt/nvt, coupling_parameter
 const char usage_string[] = "usage: program.exe (r for read / c for create) \
 (readfile / # cubes per dim) (output_folder / packing_fraction) mc_steps output_steps BetaP Phi order_mode \
-target_cluster_size nvt/npt\norder_mode: transl = 1, sl = 2, unsl = 3, edge = 4\n";
+target_cluster_size nvt/npt coupling_parameter\norder_mode: transl = 1, sl = 2, unsl = 3, edge = 4\n";
 char output_folder[128] = "";
 
 int output_steps = 100;
@@ -57,6 +57,7 @@ double ParticleVolume;
 double CosPhi; // cos and sin of Phi appear a lot, and are expensive to calculate.
 double SinPhi; // Since Phi doesn't change, it's faster to calculate only once.
 int what_order = 0; // transl = 1, sl = 2, unsl = 3, edge = 4
+char order_character;
 
 int target_cluster_size = 0;
 double coupling_parameter = 0.01; // temp
@@ -133,10 +134,19 @@ int main(int argc, char* argv[])
     char datafolder_name[128] = "";
     // replace all %d, %lf in buffer with values and put in datafolder_name
     if (IsCreated) {
-        sprintf(datafolder_name, buffer, CubesPerDim, packing_fraction, BetaP, Phi);
+        char simtype[4] = "";
+        if (IsNVT)
+            strcat(simtype, "nvt");
+        else
+            strcat(simtype, "npt");
+
+        sprintf(datafolder_name, buffer, CubesPerDim, packing_fraction, BetaP, Phi, order_character, target_cluster_size, simtype, coupling_parameter);
     } else {
+        // sprintf(datafolder_name, "datafolder/%s%5.3lf", output_folder, coupling_parameter);
         sprintf(datafolder_name, "datafolder/%s", output_folder);
     }
+
+
 
 // make the folder to store all the data in, if it already exists do nothing.
 #ifdef _WIN32
@@ -169,9 +179,15 @@ int main(int argc, char* argv[])
 
     // printf("#Step\tVolume\t\t acceptances\t\t deltas\n");
     for (int step = 0; step <= mc_steps; ++step) {
-        if (step % output_steps == 0)
+        if (step % (50 * output_steps) == 0) {
+            printf("\nstep\tclsize\tE diff\tsz diff");
+        }
+        
+        if (step % output_steps == 0) {
+            printf("\n%d\t", step);
             // write_data(step, fp_density, datafolder_name);
             write_data(step, NULL, datafolder_name);
+        }
 
         for (int n = 0; n < 2 * n_particles + 1; ++n) {
             // Have to randomize order of moves to obey detailed balance
@@ -191,26 +207,34 @@ int main(int argc, char* argv[])
         // we do an umbrella sampling step every two MC sweeps
         if (/* step > 10000 &&  */step % 2) {
             // printf("clsize = %d, ", sim->clust_size);
+            // printf("%d\t", sim->clust_size);
 
             // difference in cluster size
             int diff = biggest_cluster_size(what_order) - target_cluster_size;
             // printf("clsize diff = %d, ", diff);
+            // printf("%d\t", diff);
 
             // bias potential energy
             double new_energy = 0.5 * coupling_parameter * diff * diff;
-            // printf("energy diff  = %lf, ", new_energy - sim->energy);
+            // printf("energy diff = %lf, ", new_energy - sim->energy);
+            // printf("%lf\t", new_energy - sim->energy);
             
             double boltzmann = exp(sim->energy - new_energy); // beta absorbed in coupling_parameter
             // printf("boltzfact = %lf\n", boltzmann);
 
+            if (step % output_steps == 1) { //diff + target_cluster_size; = clust_size
+                printf("%d\t%7.2lf\t%d", diff + target_cluster_size, new_energy - sim->energy, diff);
+            }
             if (ran(0, 1) < boltzmann) { // if move is accepted
+                printf(" v");
+                // printf(" move"); // printf("\tnew clust sz = %d", sim->clust_size);
                 copy_system(previous_step, sim); // new previous step
-                sim->clust_size = biggest_cluster_size(what_order);
+                sim->clust_size = diff + target_cluster_size;//biggest_cluster_size(what_order);
                 sim->energy = new_energy;
-                // printf("new clust sz = %d\n", sim->clust_size);
             } else {
                 copy_system(sim, previous_step); // go back
             }
+            // printf("\n");
         }
 
         if (step % output_steps == 0) {
@@ -237,6 +261,7 @@ int main(int argc, char* argv[])
             }
         }
     }
+    printf("\n");
 
     // fclose(fp_density); // densities/...
 
@@ -722,10 +747,11 @@ void update_cell_list(int index)
     int z_new = r_new.z / sim->CellLength;
     if (x_new == CellsPerDim || y_new == CellsPerDim || z_new == CellsPerDim) {
         // DEBUG
-        printf("new coordinate is exactly(ish) the box size\n");
-        printf("cube %d moved to (%lf, %lf, %lf), but boxsize is %lf.\n", index, r_new.x, r_new.y, r_new.z, sim->box[0]);
-        printf("CellLength is %lf, so xyz is (%d, %d, %d).\n", sim->CellLength, x_new, y_new, z_new);
-        printf("celllength: %lf\nboxsize: %lf\ncellsperdim: %d\n\n", sim->CellLength, sim->box[0], CellsPerDim);
+        printf(" !");
+        // printf("\nnew coordinate is exactly(ish) the box size\n");
+        // printf("cube %d moved to (%lf, %lf, %lf), but boxsize is %lf.\n", index, r_new.x, r_new.y, r_new.z, sim->box[0]);
+        // printf("CellLength is %lf, so xyz is (%d, %d, %d).\n", sim->CellLength, x_new, y_new, z_new);
+        // printf("celllength: %lf\nboxsize: %lf\ncellsperdim: %d\n\n", sim->CellLength, sim->box[0], CellsPerDim);
         /* for (int i = 0; i < CellsPerDim; i++) {
             for (int j = 0; j < CellsPerDim; j++) {
                 for (int k = 0; k < CellsPerDim; k++) {
@@ -975,15 +1001,15 @@ void remove_overlap_smart(void)
 /// If something goes wrong, return != 0
 int parse_commandline(int argc, char* argv[])
 {
-    if (argc != 11) {
-        printf("need 10 arguments:\n");
+    if (argc != 12) {
+        printf("need 11 arguments:\n");
         return 3;
     }
 
     if (EOF == sscanf(argv[7], "%lf", &Phi)) {
         printf("reading Phi has failed\n");
         return 1;
-    };
+    }
     // read data from a file or create a system with CubesPerDim cubes per dimension
     if (strcmp(argv[1], "read") == 0 || strcmp(argv[1], "r") == 0) {
         printf("reading file %s...\n", argv[2]);
@@ -1015,23 +1041,56 @@ int parse_commandline(int argc, char* argv[])
     if (EOF == sscanf(argv[4], "%d", &mc_steps)) {
         printf("reading mc_steps has failed\n");
         return 1;
-    };
+    }
     if (EOF == sscanf(argv[5], "%d", &output_steps)) {
         printf("reading output_steps has failed\n");
         return 1;
-    };
+    }
     if (EOF == sscanf(argv[6], "%lf", &BetaP)) {
         printf("reading BetaP has failed\n");
         return 1;
-    };
-    if (EOF == sscanf(argv[8], "%d", &what_order)) {
-        printf("reading what_order has failed\n");
-        return 1;
-    };
+    }
+
+    // if (EOF == sscanf(argv[8], "%d", &what_order)) {
+    //     printf("reading what_order has failed\n");
+    //     return 1;
+    // }
+    char whatorder_string[64] = "";
+    switch (argv[8][0]) {
+        case '1':
+        case 't': // t = transl
+            what_order = 1;
+            order_character = 't';
+            strcat(whatorder_string,"translational");
+            break;
+        case '2':
+        case 's': // s = slanted face normals
+            what_order = 2;
+            order_character = 's';
+            strcat(whatorder_string,"orientational (slanted face normals)");
+            break;
+        case '3':
+        case 'u': // u = unslanted face normals
+            what_order = 3;
+            strcat(whatorder_string,"orientational (unslanted face normals)");
+            order_character = 'u';
+            break;
+        case '4':
+        case 'e': // e = edges
+            what_order = 4;
+            order_character = 'e';
+            strcat(whatorder_string,"orientational (edges)");
+            break;
+        default:
+            printf("reading what_order has failed\n");
+            // printf("something went horribly wrong this message shouldn't be visible\n");
+            return 1;
+    }
+
     if (EOF == sscanf(argv[9], "%d", &target_cluster_size)) {
         printf("reading target_cluster_size has failed\n");
         return 1;
-    };
+    }
     if (strcmp(argv[10], "npt") == 0 || strcmp(argv[10], "NpT") == 0 || strcmp(argv[10], "NPT") == 0) {
         printf("doing npt simulation\n");
         IsNVT = false;
@@ -1040,6 +1099,10 @@ int parse_commandline(int argc, char* argv[])
         IsNVT = true;
     } else {
         printf("error reading 10th argument: %s\n", argv[10]);
+        return 1;
+    }
+    if (EOF == sscanf(argv[11], "%lf", &coupling_parameter)) {
+        printf("reading coupling_parameter has failed\n");
         return 1;
     }
 
@@ -1069,9 +1132,12 @@ int parse_commandline(int argc, char* argv[])
         printf("1 <= what_order <= 4\n(transl = 1, sl = 2, unsl = 3, edge = 4)\n");
         return 2;
     }
-
     if (target_cluster_size < 1 || target_cluster_size > n_particles) {
         printf("1 <= target_cluster_size <= 4\n");
+        return 2;
+    }
+    if (coupling_parameter <= 0|| coupling_parameter >= 1) {
+        printf("0 < coupling_parameter < 1\n");
         return 2;
     }
 
@@ -1080,8 +1146,8 @@ int parse_commandline(int argc, char* argv[])
     printf("packing_fraction\t%lf\n", packing_fraction);
     printf("BetaP\t\t\t%lf\n", BetaP);
     printf("Phi\t\t\t%lf\n", Phi);
-    printf("what_order\t\t%d\n", what_order);
-    printf("target_cluster_size\t%d\n\n", target_cluster_size);
+    printf("what_order\t\t%s\n", whatorder_string);
+    printf("target_cluster_size\t%d\n", target_cluster_size);
     printf("sim\t\t\t%s\n", IsNVT ? "NVT" : "NpT");
 
     return 0; // no exceptions, run the program

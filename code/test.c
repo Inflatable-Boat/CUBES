@@ -552,5 +552,23 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
     free(cluss); // TODO make this nice
     free(size); */
 
+    /* switch (argv[1][0]) {
+        case 0: // impossible
+            printf("wow\n");
+            break;
+        case '1':
+        case 'a':
+            printf("a\n");
+            break;
+        case 2:
+        case 'b':
+            printf("b\n");
+            break;
+        case 3:
+            printf("easter egg\n");
+        default:
+            printf("dikke schijt\n");
+    } */
+
     return 0;
 }

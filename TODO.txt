@@ -105,7 +105,11 @@ v13: slowly increase pressure
 v15: v1, but with output_steps read from cmdline, and try to resolve overlap by scaling to 
      optimal density (1 + 0.5 * cos(Phi))^(-3), and try to rotate cubes until no more overlap
 v16: v6 (fast crush), but don't save cluster snapshots (v14/v18 does this)
-v17: umbrella sampling, based on v15
+v17: umbrella sampling, based on v15. requires 11 arguments:
+     usage: program.exe (r for read / c for create) (readfile / # cubes per dim)
+     (output_folder / packing_fraction) mc_steps output_steps BetaP Phi order_mode
+     target_cluster_size nvt/npt coupling_parameter
+	 order_mode: transl = 1, sl = 2, unsl = 3, edge = 4\n"
 v18: make order param data + extra histograms + read_per implemented + save if (!output_per)
 
 	Currently (2019-02-22) in use:
