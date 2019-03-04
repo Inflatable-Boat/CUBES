@@ -11,8 +11,10 @@ TODO:
 - do cluster analysis on slow crush (v13)
 	- crush was too fast, increase BetaP by 1 or less each 10k steps, not 5 each 10k steps.
 
-- do umbrella sampling
-	- will be v17
+= do umbrella sampling
+	= is v17
+	- find suitable configurations/parameters
+	- implement a nudgeable coupling parameter (if too strong->weaker and vice versa)
 
 - crystal_v17.c: try to make without nested function
 

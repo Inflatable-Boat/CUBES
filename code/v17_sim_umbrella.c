@@ -84,7 +84,7 @@ vec3_t random_cube_axis(void);
 int move_particle_cell_list(void);
 int rotate_particle(void);
 int change_volume(void);
-void nudge_deltas(double mov, double vol, double rot);
+void nudge_deltas(double mov, double vol, double rot, double umbr);
 void write_data(int step, FILE* fp_density, char datafolder_name[128]);
 
 // collision detection
@@ -171,8 +171,8 @@ int main(int argc, char* argv[])
 
     FILE* fp_density = fopen(density_filename, "w"); */
 
-    int mov_accepted = 0, vol_accepted = 0, rot_accepted = 0;
-    int mov_attempted = 0, vol_attempted = 0, rot_attempted = 0;
+    int mov_accepted = 0, vol_accepted = 0, rot_accepted = 0, umbrella_accepted = 0;
+    int mov_attempted = 0, vol_attempted = 0, rot_attempted = 0, umbrella_attempted = 0;
 
     system_t* previous_step = sim + 1;
     copy_system(previous_step, sim); // copy to previous_step: sim
@@ -225,8 +225,10 @@ int main(int argc, char* argv[])
             if (step % output_steps == 1) { //diff + target_cluster_size; = clust_size
                 printf("%d\t%7.2lf\t%d", diff + target_cluster_size, new_energy - sim->energy, diff);
             }
+            umbrella_attempted++;
             if (ran(0, 1) < boltzmann) { // if move is accepted
                 printf(" v");
+                umbrella_accepted++;
                 // printf(" move"); // printf("\tnew clust sz = %d", sim->clust_size);
                 copy_system(previous_step, sim); // new previous step
                 sim->clust_size = diff + target_cluster_size;//biggest_cluster_size(what_order);
@@ -241,6 +243,7 @@ int main(int argc, char* argv[])
             double move_acceptance = (double)mov_accepted / mov_attempted;
             double rotation_acceptance = (double)rot_accepted / rot_attempted;
             double volume_acceptance = (double)vol_accepted / vol_attempted;
+            double umbrella_acceptance = (double)umbrella_accepted / umbrella_attempted;
             /* printf("%d\t%.3lf\t %.3lf\t%.3lf\t%.3lf\t %.3lf\t%.3lf\t%.3lf\n",
                 step, sim->box[0] * sim->box[1] * sim->box[2],
                 move_acceptance,
@@ -249,7 +252,7 @@ int main(int argc, char* argv[])
                 Delta, DeltaR, DeltaV); */
 
             // Here is where delta, deltaR, deltaV might get changed if necessary
-            nudge_deltas(move_acceptance, volume_acceptance, rotation_acceptance);
+            nudge_deltas(move_acceptance, volume_acceptance, rotation_acceptance, umbrella_acceptance);
             // And reset for the next loop
             mov_attempted = rot_attempted = vol_attempted = 0;
             mov_accepted = rot_accepted = vol_accepted = 0;
@@ -415,7 +418,7 @@ bool is_overlap_between(int i, int j)
 
 /// This function checks if the move- and volume-acceptances are too high or low,
 /// and adjusts delta and deltaV accordingly.
-void nudge_deltas(double mov, double vol, double rot)
+void nudge_deltas(double mov, double vol, double rot, double umbr)
 {
     if (mov < 0.3)
         Delta *= 0.9; // acceptance too low  --> decrease delta
@@ -429,6 +432,10 @@ void nudge_deltas(double mov, double vol, double rot)
         DeltaR *= 0.9;
     if (rot > 0.4 && DeltaR < M_PI / 4)
         DeltaR *= 1.1;
+    if (umbr > 1)
+        coupling_parameter *= 0.9;
+    if (umbr < 0)
+        coupling_parameter *= 1.1;
 }
 
 /// This function attempts to change the volume, returning 1 if succesful and 0 if not.
