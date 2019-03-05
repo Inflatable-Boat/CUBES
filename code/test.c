@@ -570,5 +570,9 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
             printf("dikke schijt\n");
     } */
 
+    /* double aap = -1;
+    sscanf(argv[1], "%lf", &aap);
+    printf("%lf\n", aap); */ // if text is inserted, aap will remain 1
+
     return 0;
 }
