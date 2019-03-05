@@ -972,6 +972,7 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
             rnk = rank[cluss[i]];
             if (rnk > 0)
                 rnk = ((rnk - 1) % 25) + 1;
+            part[i].d = 1.0;
         } else {
             part[i].d = 0.1;
         }
