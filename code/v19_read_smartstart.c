@@ -133,20 +133,28 @@ int main(int argc, char* argv[])
     initialize_cell_list();
 
     char datafolder_name[128] = "";
+    char densityfile_name[128] = "";
     if (IsCreated) {
-        char buffer[128] = "datafolder/";
-        strcat(buffer, labelstring);
-        // char simtype[4] = "";
-        if (IsNVT)
-            strcat(buffer, "nvt");
-        else
-            strcat(buffer, "npt");
-        sprintf(datafolder_name, buffer, CubesPerDim, packing_fraction, BetaP, Phi);
+        char buffer_df[128] = "datafolder/";
+        char buffer_rho[128] = "densities/";
+        strcat(buffer_df, labelstring);
+        strcat(buffer_rho, labelstring);
+        if (IsNVT) {
+            strcat(buffer_df, "nvt");
+            strcat(buffer_rho, "nvt");
+        } else {
+            strcat(buffer_df, "npt");
+            strcat(buffer_rho, "npt");
+        }
+        // replace all %d, %lf in the buffers with values and put in density_filename
+        sprintf(datafolder_name, buffer_df, CubesPerDim, packing_fraction, BetaP, Phi);
+        sprintf(densityfile_name, buffer_rho, CubesPerDim, packing_fraction, BetaP, Phi);
     } else {
         sprintf(datafolder_name, "datafolder/%s", output_folder);
+        sprintf(densityfile_name, "densities/%s", output_folder);
     }
 
-    printf("saving to %s...\n", datafolder_name);
+    printf("saving to:\n%s\n%s...\n", datafolder_name, densityfile_name);
 
 // make the folder to store all the data in, if it already exists do nothing.
 #ifdef _WIN32
@@ -163,13 +171,7 @@ int main(int argc, char* argv[])
     exit(3);
 #endif
 
-    /* char buffer2[128] = "densities/";
-    strcat(buffer2, labelstring);
-    char density_filename[128] = "";
-    // replace all %d, %lf in buffer2 with values and put in density_filename
-    sprintf(density_filename, buffer2, CubesPerDim, packing_fraction, BetaP, Phi); */
-
-    // FILE* fp_density = fopen(density_filename, "w");
+    FILE* fp_density = fopen(densityfile_name, "w");
 
     int mov_accepted = 0, vol_accepted = 0, rot_accepted = 0;
     int mov_attempted = 0, vol_attempted = 0, rot_attempted = 0;
@@ -180,7 +182,7 @@ int main(int argc, char* argv[])
     printf("#Step\tVolume\t acceptances\t\t\t deltas\n");
     for (int step = 0; step <= mc_steps; ++step) {
         if (step % output_steps == 0)
-            write_data(step, NULL, datafolder_name);
+            write_data(step, fp_density, datafolder_name);
         for (int n = 0; n < 2 * n_particles + 2; ++n) {
             // Have to randomize order of moves to obey detailed balance
             int temp_ran = (int)ran(0, max_ran);
@@ -221,7 +223,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    // fclose(fp_density); // densities/...
+    fclose(fp_density); // densities/...
 
     return 0;
 }

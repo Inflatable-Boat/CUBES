@@ -100,6 +100,20 @@ DONE
 Which versions are being used:
 ================================================================================================
 ================================================================================================
+	Currently (2019-03-07) in use:
+v7: g_of_r_maker, prints density next to 'count' in g%07d.txt every step too.
+v13: slowly increase pressure
+v16: v6 (fast crush), but don't save cluster snapshots (v14/v18/v20 does this)
+v17: umbrella sampling, based on v15. requires 11 arguments:
+     usage: program.exe (r for read / c for create) (readfile / # cubes per dim)
+     (output_folder / packing_fraction) mc_steps output_steps BetaP Phi order_mode
+     target_cluster_size nvt/npt coupling_parameter
+     order_mode: transl = 1, sl = 2, unsl = 3, edge = 4
+v19: v15, but can do NVT (if BetaP is given text rather than a number) and give output_folder
+     instead of packing_fraction if we read from a file. Also makes density files again.
+v20: make order param data + extra histograms + read_per implemented + save if (!output_per)
+     histograms included: nbhist, Xnbhist, q4hist, q4avg per cube, clsizehist
+
 	Currently (2019-03-05) in use:
 v7: g_of_r_maker, prints density next to 'count' in g%07d.txt every step too.
 v13: slowly increase pressure
@@ -112,7 +126,6 @@ v17: umbrella sampling, based on v15. requires 11 arguments:
 v18: make order param data + extra histograms + read_per implemented + save if (!output_per)
 v19: v15, but can do NVT (if BetaP is given text rather than a number) and give output_folder
      instead of packing_fraction if we read from a file
-
 	Currently (2019-02-28) in use:
 v7: g_of_r_maker, prints density next to 'count' in g%07d.txt every step too.
 v13: slowly increase pressure
@@ -167,6 +180,7 @@ v9: read all coord files from a datafolder and give orient. or transl. order dat
 Version explanation:
 ================================================================================================
 ================================================================================================
+- v20 is just v18 but with a primitive cluster size histogram (program stops if clsz > 100 found)
 - v19 is just v15 but can read output_folder, nvt in place of packing_fraction, betaP respectively
 - v18 is just v14 but if output_steps == 0 we don't save the snapshots, 
 - v17 is just v15 but with umbrella sampling
