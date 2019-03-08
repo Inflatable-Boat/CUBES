@@ -1,0 +1,80 @@
+% Credit: TeXniCie A-eskwadraat
+%
+%%% This is a subfile! Type your chapters/section, appendices, etc in here! This code can be run by itself to try for bugs or typo's, but you have to declare your master file for this to work.
+
+% Declare the documentclass. Don't change \documentclass[...]{subfiles}, but replace the ... with the name of your master file.
+\documentclass[thesis]{subfiles}
+
+% Write the body of the chapter/section/other. You CAN NOT define preamble stuff in here (like \newcommand or \usepackage), that should be done in the preamble.tex instead (which will automatically apply to all subfiles).
+\begin{document}
+
+\section{Radial distribution function}
+
+A simple way to look at the structure of a colloidal system is to look at the \emph{radial distribution function}, closely related to the \emph{pair correlation function}. We discuss the latter first, because it is more general. Loosely speaking, the pair correlation function $\rho^{(2)}(\bm r, \bm r')$ is the probability that there is a particle at position $\bm r$ and $\bm r'$ at the same time. In a formula, this looks like 
+\begin{equation}
+	\rho^{(2)}(\bm r, \bm r') = \llangle \sum_i \sum_{j \neq i} \delta(\bm r - \bm r_i) \delta(\bm r' - \bm r_j) \rrangle.
+\end{equation}
+where $\langle \cdot \rangle$ denotes the ensemble average, $\bm r_i$ is the position of particle $i$, and the sums are over all particles (but not the same two).
+If our system is homogeneous, we can arbitrarily pick one of the particles to be at the origin, and if our system is also isotropic, orientation does not matter either, and the only parameter left is distance. These simplifications lead to the radial distribution function $g(r):$
+\begin{equation}
+	\rho^{(2)}(\bm r, \bm r') = \rho^2 g(|\bm r - \bm r'|),
+\end{equation}
+where the density $\rho$ of particles in the system has been factored out. This is done so $g(r) \rightarrow 1$ as $r \rightarrow \infty$, so long as there is no long range order (e.g. in a liquid). Now follow some examples for what to expect from the radial distribution function, henceforth simply called $g(r)$.
+\begin{itemize}
+	\item Ideal gas: $g(r) \equiv 1$.\\
+	Since there is no interaction between particles in an ideal gas, there is no correlation between one particle position and another.
+	\item Dilute gas of hard spheres of diameter $\sigma$: $g(r) = \begin{cases} 0 & \textrm{if } r < \sigma, \\ 1 & \textrm{else.} \end{cases}$\\
+	Since hard spheres cannot overlap, we won't find any within one diameter of another (hence the $g(r)$ is zero there). But because the gas is dilute, there is very little interaction, and it'll be equally likely to find a sphere anywhere else.
+	\item Perfect one dimensional crystal with lattice constant $\sigma$: $g(x) = \sum_{i = 1}^\infty \delta(x - i\sigma)$.\\
+	In a perfect crystal, all particle positions are static. In this particular crystal, each particle sees exactly one particle at an integer amount times $\sigma$ away. This manifests itself in the $g(r)$ by becoming $\delta$-peaks. If the particles were allowed to move a little bit (e.g. due to heat), the $\delta$-peaks would broaden to form e.g. Gaussian distributions.
+\end{itemize}
+
+\begin{minipage}{0.5\textwidth}
+	\includegraphics[width=\linewidth]{images/gofr_90_l}
+\end{minipage}
+\hfill
+\begin{minipage}{0.5\textwidth}\raggedleft
+	\includegraphics[width=\linewidth]{images/gofr_90_l}
+\end{minipage}
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

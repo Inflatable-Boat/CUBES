@@ -1,0 +1,156 @@
+\author{TeXniCie}
+\date{\today}
+\title{Manual for thesis}
+
+%%% Overview of this file in order:
+% Packages which don't need options
+% Packages which have one or few options
+% Geometry package
+% Header/footer settings
+% Theorem styles
+% Enable/disable parindents
+% Reference and bibliography settings
+% Front/main/back-matter
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{
+		%layout,		% Allow visualisation of all the margins
+		subfiles,		% For separate main and sub documents
+		graphicx,		% For image modifications and the figure environment
+		amsmath,		% For the AMS math styles
+		amssymb,		% The extended AMS math symbol list
+		bm,				% bold math symbols
+		amsthm,			% For use of theorems (works together with thmtools)
+		fancyhdr,		% For fancy headers and footers on pages
+		%gensymb,		% For easy generic symbols (uniform use in math and text mode)
+		%sidecap,		% For use of captions next to a float (figure, table, etc)
+		subcaption,		% For easy subfigures in a plot (with nice captions)
+		%tikz,			% Difficult drawing of awesome vector plots
+		%listings,		% For listing pieces of code in a nice and neat way
+		multicol,		% For easy local multicolumn use
+		color,			% For handy colour definitions (used cause of styling)
+		%calc,			% To calculate stuff for the back-end
+		%mdwlist,		% For customising lists
+		thmtools,		% Lets you define your own theorem style (used for all the fancy theorems, definitions etc.)
+		etoolbox,		% Allows adjustment of commands (used to reset the claim counter at the end of a proof).
+		xspace,			% Makes latex not eat spaces after commands
+        hyperref		% Makes links, references, the Table of Contents, etc. clickable.
+        }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[english]{babel} % Correct language setting, 'british', 'american'='english' or 'dutch'.
+%\usepackage[autostyle]{csquotes} % Fixes quotes to correspond to the babel language.
+% Note the difference between ``quotes'' and ''quotes'' when using different languages.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ \usepackage[margin=2.5cm]{geometry}
+ % Change the shape of a page (custom margins etc.)
+ % paper=a4paper slightly changes the style through the whole document.
+    %%%% We set the margins for whole document here, except the titlepage. The titlepage uses special margins; see titlepage.tex.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% This is about changing the headers and footers (i.e. Top and bottom of the page)
+
+\pagestyle{fancy}% use fancyheaders with the bar on the top
+\fancyhf{} % Clear the normal style
+\fancyhead[L]{\bfseries\leftmark} %this places the section number and name in the top left
+\fancyhead[R]{\bfseries\thepage}% this places the pagenumber in the top right
+	
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%		Theorem style
+
+% The set-up is as follows, first you give the 'style' of your theorem. This determines whether it for instance is plain, or italic. Secondly you can give an option for the symbol on the end, normally it is nothing. But you could add some to increase the readability of your text. Finally you can use numberwithin to add the number of your section/theorem before your equations. This is useful if you want to keep the numbers of your equation in check (In this thesis there where over a 100) and keeps in order where the equations are.
+%Finally you can use sibling to let different 'theorems' count together. Hence you will get Theorem 1 Definition 2 Claim 3, instead of Theorem 1 Definition 1 Claim 1. This is a matter of taste.
+
+% Theorem definitions
+\declaretheorem[style=definition,numberwithin=subsection]{definition} %If you want your theorems to be counted per section instead of subsection, then just remove the sub from the numberwithin
+\declaretheorem[style=definition,qed=$\triangle$,sibling=definition]{example}% sibling says with what type of theorems you wan the numbering to count with.
+
+\declaretheorem[style=plain,sibling=definition]{theorem}
+\declaretheorem[style=plain,sibling=definition]{lemma}
+\declaretheorem[style=plain,sibling=definition]{proposition}
+\declaretheorem[style=plain,sibling=definition]{corollary}
+\declaretheorem[style=definition]{claim}
+\declaretheorem[style=definition,sibling=example]{remark}
+
+%\AtEndEnvironment{proof}{\setcounter{claim}{0}} % Sets the claim number to 0 after ending a proof
+
+% You can make short-hands like these. 
+
+\newcommand{\thm}[2]{\begin{theorem} #1 \begin{proof} #2 \end{proof} \end{theorem}}
+\newcommand{\lm}[2]{\begin{lemma} #1 \begin{proof} #2 \end{proof} \end{lemma}}
+\newcommand{\df}[1]{\begin{definition} #1 \end{definition}}
+\newcommand{\clm}[1]{\begin{claim} #1 \end{claim}}
+
+\newcommand{\llangle}{\left\langle}
+\newcommand{\rrangle}{\right\rangle}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Comment/uncomment the following to disable/enable parindents:
+\setlength\parindent{0pt}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%% Add the bibliography with some settings:
+% package:
+\usepackage[% Options
+style = alphabetic, % 
+% Choose the style of your citations (and correspondingly your bibliography).
+% Few examples:
+% numeric = [15, 16, 17, 20], numeric-comp = [15-17, 20], numeric-verb = [15]; [16]; [17]; [20], alphabetic = [Jon99, Wil93, BT86, Zil13], authoryear = Jones 99, Wilfred 93, Bohr, Turing 86, Ziltener 13.
+%
+% List of all: (you probably want a version of numeric, alphabetic or authoryear)
+% numeric, numeric-comp, numeric-verb,
+% nature (like numeric, but with '23.' instead of '[23]' in the bibliography),
+% apa (does not work well with out with only 'year'; really needs a full date)
+% alphabetic, alphabetic-verb,
+% authoryear, authoryear-comp, authoryear-ibid, authoryear-icomp,
+% authortitle, authortitle-comp, authortitle-ibid, authortitle-icomp, authortitle-terse, authortitle-tcomp, authortitle-ticomp,
+% verbose, verbose-ibid, verbose-note, verbose-inote, verbose-trad1, verbose-trad2, verbose-trad3,
+% reading, (draft, debug)
+sorting = nty % 
+% Choose how the bibliography is sorted.
+% Options: nty, nyt, nyvt, anyt, anyvt, ynt, ydnt, none, (debug)
+% Here n = name, t = title, y = year, v = volume, a = alphabetic label, ...d = ... descending
+% So nty = sort by name, then title, then year.
+]{biblatex}
+
+% If you use APA, you will need:
+% \DeclareLanguageMapping{english}{english-apa}
+
+% There exist related packages for specific styles like biblatex-chicago (Chicago manual of style citations) or biblatex-jura (German legal citations). You most likely won't need them or use them.
+
+% For more information and a nice matrix with typesupport, see:
+% https://en.wikibooks.org/wiki/LaTeX/Bibliography_Management#biblatex
+
+% The source file for you bibliography:
+\addbibresource{bibfile.bib}
+% It's possible to add multiple bib files and separate them based on label (so to have two different references lists e.g. to seperate main sources from minor sources or books and theses from misc sources); see in 3.7 of the BibLaTeX documentation if you want to do stuff like that.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%% frontmatter/mainmatter/backmatter:
+\newcommand\frontmatter{%
+    \cleardoublepage
+    \pagenumbering{roman}} %small Roman numbers
+
+\newcommand\mainmatter{%
+    \cleardoublepage
+    \pagenumbering{arabic}} %normal numbers
+
+\newcommand\backmatter{%
+    \cleardoublepage %% double page style
+    %\clearpage %% single page style
+    \pagenumbering{Roman}} %capital Roman numbers
+   
+
+

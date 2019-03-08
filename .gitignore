@@ -15,4 +15,5 @@ clusdatafolder
 old_*
 time_series_*
 plotters
-tex
+tex/*
+!tex/*.tex

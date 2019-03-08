@@ -1,0 +1,49 @@
+%%% Credit: TeXniCie, A-esKwadraat
+% Note that we have done our best to make a file that can be used for a thesis and we can help you if you have any problems, but we are not responsible for any issues that may occur.
+
+% First we have to declare what kind of document this is. For a thesis, the usual options are article (for normal theses), report (for slightly larger theses) or book (for 100 or more pages of thesis). Report is rarely used and not supported as well as the article class:
+\documentclass{article}
+
+\input{preamble}
+
+
+
+\begin{document}
+
+\subfile{titlepage}
+
+\frontmatter
+
+%\subfile{abstract}
+\clearpage
+\tableofcontents
+
+
+\mainmatter % We want normal pagenumbers here.
+\subfile{g_of_r}
+
+
+%\newpage
+%\appendix % From here on, sections are numbered with capital letters
+%\subfile{appendixAB} % Contains two 'appendices'
+
+%\backmatter
+
+\printbibliography[% 
+% There are a lot of options for partial bibliographies, but you probably won't use them.
+% title = Optional custom title (not recommended)
+]
+
+
+%\addcontentsline{toc}{section}{References}
+
+
+
+
+
+
+
+
+
+
+\end{document}
