@@ -14,29 +14,74 @@ A simple way to look at the structure of a colloidal system is to look at the \e
 \begin{equation}
 	\rho^{(2)}(\bm r, \bm r') = \llangle \sum_i \sum_{j \neq i} \delta(\bm r - \bm r_i) \delta(\bm r' - \bm r_j) \rrangle.
 \end{equation}
-where $\langle \cdot \rangle$ denotes the ensemble average, $\bm r_i$ is the position of particle $i$, and the sums are over all particles (but not the same two).
+where $\langle \cdot \rangle$ denotes the ensemble average, $\bm r_i$ is the position of particle $i$, and the sums are over all pairs of particles (where a pair cannot be the same two).
 If our system is homogeneous, we can arbitrarily pick one of the particles to be at the origin, and if our system is also isotropic, orientation does not matter either, and the only parameter left is distance. These simplifications lead to the radial distribution function $g(r):$
 \begin{equation}
 	\rho^{(2)}(\bm r, \bm r') = \rho^2 g(|\bm r - \bm r'|),
 \end{equation}
-where the density $\rho$ of particles in the system has been factored out. This is done so $g(r) \rightarrow 1$ as $r \rightarrow \infty$, so long as there is no long range order (e.g. in a liquid). Now follow some examples for what to expect from the radial distribution function, henceforth simply called $g(r)$.
+where the density $\rho$ of particles in the system has been factored out. This is done so $g(r) \rightarrow 1$ as $r \rightarrow \infty$, so long as there is no long range order (e.g. in a liquid). A few typical examples of radial distribution functions, henceforth simply called $g(r)$, are:
+
+
 \begin{itemize}
 	\item Ideal gas: $g(r) \equiv 1$.\\
 	Since there is no interaction between particles in an ideal gas, there is no correlation between one particle position and another.
+\begin{comment}
 	\item Dilute gas of hard spheres of diameter $\sigma$: $g(r) = \begin{cases} 0 & \textrm{if } r < \sigma, \\ 1 & \textrm{else.} \end{cases}$\\
 	Since hard spheres cannot overlap, we won't find any within one diameter of another (hence the $g(r)$ is zero there). But because the gas is dilute, there is very little interaction, and it'll be equally likely to find a sphere anywhere else.
+\end{comment}
 	\item Perfect one dimensional crystal with lattice constant $\sigma$: $g(x) = \sum_{i = 1}^\infty \delta(x - i\sigma)$.\\
-	In a perfect crystal, all particle positions are static. In this particular crystal, each particle sees exactly one particle at an integer amount times $\sigma$ away. This manifests itself in the $g(r)$ by becoming $\delta$-peaks. If the particles were allowed to move a little bit (e.g. due to heat), the $\delta$-peaks would broaden to form e.g. Gaussian distributions.
+	In a perfect crystal, all particle positions are static. In this particular crystal, each particle sees exactly one particle at an integer amount times $\sigma$ away. This manifests itself in the $g(r)$ by becoming $\delta$-peaks.
 \end{itemize}
 
-\begin{minipage}{0.5\textwidth}
+With some imagination, after looking at the last example, one can see how on a 2-dimensional square lattice, we would also see peaks at distances of $\sqrt 2\sigma, \sqrt 5\sigma$, and other distances between square lattice sites. With even more imagination, one can see that the more relevant 3-dimensional cubic crystal would also give peaks at $\sqrt 3 \sigma, \sqrt 6 \sigma$ and other distances between cubic lattice sites.
+If the particles were allowed to move a little bit (say e.g. due to heat), the $\delta$-peaks would broaden. This is what we will see in the next bit.
+\bigbreak
+Before we look at the $g(r)$ of our system, let's motivate why. In order to determine the degree of crystallinity in our system, we look at \emph{local} order in our system (be it translational or orientational). In order to determine \emph{how} local we need to look, we can consult the $g(r)$. If we want to only look at the nearest neighbours, we can infer from the $g(r)$ where the first neighbour shell (roughly) ends. This way we can choose the cutoff for neighbouring particles less arbitrarily.
+
+%\newpage
+\subsection{Measurements of \texorpdfstring{$g(r)$}{g(r)}}
+
+So let's take a look at the $g(r)$ of a typical system we are studying: hard cubes in an $NpT$ simulation. We look at a low pressure (resulting in a liquid state), and a high pressure (resulting in a crystal).
+
+\begin{figure}[h]
+\begin{subfigure}{0.4\textwidth}
+	\centering
+	\vspace{8pt}
+	\includegraphics[width=0.815\linewidth]{images/gofr_90_l_snapshot}
+	\vspace{10pt}
+	\caption{A snapshot of the system. $\rho = 0.413$.}
+\end{subfigure}
+\begin{subfigure}{0.6\textwidth}
+	\centering
 	\includegraphics[width=\linewidth]{images/gofr_90_l}
+	\caption{The $g(r)$ averaged over numerous Monte Carlo steps.}
+\end{subfigure}
+\caption{A disordered liquid of cubes with side length 1. On the right, we can see that there are no cubes within a distance of 1, as this is not allowed. Furthermore, we don't see a cubic crystal structure (we'd expect peaks at $1, \sqrt 2, \sqrt 3$ times the lattice spacing), but rather, we see \emph{neighbour shells}. We see a peak at roughly 1.2, which corresponds to the first neighbour shell. At a distance of 2.05 the minimum between the first two neighbour shells is marked.}
+\end{figure}
+
+\begin{figure}[h]
+	\begin{subfigure}{0.4\textwidth}
+		\centering
+		\includegraphics[width=0.815\linewidth]{images/gofr_90_X_snapshot}
+		\caption{A snapshot of the system. $\rho = 0.644$.}
+	\end{subfigure}
+	\begin{subfigure}{0.6\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{images/gofr_90_X}
+		\caption{The $g(r)$ averaged over numerous Monte Carlo steps.}
+	\end{subfigure}
+	\caption{A crystal of cubes with side length 1. Again we see that there are no cubes within a distance of 1. Now the $g(r)$ shows much more structure. We see a sharp peak at roughly 1.1, and at roughly $1.1 \sqrt 2 \approx 1.55$ is a peak where we expect the second-nearest neighbours. A small bump at $1.1 \sqrt 3 \approx 1.9$ is also visible, which corresponds to the third-nearest neighbours. The first minimum at roughly 1.4 is also marked, signifying where we should put our cutoff for the nearest neighbours.}
+\end{figure}
+
+\begin{comment}
+\begin{minipage}{0.4\textwidth}
+	\includegraphics[width=\linewidth]{images/gofr_90_l_snapshot}
 \end{minipage}
 \hfill
-\begin{minipage}{0.5\textwidth}\raggedleft
+\begin{minipage}{0.6\textwidth}\raggedleft
 	\includegraphics[width=\linewidth]{images/gofr_90_l}
 \end{minipage}
-
+\end{comment}
 
 \end{document}
 
