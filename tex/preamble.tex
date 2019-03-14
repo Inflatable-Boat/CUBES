@@ -42,7 +42,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \usepackage[british]{babel} % Correct language setting, 'british', 'american'='english' or 'dutch'.
-%\usepackage[autostyle]{csquotes} % Fixes quotes to correspond to the babel language.
+\usepackage[autostyle]{csquotes} % Fixes quotes to correspond to the babel language.
 % Note the difference between ``quotes'' and ''quotes'' when using different languages.
 
 
@@ -81,7 +81,7 @@
 \declaretheorem[style=definition]{claim}
 \declaretheorem[style=definition,sibling=example]{remark}
 
-%\AtEndEnvironment{proof}{\setcounter{claim}{0}} % Sets the claim number to 0 after ending a proof
+\AtEndEnvironment{proof}{\setcounter{claim}{0}} % Sets the claim number to 0 after ending a proof
 
 % You can make short-hands like these. 
 
@@ -103,6 +103,7 @@
 %%%% Add the bibliography with some settings:
 % package:
 \usepackage[% Options
+backend = biber,
 style = alphabetic, % 
 % Choose the style of your citations (and correspondingly your bibliography).
 % Few examples:
@@ -132,8 +133,8 @@ sorting = nty %
 % For more information and a nice matrix with typesupport, see:
 % https://en.wikibooks.org/wiki/LaTeX/Bibliography_Management#biblatex
 
-% The source file for you bibliography:
-\addbibresource{bibfile.bib}
+% The source file for your bibliography:
+\addbibresource{mybib.bib}
 % It's possible to add multiple bib files and separate them based on label (so to have two different references lists e.g. to seperate main sources from minor sources or books and theses from misc sources); see in 3.7 of the BibLaTeX documentation if you want to do stuff like that.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

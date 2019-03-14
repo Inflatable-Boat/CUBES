@@ -108,6 +108,7 @@ static inline vec3_t v3_muls  (vec3_t a, double s)          { return (vec3_t){ a
 static inline vec3_t v3_div   (vec3_t a, vec3_t b)          { return (vec3_t){ a.x / b.x, a.y / b.y, a.z / b.z }; }
 static inline vec3_t v3_divs  (vec3_t a, double s)          { return (vec3_t){ a.x / s,   a.y / s,   a.z / s   }; }
 static inline double  v3_length(vec3_t v)                   { return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);          }
+static inline double  v3_length2(vec3_t v)                  { return v.x*v.x + v.y*v.y + v.z*v.z;                }
 static inline vec3_t v3_norm  (vec3_t v);
 static inline double  v3_dot   (vec3_t a, vec3_t b)         { return a.x*b.x + a.y*b.y + a.z*b.z;                 }
 static inline vec3_t v3_proj  (vec3_t v, vec3_t onto);

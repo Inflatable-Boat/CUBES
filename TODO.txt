@@ -180,6 +180,7 @@ v9: read all coord files from a datafolder and give orient. or transl. order dat
 Version explanation:
 ================================================================================================
 ================================================================================================
+- v21 is just v19 but with prints the g(r) to g.txt in the folder, superseding v19 and v7.
 - v20 is just v18 but with a primitive cluster size histogram (program stops if clsz > 100 found)
 - v19 is just v15 but can read output_folder, nvt in place of packing_fraction, betaP respectively
 - v18 is just v14 but if output_steps == 0 we don't save the snapshots, 
