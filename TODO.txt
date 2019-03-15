@@ -11,14 +11,14 @@ TODO:
 = do umbrella sampling
 	= is v17
 	- find suitable configurations/parameters
-	- implement a nudgeable coupling parameter (if too strong->weaker and vice versa)
+	##implement a nudgeable coupling parameter (if too strong->weaker and vice versa)
 
-- crystal_v17.c: try to make without nested function
+- crystal_coords_v18_for_v17.c: try to make without nested function
 
 - write latex on positional, orientational order param code
 
 - somehow write transl_order and orient_order as the same function, because there is a lot of
-	duplicate code in v10 <- v11 <- v14 <- v18.
+	duplicate code in v10 <- v11 <- v14 <- v18 <- v20 <- v22.
 
 - make nice fluids for pressures 6-9 (go as high as possible) and differing angles (see notes):
 	##make v3 do: stop volume moves after reaching desired pf, i.e. make it do NVT
@@ -100,6 +100,19 @@ DONE
 Which versions are being used:
 ================================================================================================
 ================================================================================================
+	Currently (2019-03-15) in use:
+v13: slowly increase pressure
+v16: v6 (fast crush), but don't save cluster snapshots (v14/v18/v20 does this)
+v17: umbrella sampling, based on v15. requires 11 arguments:
+     usage: program.exe (r for read / c for create) (readfile / # cubes per dim)
+     (output_folder / packing_fraction) mc_steps output_steps BetaP Phi order_mode
+     target_cluster_size nvt/npt coupling_parameter
+     order_mode: transl = 1, sl = 2, unsl = 3, edge = 4
+v21: v19, but with g(r) in datafoldername/g.txt
+v22: v20 (make order param data + extra histograms + read_per implemented + save if (!output_per)
+     histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
+     instead of making a histogram of the clustersizes.
+
 	Currently (2019-03-07) in use:
 v7: g_of_r_maker, prints density next to 'count' in g%07d.txt every step too.
 v13: slowly increase pressure
@@ -113,7 +126,6 @@ v19: v15, but can do NVT (if BetaP is given text rather than a number) and give 
      instead of packing_fraction if we read from a file. Also makes density files again.
 v20: make order param data + extra histograms + read_per implemented + save if (!output_per)
      histograms included: nbhist, Xnbhist, q4hist, q4avg per cube, clsizehist
-
 	Currently (2019-03-05) in use:
 v7: g_of_r_maker, prints density next to 'count' in g%07d.txt every step too.
 v13: slowly increase pressure
@@ -180,6 +192,7 @@ v9: read all coord files from a datafolder and give orient. or transl. order dat
 Version explanation:
 ================================================================================================
 ================================================================================================
+- v22 is just v20 but prints all clustersizes rather than making a hist.
 - v21 is just v19 but with prints the g(r) to g.txt in the folder, superseding v19 and v7.
 - v20 is just v18 but with a primitive cluster size histogram (program stops if clsz > 100 found)
 - v19 is just v15 but can read output_folder, nvt in place of packing_fraction, betaP respectively
