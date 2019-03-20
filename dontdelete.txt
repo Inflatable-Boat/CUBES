@@ -1,0 +1,3 @@
+v21_12*/coord* can be deleted after making sure v21_eq_of_state.nb and v21_g_of_r.nb are good
+
+

@@ -13,7 +13,7 @@
 /usr/bin/time -o times/v21_compr_12_p072_27 -f "%E\t%U\t%S,\t%P\n" ./v21_sim.exe c 12 0.40 750000 1000  7.2 1.26610367 > logs/v21_compr_12_p072 &
 # /usr/bin/time -o times/v21_compr_12_p073_27 -f "%E\t%U\t%S,\t%P\n" ./v21_sim.exe c 12 0.40 750000 1000  7.3 1.26610367 > logs/v21_compr_12_p073 &
 /usr/bin/time -o times/v21_compr_12_p074_27 -f "%E\t%U\t%S,\t%P\n" ./v21_sim.exe c 12 0.40 750000 1000  7.4 1.26610367 > logs/v21_compr_12_p074 &
-# /usr/bin/time -o times/v21_compr_12_p075_27 -f "%E\t%U\t%S,\t%P\n" ./v21_sim.exe c 12 0.40 750000 1000  7.5 1.26610367 > logs/v21_compr_12_p075 &
+/usr/bin/time -o times/v21_compr_12_p075_27 -f "%E\t%U\t%S,\t%P\n" ./v21_sim.exe c 12 0.40 750000 1000  7.5 1.26610367 > logs/v21_compr_12_p075 &
 /usr/bin/time -o times/v21_compr_12_p076_27 -f "%E\t%U\t%S,\t%P\n" ./v21_sim.exe c 12 0.40 750000 1000  7.6 1.26610367 > logs/v21_compr_12_p076 &
 # /usr/bin/time -o times/v21_compr_12_p077_27 -f "%E\t%U\t%S,\t%P\n" ./v21_sim.exe c 12 0.40 750000 1000  7.7 1.26610367 > logs/v21_compr_12_p077 &
 /usr/bin/time -o times/v21_compr_12_p078_27 -f "%E\t%U\t%S,\t%P\n" ./v21_sim.exe c 12 0.40 750000 1000  7.8 1.26610367 > logs/v21_compr_12_p078 &
