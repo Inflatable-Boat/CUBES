@@ -10,12 +10,14 @@ TODO:
 ================================================================================================
 = do umbrella sampling
 	= is v17
-	- find suitable configurations/parameters
+	-
+	##find suitable configurations/parameters
 	##implement a nudgeable coupling parameter (if too strong->weaker and vice versa)
 
 - crystal_coords_v18_for_v17.c: try to make without nested function
 
-- write latex on positional, orientational order param code
+- write latex on structure of the fluid (g(r), positional and orientational order param)
+- write latex on monte carlo, classical nucleation theory, umbrella sampling
 
 - somehow write transl_order and orient_order as the same function, because there is a lot of
 	duplicate code in v10 <- v11 <- v14 <- v18 <- v20 <- v22.
@@ -103,6 +105,15 @@ Which versions are being used:
 	Currently (2019-03-15) in use:
 v13: slowly increase pressure
 v16: v6 (fast crush), but don't save cluster snapshots (v14/v18/v20 does this)
+v21: v19, but with g(r) in datafoldername/g.txt
+v22: v20 (make order param data + extra histograms + read_per implemented + save if (!output_per)
+     histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
+     instead of making a histogram of the clustersizes.
+v23: v17 (umbrella) based on v21.
+
+	Currently (2019-03-15) in use:
+v13: slowly increase pressure
+v16: v6 (fast crush), but don't save cluster snapshots (v14/v18/v20 does this)
 v17: umbrella sampling, based on v15. requires 11 arguments:
      usage: program.exe (r for read / c for create) (readfile / # cubes per dim)
      (output_folder / packing_fraction) mc_steps output_steps BetaP Phi order_mode
@@ -112,7 +123,6 @@ v21: v19, but with g(r) in datafoldername/g.txt
 v22: v20 (make order param data + extra histograms + read_per implemented + save if (!output_per)
      histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
      instead of making a histogram of the clustersizes.
-
 	Currently (2019-03-07) in use:
 v7: g_of_r_maker, prints density next to 'count' in g%07d.txt every step too.
 v13: slowly increase pressure
@@ -192,6 +202,7 @@ v9: read all coord files from a datafolder and give orient. or transl. order dat
 Version explanation:
 ================================================================================================
 ================================================================================================
+- v23 is just v17 but based on v21 (it still does umbrella)
 - v22 is just v20 but prints all clustersizes rather than making a hist.
 - v21 is just v19 but with prints the g(r) to g.txt in the folder, superseding v19 and v7.
 - v20 is just v18 but with a primitive cluster size histogram (program stops if clsz > 100 found)

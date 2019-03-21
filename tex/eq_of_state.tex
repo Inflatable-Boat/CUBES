@@ -6,15 +6,38 @@
 
 \section{Equation of state}
 
-One way to describe the properties of the system we're studying is by finding an \emph{equation of state}. This is an equation that relates the thermodynamic variables to one another. A simple example would be the ideal gas law, $\beta p = \rho$, where $\beta = 1/k_bT$ is the inverse temperature and $\rho = N/V$ is the density of the system. By running multiple $NpT$ ensembles for differing pressures $p$, and finding the equilibrium density $\rho$ for each $p$, we can find the equation of state. This has been done before \cite{van2017phase}, and we will compare our results to previously done research to see if the simulation is working as intended. \bigbreak
+One way to describe the properties of the system we're studying is by finding an \emph{equation of state}. This is an equation that relates the thermodynamic variables to one another. A simple example would be the ideal gas law, $\beta p = \rho$, where $\beta = 1/k_bT$ is the inverse temperature and $\rho = N/V$ is the density of the system. By running multiple $NpT$ ensembles for differing pressures $p$, and finding the equilibrium density $\rho$ for each $p$, we can find the equation of state. This has been done before \cite{van2017phase}, and we will compare our results to previously done research to see if the simulation is working as intended. Note that, in our case, we are looking at hard (slanted) cubes, so the energy potential is either zero or infinite, regardless of temperature. This means our simulation is effectively independent of temperature, which reduces the amount of variables by one already. \bigbreak
 
-Two runs have been done per pressure: a compression run, starting at a relatively low density of 0.4 (i.e. in the fluid phase), and a melting run, starting in a relatively high density of 0.6, starting on a simple cubic lattice. The results are shown in figure \ref{fig:eos}. 
+Two runs have been done per pressure: a compression run, starting at a relatively low density of 0.4 (i.e. in the fluid phase), and a melting run, starting in a relatively high density of 0.6 (i.e. in the crystal phase). Both runs start on a simple cubic lattice, but in the compression run this crystal melts immediately because of the low density. The results are shown in figure \ref{fig:eos72} and \ref{fig:eos90}. 
 
-\begin{figure}
-	\centering
-	\includegraphics[width=0.8\linewidth]{images/v21_eq_of_state2}
-	\caption{placeholder}
-	\label{fig:eos}
+\begin{figure}[h]
+	\begin{subfigure}[t]{0.475\textwidth}
+		\includegraphics[width=\textwidth]{images/v21_eq_of_state_90all}
+		\caption{A plot of all data points.}
+		\label{fig:eos90-a}
+	\end{subfigure}\hfill
+	\begin{subfigure}[t]{0.475\textwidth}
+		\includegraphics[width=\textwidth]{images/v21_eq_of_state_90zoom}
+		\caption{A close-up of the interesting transition region.}
+		\label{fig:eos90-b}
+	\end{subfigure}
+	\caption{The equation of state found of hard cubes. This was done doing simulations with $N = 1728$ cubes, running for $7.5 \times 10^5$ Monte Carlo sweeps.}
+	\label{fig:eos90}
+\end{figure}
+\todo{Explain Monte Carlo sweep somewhere.} 
+\begin{figure}[h]
+	\begin{subfigure}[t]{0.475\textwidth}
+		\includegraphics[width=\textwidth]{images/v21_eq_of_state_72all}
+		\caption{A plot of all data points.}
+		\label{fig:eos72-a}
+	\end{subfigure}\hfill
+	\begin{subfigure}[t]{0.475\textwidth}
+		\includegraphics[width=\textwidth]{images/v21_eq_of_state_72zoom}
+		\caption{A close-up of the interesting transition region.}
+		\label{fig:eos72-b}
+	\end{subfigure}
+	\caption{The equation of state of hard slanted cubes with a slant angle of $\phi = 72\deg$.} 
+	\label{fig:eos72}
 \end{figure}
 
 \end{document}
