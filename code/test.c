@@ -572,7 +572,24 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
 
     /* double aap = -1;
     sscanf(argv[1], "%lf", &aap);
-    printf("%lf\n", aap); */ // if text is inserted, aap will remain 1
+    printf("%lf\n", aap); // if text is inserted, aap will remain 1 */
+
+    /* char aap[128] = "aap%07d";
+    int noot = 1483;
+    sprintf(aap, aap, noot); // replace %07d with noot and put in aap
+    printf("%s\n", aap); // aap0001483483 // like, wtf just stop */
+
+    /* vec3_t aap = vec3(0,1,2);
+    printf("aap.xyz = %lf, %lf, %lf\n", aap.x, aap.y, aap.z); // 0 1 2
+    for (int i = 0; i < 3; i++) {
+        *(&aap.x + i) += 3 - i;
+    }
+    printf("aap.xyz = %lf, %lf, %lf\n", aap.x, aap.y, aap.z); // 3 3 3
+    double* pgarbage = &aap.x;
+    for (int i = 0; i < 3; i++) {
+        *(pgarbage + i) += 3 - i;
+    } // equivalent, so we don't need the pointer
+    printf("aap.xyz = %lf, %lf, %lf\n", aap.x, aap.y, aap.z); // 6 5 4 */
 
     return 0;
 }

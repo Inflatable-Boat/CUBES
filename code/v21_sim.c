@@ -30,8 +30,6 @@
 // WhichCubesInCell is an array of size NC^3, this is already a million at NC == 32.
 
 /* Initialization variables */
-// many have been made not constant, so that one can enter into the command line:
-// a.exe mc_steps packing_fraction BetaP Phi
 static int mc_steps;
 static double packing_fraction;
 static double BetaP;
@@ -40,6 +38,7 @@ static double Phi; // angle of slanted cube
 const char labelstring[] = "v21_%02dpf%04.2lfp%04.1lfa%04.2lf";
 // e.g. sl10pf0.50p08.0a1.25:
 // 10 CubesPerDim, pack_frac 0.50, pressure 8.0, angle 1.25
+// if p == -1, it means NVT ensemble
 const char usage_string[] = "usage: program.exe (read / create) \
 (readfile / CubesPerDim) (output_folder / packing_fraction) mc_steps output_steps BetaP/NVT Phi\n";
 char output_folder[128] = "";
@@ -77,8 +76,6 @@ static double gof[NBINS];
 void print_celllists(void);
 
 inline static double ran(double low, double high);
-inline static int pos_mod_i(int a, int b);
-inline static double pos_mod_f(double a, double b);
 void scale(double scale_factor);
 
 // initialization
@@ -144,13 +141,6 @@ int main(int argc, char* argv[])
         char buffer_rho[128] = "densities/";
         strcat(buffer_df, labelstring);
         strcat(buffer_rho, labelstring);
-        /* if (IsNVT) { // if IsNVT, p == -1.0
-            strcat(buffer_df, "nvt");
-            strcat(buffer_rho, "nvt");
-        } else {
-            strcat(buffer_df, "npt");
-            strcat(buffer_rho, "npt");
-        } */
         // replace all %d, %lf in the buffers with values and put in density_filename
         sprintf(datafolder_name, buffer_df, CubesPerDim, packing_fraction, BetaP, Phi);
         sprintf(densityfile_name, buffer_rho, CubesPerDim, packing_fraction, BetaP, Phi);
@@ -245,18 +235,6 @@ int main(int argc, char* argv[])
 inline static double ran(double low, double high)
 {
     return (high - low) * dsfmt_genrand() + low;
-}
-
-/// returns a (mod b), nonnegative, given that a >= -b is always true
-inline static int pos_mod_i(int a, int b)
-{
-    return (a + b) % b;
-}
-
-/// returns a (mod b), nonnegative, given that a >= -b is always true
-inline static double pos_mod_f(double a, double b)
-{
-    return fmod(a + b, b);
 }
 
 /// Scales the system with the scale factor
@@ -641,9 +619,10 @@ bool is_overlap_from(int index)
         for (int j = -1; j < 2; j++) {
             for (int k = -1; k < 2; k++) {
                 // now loop over all cubes in this cell, remember periodic boundary conditions
-                int loop_x = pos_mod_i(x + i, CellsPerDim);
-                int loop_y = pos_mod_i(y + j, CellsPerDim);
-                int loop_z = pos_mod_i(z + k, CellsPerDim);
+                int loop_x = (x + i + CellsPerDim) % CellsPerDim;
+                int loop_y = (y + j + CellsPerDim) % CellsPerDim;
+                int loop_z = (z + k + CellsPerDim) % CellsPerDim;
+                // TODO: only check on boundary cells?
                 int num_cubes = NumCubesInCell[loop_x][loop_y][loop_z];
                 for (int cube = 0; cube < num_cubes; cube++) {
                     int index2 = WhichCubesInCell[loop_x][loop_y][loop_z][cube];
@@ -681,10 +660,9 @@ int move_particle_cell_list(void)
     double* pgarbage = &(r[index].x);
     for (int d = 0; d < NDIM; d++) {
         *(pgarbage + d) += ran(-Delta, Delta);
-        // periodic boundary conditions happen here, in pos_mod_f. Since delta < box[dim],
+        // periodic boundary conditions happen here. Since delta < box[dim],
         // the following expression will always return a positive number.
-        // *(pgarbage + d) = fmodf(*(pgarbage + d) + box[d], box[d]);
-        *(pgarbage + d) = pos_mod_f(*(pgarbage + d), box[d]);
+        *(pgarbage + d) = fmodf(*(pgarbage + d) + box[d], box[d]);
         // TODO: maybe make faster by only checking on boundary cells
     }
 
@@ -715,26 +693,11 @@ void update_cell_list(int index)
     int y_new = r_new.y / CellLength;
     int z_new = r_new.z / CellLength;
     if (x_new == CellsPerDim || y_new == CellsPerDim || z_new == CellsPerDim) {
-        // DEBUG
-        printf("new coordinate is exactly(ish) the box size\n");
-        printf("cube %d moved to (%lf, %lf, %lf), but boxsize is %lf.\n", index, r_new.x, r_new.y, r_new.z, box[0]);
-        printf("CellLength is %lf, so xyz is (%d, %d, %d).\n", CellLength, x_new, y_new, z_new);
-        printf("celllength: %lf\nboxsize: %lf\ncellsperdim: %d\n\n", CellLength, box[0], CellsPerDim);
-        for (int i = 0; i < CellsPerDim; i++) {
-            for (int j = 0; j < CellsPerDim; j++) {
-                for (int k = 0; k < CellsPerDim; k++) {
-                    printf("%2d ", NumCubesInCell[i][j][k]);
-                }
-                printf("\n");
-            }
-            printf("\n");
-        }
-
         // exit(6); // yeah so this actually happens for floats.
+        // and apparently it happens enough for doubles as well
         x_new = x_new % CellsPerDim;
         y_new = y_new % CellsPerDim;
         z_new = z_new % CellsPerDim;
-        // ENDEBUG
     }
     if (x_old == x_new && y_old == y_new && z_old == z_new) {
         return; // still in same box, don't have to change anything
@@ -747,14 +710,7 @@ void update_cell_list(int index)
             cube++;
             if (cube >= MAXPC) {
                 printf("infinite loop in update_cell_list\n");
-                // DEBUG
-                // printf("in cell %d %d %d, trying to find %d:\n", x_old, y_old, z_old, index);
-                // for (int i = 0; i < NC; i++) {
-                //     printf("%d ", WhichCubesInCell[x_old][y_old][z_old][i]);
-                // }
-                // printf("num of particles: %d\n", NumCubesInCell[x_old][y_old][z_old]);
                 exit(5); // not so infinite anymore eh
-                // ENDEBUG
             }
         }
         // now cube contains the index in the cell list
@@ -824,11 +780,6 @@ void write_data(int step, FILE* fp_density, FILE* fp_g, char datafolder_name[128
 
     char datafile[128];
     sprintf(datafile, buffer, step); // replace %07d with step and put in output_file.
-    // char datafile[128];
-    // strcpy(datafile, datafolder_name);
-    // strcat(datafile, "/coords_step%07d.poly");
-    // sprintf(datafile, datafile, step); // replace %07d with step and put in output_file.
-    // THIS GOES WRONG
 
     FILE* fp = fopen(datafile, "w");
     fprintf(fp, "%d\n", n_particles);
@@ -888,18 +839,6 @@ void sample_g_of_r(void)
         }
     }
 
-    // normalize
-    /* double num_density = n_particles / (box[0] * box[1] * box[2]);
-    double thickness = g_of_r_cutoff / NBINS;
-    for (int i = 0; i < NBINS; i++) {
-        double dist = (i + 0.5) * thickness;
-        double area = 4 * M_PI * dist * dist;
-        double volume_of_this_shell = area * thickness;
-        double expected_number = num_density * volume_of_this_shell;
-        gof[i] /= expected_number; // normalize by distance
-        // gof[i] /= count; // and normalize by number
-        gof[i] /= n_particles; // and normalize by number
-    } */
     double num_density = n_particles / (box[0] * box[1] * box[2]);
     double R;
     double dR = (double) g_of_r_cutoff / NBINS;
@@ -927,8 +866,8 @@ void set_packing_fraction(void)
         printf("packing fraction %5.3lf entered, \
 > %5.3lf (optimal pf the way we do it)\nSetting initial pf to %5.2lf\n",
             packing_fraction, optimal_packing_fraction, optimal_packing_fraction);
-        // packing_fraction = optimal_packing_fraction;
-        // * 0.99 to prevent rounding errors from screwing us over
+        printf("\n\tactually I'm too lazy I'm just gonna stop right here.\n");
+        exit(7);
     }
     double target_pf = packing_fraction < optimal_packing_fraction ? packing_fraction : optimal_packing_fraction;
     double target_volume = (n_particles * ParticleVolume) / (target_pf);
@@ -1023,7 +962,6 @@ void remove_overlap_smart(void)
                     if (is_overlap_from(i)) {
                         continue; // try again
                     } else { // move on to the next particle
-                        // printf("good ");
                         is_good_rotation = true;
                         break;
                     }
@@ -1034,10 +972,6 @@ void remove_overlap_smart(void)
         }
         iterations++;
     } while (is_overlap());
-
-    // since we want to try this out first, exit here.
-    // printf("reached end of remove_overlap_smart\n");
-    // exit(0);
 }
 
 /// Put parsing the commandline in a function.
@@ -1051,20 +985,20 @@ int parse_commandline(int argc, char* argv[])
     if (EOF == sscanf(argv[4], "%d", &mc_steps)) {
         printf("reading mc_steps has failed\n");
         return 1;
-    };
+    }
     if (EOF == sscanf(argv[5], "%d", &output_steps)) {
         printf("reading output_steps has failed\n");
         return 1;
-    };
+    }
     BetaP = -1.; // if we type nvt/n in the BetaP slot, BetaP will retain this value
     if (EOF == sscanf(argv[6], "%lf", &BetaP)) {
         printf("reading BetaP has failed\n");
         return 1;
-    };
+    }
     if (EOF == sscanf(argv[7], "%lf", &Phi)) {
         printf("reading Phi has failed\n");
         return 1;
-    };
+    }
 
     if (mc_steps < 100) {
         printf("mc_steps > 99\n");
@@ -1093,8 +1027,6 @@ int parse_commandline(int argc, char* argv[])
         read_data2(argv[2]);
 
         sscanf(argv[3], "%s", output_folder);
-        // printf("saving to datafolder/%s", output_folder); // this is in main()
-        // CubesPerDim = 0; //(int)pow(n_particles, 1. / 3.); // CubesPerDim only for creating system
         IsCreated = false;
     } else if (strcmp(argv[1], "create") == 0 || strcmp(argv[1], "c") == 0) {
         CubesPerDim = atoi(argv[2]);
@@ -1105,7 +1037,7 @@ int parse_commandline(int argc, char* argv[])
         if (EOF == sscanf(argv[3], "%lf", &packing_fraction)) {
             printf("reading packing_fraction has failed\n");
             return 1;
-        };
+        }
         if (packing_fraction <= 0 || packing_fraction > 1) {
             printf("0 < packing_fraction <= 1\n");
             return 2;
@@ -1126,42 +1058,4 @@ int parse_commandline(int argc, char* argv[])
     printf("Phi\t\t\t%lf\n", Phi);
 
     return 0; // no exceptions, run the program
-}
-
-/// DEBUG method
-/// CellsPerDim, CellLength,
-/// NumCubesInCell[][][], WhichCubesInCell[][][][] and InWhichCellIsThisCube[]
-void print_celllists(void)
-{
-    printf("boxsize: %lf", box[0]);
-    printf("\tCellLength: %lf", CellLength);
-    printf("\tCellsPerDim: %d\n", CellsPerDim);
-
-    printf("InWhichCellIsThisCube:\n");
-    for (int i = 0; i < n_particles; i++) {
-        int cell = InWhichCellIsThisCube[i];
-        printf("%d: %d, %d, %d\n", i, cell / (NC * NC), (cell / NC) % NC, cell % NC);
-    }
-
-    printf("\nNumCubesInCell:\n");
-    for (int i = 0; i < CellsPerDim; i++) {
-        for (int j = 0; j < CellsPerDim; j++) {
-            for (int k = 0; k < CellsPerDim; k++) {
-                printf("%d, %d, %d: %d\n", i, j, k, NumCubesInCell[i][j][k]);
-            }
-        }
-    }
-
-    printf("\nWhichCubesInCell:\n");
-    for (int i = 0; i < CellsPerDim; i++) {
-        for (int j = 0; j < CellsPerDim; j++) {
-            for (int k = 0; k < CellsPerDim; k++) {
-                printf("%d, %d, %d: ", i, j, k);
-                for (int l = 0; l < NumCubesInCell[i][j][k]; l++) {
-                    printf("%d ", WhichCubesInCell[i][j][k][l]);
-                }
-                printf("\n");
-            }
-        }
-    }
 }
