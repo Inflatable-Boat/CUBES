@@ -86,7 +86,7 @@ void sample_g_of_r(void);
 // collision detection
 bool is_overlap_between(int i, int j);
 bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1);
-bool is_collision_along_axis_check_first_cube_only_twice(vec3_t axis, int i, int j, vec3_t r2_r1);
+bool is_collision_along_axis_check_first_cube_only_twice(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis);
 vec3_t get_offset(int i, int j);
 bool is_overlap_from(int index);
 void update_cell_list(int index);
@@ -97,7 +97,7 @@ bool is_overlap(void);
 
 int main(int argc, char* argv[])
 {
-    dsfmt_seed(time(NULL));
+    dsfmt_seed(1234); // TODO
 
     sim = (system_t*)malloc(sizeof(*sim));
 
@@ -237,9 +237,8 @@ void scale(double scale_factor)
 {
     for (int n = 0; n < n_particles; ++n) {
         // We use pointers to loop over the x, y, z members of the vec3_t type.
-        double* pgarbage = &(sim->r[n].x);
         for (int d = 0; d < NDIM; ++d)
-            *(pgarbage + d) *= scale_factor;
+            *(&(sim->r[n].x) + d) *= scale_factor;
     }
     for (int d = 0; d < NDIM; ++d)
         sim->box[d] *= scale_factor;
@@ -301,7 +300,7 @@ bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
 
 /// same as above, but when we check normals,
 /// we only need to check two points of the first cube
-/* bool is_collision_along_axis_check_first_cube_only_twice(vec3_t axis, int i, int j, vec3_t r2_r1)
+bool is_collision_along_axis_check_first_cube_only_twice(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis)
 {
     double min1, min2, max1, max2, temp;
     min1 = max1 = v3_dot(axis, v3_add(r2_r1, get_offset(i, 0)));
@@ -320,7 +319,7 @@ bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
     } else {
         return true; // collision
     }
-} */
+}
 
 /// Checks if cube i and cube j overlap using the separating axis theorem
 bool is_overlap_between(int i, int j)
@@ -331,12 +330,11 @@ bool is_overlap_between(int i, int j)
 
     // We need to apply nearest image convention to r2_r1.
     // We use pointers to loop over the x, y, z members of the vec3_t type.
-    double* pdist = &(r2_r1.x);
     for (int d = 0; d < NDIM; d++) {
-        if (*(pdist + d) > 0.5 * sim->box[d])
-            *(pdist + d) -= sim->box[d];
-        if (*(pdist + d) < -0.5 * sim->box[d])
-            *(pdist + d) += sim->box[d];
+        if (*(&(r2_r1.x) + d) > 0.5 * sim->box[d])
+            *(&(r2_r1.x) + d) -= sim->box[d];
+        if (*(&(r2_r1.x) + d) < -0.5 * sim->box[d])
+            *(&(r2_r1.x) + d) += sim->box[d];
     }
 
     // If the cubes are more than their circumscribed sphere apart, they couldn't possibly overlap.
@@ -358,9 +356,9 @@ bool is_overlap_between(int i, int j)
 
     // Now load the cross products between edges
     vec3_t edges1[3], edges2[3];
-    edges1[0] = v3_sub(get_offset(i, 0), get_offset(i, 1));
-    edges1[1] = v3_sub(get_offset(i, 0), get_offset(i, 2));
-    edges1[2] = v3_sub(get_offset(i, 0), get_offset(i, 4));
+    edges1[0] = v3_sub(get_offset(i, 0), get_offset(i, 1)); // z
+    edges1[1] = v3_sub(get_offset(i, 0), get_offset(i, 2)); // y
+    edges1[2] = v3_sub(get_offset(i, 0), get_offset(i, 4)); // x
     edges2[0] = v3_sub(get_offset(j, 0), get_offset(j, 1));
     edges2[1] = v3_sub(get_offset(j, 0), get_offset(j, 2));
     edges2[2] = v3_sub(get_offset(j, 0), get_offset(j, 4));
@@ -369,7 +367,15 @@ bool is_overlap_between(int i, int j)
         axes[k + 6] = v3_cross(edges1[k / 3], edges2[k % 3]);
     }
 
-    for (int k = 0; k < 15; k++)
+    // if (!is_collision_along_axis_check_first_cube_only_twice(axes[0], i, j, r2_r1, 3)
+    //  || !is_collision_along_axis_check_first_cube_only_twice(axes[1], i, j, r2_r1, 2)
+    //  || !is_collision_along_axis_check_first_cube_only_twice(axes[2], i, j, r2_r1, 1)
+    //  || !is_collision_along_axis_check_first_cube_only_twice(axes[3], i, j, r2_r1, 3)
+    //  || !is_collision_along_axis_check_first_cube_only_twice(axes[4], i, j, r2_r1, 2)
+    //  || !is_collision_along_axis_check_first_cube_only_twice(axes[5], i, j, r2_r1, 1)
+    //    )
+    //     return false;
+    for (int k = 6; k < 15; k++)
         if (!is_collision_along_axis(axes[k], i, j, r2_r1))
             return false; // found separation, no overlap!
     // TODO: make smarter e.g. check only 2 points from first cube
@@ -483,9 +489,8 @@ void read_data2(char* init_file)
     bool rf = true; // read flag. if false, something went wrong
     for (int n = 0; n < n_particles; ++n) {
         // We use pointers to loop over the x, y, z members of the vec3_t type.
-        double* pgarbage = &(sim->r[n].x);
         for (int d = 0; d < NDIM; ++d) // the position of the center of cube
-            rf = rf && fscanf(pFile, "%lf\t", (pgarbage + d));
+            rf = rf && fscanf(pFile, "%lf\t", (&(sim->r[n].x) + d));
         rf = rf && fscanf(pFile, "%lf\t", &garbagef); // Edge_Length == 1
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
@@ -675,12 +680,11 @@ int move_particle_cell_list(void)
 
     // move the cube
     // We use pointers to loop over the x, y, z members of the vec3_t type.
-    double* pgarbage = &(sim->r[index].x);
     for (int d = 0; d < NDIM; d++) {
-        *(pgarbage + d) += ran(-Delta, Delta);
+        *(&(sim->r[index].x) + d) += ran(-Delta, Delta);
         // periodic boundary conditions happen here. Since delta < box[dim],
         // the following expression will always return a positive number.
-        *(pgarbage + d) = fmodf(*(pgarbage + d) + sim->box[d], sim->box[d]);
+        *(&(sim->r[index].x) + d) = fmodf(*(&(sim->r[index].x) + d) + sim->box[d], sim->box[d]);
         // TODO: maybe make faster by only checking on boundary cells
     }
 
@@ -814,9 +818,8 @@ void write_data(int step, FILE* fp_density, FILE* fp_g, char datafolder_name[128
     }
     for (int n = 0; n < n_particles; ++n) {
         // We use pointers to loop over the x, y, z members of the vec3_t type.
-        double* pgarbage = &(sim->r[n].x);
         for (int d = 0; d < NDIM; ++d)
-            fprintf(fp, "%lf\t", *(pgarbage + d)); // the position of the center of cube
+            fprintf(fp, "%lf\t", *(&(sim->r[n].x) + d)); // the position of the center of cube
         fprintf(fp, "1\t"); // Edge_Length == 1
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
@@ -839,12 +842,11 @@ void sample_g_of_r(void)
         for (int j = i + 1; j < n_particles; j++) {
             vec3_t r2_r1 = v3_sub(sim->r[i], sim->r[j]);
             // We use pointers to loop over the x, y, z members of the vec3_t type.
-            double* pdist = &(r2_r1.x);
             for (int d = 0; d < NDIM; d++) {
-                if (*(pdist + d) > 0.5 * sim->box[d])
-                    *(pdist + d) -= sim->box[d];
-                if (*(pdist + d) < -0.5 * sim->box[d])
-                    *(pdist + d) += sim->box[d];
+                if (*(&(r2_r1.x) + d) > 0.5 * sim->box[d])
+                    *(&(r2_r1.x) + d) -= sim->box[d];
+                if (*(&(r2_r1.x) + d) < -0.5 * sim->box[d])
+                    *(&(r2_r1.x) + d) += sim->box[d];
             }
 
             double dist2 = v3_length2(r2_r1); // square of the distance for computational efficiency
