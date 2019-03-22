@@ -2,6 +2,7 @@
 #include "crystal_coords_v18_for_v17.c" // int biggest_cluster_size(int what_order) returns the largest cluster this step
 #include "math_3d.h" // https://github.com/arkanis/single-header-file-c-libs/blob/master/math_3d.h
 #include "mt19937.h" // Mersenne Twister (dsmft_genrand();)
+#include <malloc.h>
 #ifdef _WIN32
 #include <direct.h> // mkdir on Windows
 #elif __linux__
@@ -847,7 +848,7 @@ void sample_g_of_r(void)
             for (int d = 0; d < NDIM; d++) {
                 if (*(pdist + d) > 0.5 * sim->box[d])
                     *(pdist + d) -= sim->box[d];
-                if (*(pdist + d) < -0.5 *sim-> box[d])
+                if (*(pdist + d) < -0.5 * sim->box[d])
                     *(pdist + d) += sim->box[d];
             }
 
@@ -864,7 +865,7 @@ void sample_g_of_r(void)
 
     double num_density = n_particles / (sim->box[0] * sim->box[1] * sim->box[2]);
     double R;
-    double dR = (double) g_of_r_cutoff / NBINS;
+    double dR = (double)g_of_r_cutoff / NBINS;
     const double PI4DR = 4 * M_PI * dR;
     for (int i = 0; i < NBINS; i++) {
         R = i * dR;

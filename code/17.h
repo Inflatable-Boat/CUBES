@@ -1,6 +1,8 @@
 #ifndef V_17HEADER
 #define V_17HEADER
 
+#include "math_3d.h" // https://github.com/arkanis/single-header-file-c-libs/blob/master/math_3d.h
+
 #define NDIM 3
 #define N 8000 // 20^3 should be plenty for now
 #define NC 16 // max number of cells per direction

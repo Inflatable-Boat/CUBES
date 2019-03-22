@@ -8,6 +8,7 @@
         "math_3d.h": "c",
         "math.h": "c",
         "errno.h": "c",
-        "errno-base.h": "c"
+        "errno-base.h": "c",
+        "malloc.h": "c"
     }
 }
