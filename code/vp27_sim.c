@@ -1,4 +1,4 @@
-#include "17.h"
+#include "21.h"
 #include "math_3d.h" // https://github.com/arkanis/single-header-file-c-libs/blob/master/math_3d.h
 #include "mt19937.h" // Mersenne Twister (dsmft_genrand();)
 #include <malloc.h>
@@ -27,7 +27,7 @@ static double packing_fraction;
 static double BetaP;
 static double Phi; // angle of slanted cube
 
-const char labelstring[] = "v21_%02dpf%04.2lfp%04.1lfa%04.2lf";
+const char labelstring[] = "vp27_%02dpf%04.2lfp%04.1lfa%04.2lf";
 // e.g. sl10pf0.50p08.0a1.25:
 // 10 CubesPerDim, pack_frac 0.50, pressure 8.0, angle 1.25
 // if p == -1, it means NVT ensemble
@@ -72,6 +72,7 @@ void set_packing_fraction(void);
 void set_random_orientation(void);
 void remove_overlap(void);
 void remove_overlap_smart(void);
+void initialize_phi_normal_offset(void);
 void initialize_cell_list(void);
 vec3_t random_cube_axis(void);
 
@@ -87,9 +88,9 @@ void sample_g_of_r(void);
 bool is_overlap_between(int i, int j);
 bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1);
 bool is_collision_along_axis_check_first_cube_only_twice(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis);
-vec3_t get_offset(int i, int j);
+inline vec3_t get_offset(int i, int j);
 bool is_overlap_from(int index);
-void update_cell_list(int index);
+// void update_cell_list(int index);
 inline static void update_CellLength(void);
 bool is_overlap(void);
 
@@ -97,7 +98,7 @@ bool is_overlap(void);
 
 int main(int argc, char* argv[])
 {
-    dsfmt_seed(time(NULL)); // TODO
+    dsfmt_seed(1234); // TODO
 
     sim = (system_t*)malloc(sizeof(*sim));
 
@@ -121,6 +122,7 @@ int main(int argc, char* argv[])
         }
     }
     initialize_cell_list();
+    printf("celllength: %lf\nboxsize: %lf\ncellsperdim: %d\n\n", sim->CellLength, sim->box[0], CellsPerDim);
 
     char datafolder_name[128] = "";
     char densityfile_name[128] = "";
@@ -256,22 +258,9 @@ void scale(double scale_factor)
 ///     0----x                          0----4
 /// The angle Phi is the angle ∠104 in the picture above, i.e. the angle of
 /// "the z-axis of the cube" with "the x-axis of the cube"
-vec3_t get_offset(int i, int j)
+inline vec3_t get_offset(int i, int j)
 {
-    vec3_t offset = vec3(-0.5 * (1 + CosPhi), -0.5, -0.5 * SinPhi);
-    if (j & 4) //   x+ = 4, 5, 6, 7
-        offset.x += 1;
-    if (j & 2) //   y+ = 2, 3, 6, 7
-        offset.y += 1;
-    if (j & 1) { // z+ = 1, 3, 5, 7
-        offset.z += SinPhi;
-        offset.x += CosPhi;
-    }
-    // offset = v3_muls(offset, Edge_Length); // Edge_Length == 1
-
-    offset = m4_mul_dir(sim->m[i], offset);
-
-    return offset;
+    return m4_mul_dir(sim->m[i], sim->offsets[j]);
 }
 
 /// Checks if there is overlap between cubes along axis, between cubes i, j.
@@ -302,19 +291,44 @@ bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
 }
 
 /// same as above, but when we check normals,
-/// we only need to check two points of the first cube
+/// we only need to check two (or three) points of the first or second cube
+/// if the axis in question is not the y-axis, we also need vertex number 5
+/// don't worry don't touch it works exactly the same as the "dumb" algorithm
+/// for a 12^3 system for 1000 MC sweeps
 bool is_collision_along_axis_check_first_cube_only_twice(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis)
 {
     double min1, min2, max1, max2, temp;
     min1 = max1 = v3_dot(axis, v3_add(r2_r1, get_offset(i, 0)));
     min2 = max2 = v3_dot(axis, get_offset(j, 0));
-    for (int n = 1; n < 8; n++) {
-        temp = v3_dot(axis, v3_add(r2_r1, get_offset(i, n)));
+    if (which_axis <= 4) { // check the first cube along the given axis only once
+        temp = v3_dot(axis, v3_add(r2_r1, get_offset(i, which_axis)));
         min1 = fmin(min1, temp);
         max1 = fmax(max1, temp);
-        temp = v3_dot(axis, get_offset(j, n));
+        if (which_axis != 2) {
+            temp = v3_dot(axis, v3_add(r2_r1, get_offset(i, 5)));
+            min1 = fmin(min1, temp);
+            max1 = fmax(max1, temp);
+        }
+        for (int n = 1; n < 8; n++) {
+            temp = v3_dot(axis, get_offset(j, n));
+            min2 = fmin(min2, temp);
+            max2 = fmax(max2, temp);
+        }
+    } else { // check the second cube along the given axis only once
+        which_axis -= 4;
+        temp = v3_dot(axis, get_offset(j, which_axis));
         min2 = fmin(min2, temp);
         max2 = fmax(max2, temp);
+        if (which_axis != 2) {
+            temp = v3_dot(axis, get_offset(j, 5));
+            min2 = fmin(min2, temp);
+            max2 = fmax(max2, temp);
+        }
+        for (int n = 1; n < 8; n++) {
+            temp = v3_dot(axis, v3_add(r2_r1, get_offset(i, n)));
+            min1 = fmin(min1, temp);
+            max1 = fmax(max1, temp);
+        }
     }
 
     if (max1 < min2 || max2 < min1) {
@@ -370,18 +384,16 @@ bool is_overlap_between(int i, int j)
         axes[k + 6] = v3_cross(edges1[k / 3], edges2[k % 3]);
     }
 
-    // if (!is_collision_along_axis_check_first_cube_only_twice(axes[0], i, j, r2_r1, 3)
-    //  || !is_collision_along_axis_check_first_cube_only_twice(axes[1], i, j, r2_r1, 2)
-    //  || !is_collision_along_axis_check_first_cube_only_twice(axes[2], i, j, r2_r1, 1)
-    //  || !is_collision_along_axis_check_first_cube_only_twice(axes[3], i, j, r2_r1, 3)
-    //  || !is_collision_along_axis_check_first_cube_only_twice(axes[4], i, j, r2_r1, 2)
-    //  || !is_collision_along_axis_check_first_cube_only_twice(axes[5], i, j, r2_r1, 1)
-    //    )
-    //     return false;
-    for (int k = 0; k < 15; k++)
+    if (!is_collision_along_axis_check_first_cube_only_twice(axes[0], i, j, r2_r1, 1)
+        || !is_collision_along_axis_check_first_cube_only_twice(axes[1], i, j, r2_r1, 2)
+        || !is_collision_along_axis_check_first_cube_only_twice(axes[2], i, j, r2_r1, 4)
+        || !is_collision_along_axis_check_first_cube_only_twice(axes[3], i, j, r2_r1, 5)
+        || !is_collision_along_axis_check_first_cube_only_twice(axes[4], i, j, r2_r1, 6)
+        || !is_collision_along_axis_check_first_cube_only_twice(axes[5], i, j, r2_r1, 8))
+        return false; // found separation, no overlap!
+    for (int k = 6; k < 15; k++)
         if (!is_collision_along_axis(axes[k], i, j, r2_r1))
             return false; // found separation, no overlap!
-    // TODO: make smarter e.g. check only 2 points from first cube
 
     // overlap on all axes ==> the cubes overlap
     return true;
@@ -516,18 +528,7 @@ void read_data2(char* init_file)
     }
     fclose(pFile);
 
-    SinPhi = sin(Phi);
-    CosPhi = cos(Phi);
-    ParticleVolume = SinPhi; // Edge_Length == 1
-
-    // now initialize the normals, put everything to zero first:
-    for (int i = 0; i < 3; i++) {
-        Normal[i].x = Normal[i].y = Normal[i].z = 0;
-    }
-    Normal[0].x = SinPhi; // normal on x-dir
-    Normal[0].z = -CosPhi;
-    Normal[1].y = 1.; // normal on y-dir
-    Normal[2].z = 1.; // normal on z-dir
+    initialize_phi_normal_offset();
 }
 
 /// This function creates the initial configuration of the system.
@@ -558,6 +559,22 @@ void create_system(void)
         }
     }
 
+    initialize_phi_normal_offset();
+
+    // now initialize the rotation matrices
+    for (int i = 0; i < n_particles; i++) {
+        for (int temp = 0; temp < 16; temp++)
+            sim->m[i].m[temp % 4][temp / 4] = 0; // everything zero first
+        for (int d = 0; d < NDIM; d++) {
+            sim->m[i].m[d][d] = 1; // 1 on the diagonal
+        }
+    }
+}
+
+/// initializes a couple of things, made into own function to avoid duplicate code:
+/// SinPhi, CosPhi, ParticleVolume, Normal[3], sim->offsets[8]
+void initialize_phi_normal_offset(void)
+{
     SinPhi = sin(Phi);
     CosPhi = cos(Phi);
     ParticleVolume = SinPhi; // Edge_Length == 1
@@ -571,13 +588,19 @@ void create_system(void)
     Normal[1].y = 1.; // normal on y-dir
     Normal[2].z = 1.; // normal on z-dir
 
-    // now initialize the rotation matrices
-    for (int i = 0; i < n_particles; i++) {
-        for (int temp = 0; temp < 16; temp++)
-            sim->m[i].m[temp % 4][temp / 4] = 0; // everything zero first
-        for (int d = 0; d < NDIM; d++) {
-            sim->m[i].m[d][d] = 1; // 1 on the diagonal
+    // offsets are calculated only once because the only thing that changes is the
+    // orientation of the cubes. Thus no need to calculate these every time, so do it here
+    for (int i = 0; i < 8; i++) {
+        vec3_t offset = vec3(-0.5 * (1 + CosPhi), -0.5, -0.5 * SinPhi);
+        if (i & 4) //   x+ = 4, 5, 6, 7
+            offset.x += 1;
+        if (i & 2) //   y+ = 2, 3, 6, 7
+            offset.y += 1;
+        if (i & 1) { // z+ = 1, 3, 5, 7
+            offset.z += SinPhi;
+            offset.x += CosPhi;
         }
+        sim->offsets[i] = offset;
     }
 }
 
@@ -634,7 +657,7 @@ inline static void update_CellLength(void)
 /// This function returns if cube number index overlaps, using cell lists
 bool is_overlap_from(int index)
 {
-    bool is_collision = false;
+    // bool is_collision = false;
     int cell = sim->InWhichCellIsThisCube[index];
     // convert cell number to x, y, z coordinates
     int x = cell / (NC * NC);
@@ -645,30 +668,72 @@ bool is_overlap_from(int index)
         for (int j = -1; j < 2; j++) {
             for (int k = -1; k < 2; k++) {
                 // now loop over all cubes in this cell, remember periodic boundary conditions
-                int loop_x = (x + i + CellsPerDim) % CellsPerDim;
-                int loop_y = (y + j + CellsPerDim) % CellsPerDim;
-                int loop_z = (z + k + CellsPerDim) % CellsPerDim;
-                // TODO: only check on boundary cells?
+                int loop_x = (x == 0 || x == CellsPerDim - 1) ? (x + i + CellsPerDim) % CellsPerDim : x + i;
+                int loop_y = (y == 0 || y == CellsPerDim - 1) ? (y + j + CellsPerDim) % CellsPerDim : y + j;
+                int loop_z = (z == 0 || z == CellsPerDim - 1) ? (z + k + CellsPerDim) % CellsPerDim : z + k;
                 int num_cubes = sim->NumCubesInCell[loop_x][loop_y][loop_z];
                 for (int cube = 0; cube < num_cubes; cube++) {
                     int index2 = sim->WhichCubesInCell[loop_x][loop_y][loop_z][cube];
                     // if checking your own cell, do not check overlap with yourself
                     if (index == index2) {
-                        continue; // TODO: is this efficient enough?
+                        continue;
                     }
 
                     if (is_overlap_between(index, index2)) {
-                        is_collision = true;
-                        // and break out of all loops
-                        cube = N;
-                        i = j = k = 2;
+                        return true;
+                        // is_collision = true;
+                        // // and break out of all loops
+                        // cube = N;
+                        // i = j = k = 2;
                     }
                 }
             }
         }
     }
-    return is_collision;
+    // return is_collision;
+    return false;
 }
+
+/// This function returns if cube number index overlaps, using cell lists
+bool is_overlap_from_this_cell(int index, int x, int y, int z)
+{
+    // bool is_collision = false;
+    // int cell = sim->InWhichCellIsThisCube[index];
+    // // convert cell number to x, y, z coordinates
+    // int x = cell / (NC * NC);
+    // int y = (cell / NC) % NC;
+    // int z = cell % NC;
+    // loop over all neighbouring cells
+    for (int i = -1; i < 2; i++) {
+        for (int j = -1; j < 2; j++) {
+            for (int k = -1; k < 2; k++) {
+                // now loop over all cubes in this cell, remember periodic boundary conditions
+                int loop_x = (x == 0 || x == CellsPerDim - 1) ? (x + i + CellsPerDim) % CellsPerDim : x + i;
+                int loop_y = (y == 0 || y == CellsPerDim - 1) ? (y + j + CellsPerDim) % CellsPerDim : y + j;
+                int loop_z = (z == 0 || z == CellsPerDim - 1) ? (z + k + CellsPerDim) % CellsPerDim : z + k;
+                int num_cubes = sim->NumCubesInCell[loop_x][loop_y][loop_z];
+                for (int cube = 0; cube < num_cubes; cube++) {
+                    int index2 = sim->WhichCubesInCell[loop_x][loop_y][loop_z][cube];
+                    // if checking your own cell, do not check overlap with yourself
+                    if (index == index2) {
+                        continue;
+                    }
+
+                    if (is_overlap_between(index, index2)) {
+                        return true;
+                        // is_collision = true;
+                        // // and break out of all loops
+                        // cube = N;
+                        // i = j = k = 2;
+                    }
+                }
+            }
+        }
+    }
+    // return is_collision;
+    return false;
+}
+
 
 /// This moves a random particle in a cube of volume (2 * delta)^3.
 /// Note this gives particles a tendency to move to one of the 8 corners of the cube,
@@ -688,18 +753,54 @@ int move_particle_cell_list(void)
         // periodic boundary conditions happen here. Since delta < box[dim],
         // the following expression will always return a positive number.
         *(&(sim->r[index].x) + d) = fmodf(*(&(sim->r[index].x) + d) + sim->box[d], sim->box[d]);
-        // TODO: maybe make faster by only checking on boundary cells
     }
 
-    update_cell_list(index);
+    // update_cell_list(index);
+
+    int x_new = sim->r[index].x / sim->CellLength;
+    int y_new = sim->r[index].y / sim->CellLength;
+    int z_new = sim->r[index].z / sim->CellLength;
+    if (x_new == CellsPerDim || y_new == CellsPerDim || z_new == CellsPerDim) {
+        printf(" !");
+        // exit(6); // yeah so this actually happens for floats.
+        // and apparently it happens enough for doubles as well
+        x_new = x_new % CellsPerDim;
+        y_new = y_new % CellsPerDim;
+        z_new = z_new % CellsPerDim;
+    }
 
     // and check for overlaps
-    if (is_overlap_from(index)) {
+    if (is_overlap_from_this_cell(index, x_new, y_new, z_new)) {
         sim->r[index] = r_old; // move back
-        update_cell_list(index); // and re-update the cell list. // TODO: make more efficient
         return 0; // unsuccesful move
     } else {
-        // remember to update (Num/Which)CubesInCell and InWhichCellIsThisCube
+        int cell_old = sim->InWhichCellIsThisCube[index];
+        int x_old = cell_old / (NC * NC);
+        int y_old = (cell_old / NC) % NC;
+        int z_old = cell_old % NC;
+        if (x_old == x_new && y_old == y_new && z_old == z_new) {
+            // still in same box, don't have to change anything
+        } else {
+            // update in which cell this cube is
+            sim->InWhichCellIsThisCube[index] = NC * NC * x_new + NC * y_new + z_new;
+            // update WhichCubesInCell, first check at what index the moved cube was
+            int cube = 0;
+            while (index != sim->WhichCubesInCell[x_old][y_old][z_old][cube]) {
+                cube++;
+                if (cube >= MAXPC) {
+                    printf("infinite loop in update_cell_list\n");
+                    exit(5); // not so infinite anymore eh
+                }
+            }
+            // now cube contains the index in the cell list
+
+            // add the cube to the new cell and add one to the counter (hence ++)
+            sim->WhichCubesInCell[x_new][y_new][z_new][(sim->NumCubesInCell[x_new][y_new][z_new])++] = index;
+            // and remove the cube in the old cell by replacing it with the last
+            // in the list and remove one from the counter (hence --)
+            int last_in_list = sim->WhichCubesInCell[x_old][y_old][z_old][--(sim->NumCubesInCell[x_old][y_old][z_old])];
+            sim->WhichCubesInCell[x_old][y_old][z_old][cube] = last_in_list;
+        }
         return 1; // succesful move
     }
 }
@@ -707,7 +808,7 @@ int move_particle_cell_list(void)
 /// This function updates the cell list. At this point, r[index] contains the new
 /// (accepted) position, and we need to check if is in the same cell as before.
 /// If not, update (Num/Which)CubesInCell and InWhichCellIsThisCube.
-void update_cell_list(int index)
+/* void update_cell_list(int index)
 {
     int cell_old = sim->InWhichCellIsThisCube[index];
     int x_old = cell_old / (NC * NC);
@@ -749,7 +850,7 @@ void update_cell_list(int index)
         sim->WhichCubesInCell[x_old][y_old][z_old][cube] = last_in_list;
         return;
     }
-}
+} */
 
 /// This rotates a random particle around a random axis
 /// by a random angle \in [-DeltaR, DeltaR]
