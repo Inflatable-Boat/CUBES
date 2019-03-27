@@ -697,12 +697,6 @@ bool is_overlap_from(int index)
 /// This function returns if cube number index overlaps, using cell lists
 bool is_overlap_from_this_cell(int index, int x, int y, int z)
 {
-    // bool is_collision = false;
-    // int cell = sim->InWhichCellIsThisCube[index];
-    // // convert cell number to x, y, z coordinates
-    // int x = cell / (NC * NC);
-    // int y = (cell / NC) % NC;
-    // int z = cell % NC;
     // loop over all neighbouring cells
     for (int i = -1; i < 2; i++) {
         for (int j = -1; j < 2; j++) {

@@ -18,3 +18,4 @@ plotters
 tex/*
 !tex/*.tex
 pov.txt
+code/timenull.c

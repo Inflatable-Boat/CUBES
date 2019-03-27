@@ -86,8 +86,8 @@ void sample_g_of_r(void);
 
 // collision detection
 bool is_overlap_between(int i, int j);
-bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1);
-bool is_collision_along_axis_check_first_cube_only_twice(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis);
+bool is_separation_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1);
+bool is_separation_along_axis_check_first_cube_only_twice(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis);
 inline vec3_t get_offset(int i, int j);
 bool is_overlap_from(int index);
 void update_cell_list(int index);
@@ -262,9 +262,9 @@ inline vec3_t get_offset(int i, int j)
     return m4_mul_dir(sim->m[i], sim->offsets[j]);
 }
 
-/// Checks if there is overlap between cubes along axis, between cubes i, j.
+/// Checks if there is separation between cubes along axis, between cubes i, j.
 /// Also the difference vector r2-r1 is given as it has already been calculated
-bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
+bool is_separation_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
 {
     // The axis doesn't need to be normalized, source:
     // https://gamedevelopment.tutsplus.com/tutorials/collision-detection-using-the-separating-axis-theorem--gamedev-169)
@@ -283,9 +283,9 @@ bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
     }
 
     if (max1 < min2 || max2 < min1) {
-        return false; // separation!
+        return true; // separation!
     } else {
-        return true; // collision
+        return false; // collision
     }
 }
 
@@ -294,46 +294,58 @@ bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
 /// if the axis in question is not the y-axis, we also need vertex number 5
 /// don't worry don't touch it works exactly the same as the "dumb" algorithm
 /// for a 12^3 system for 1000 MC sweeps
-bool is_collision_along_axis_check_first_cube_only_twice(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis)
+bool is_separation_along_axis_fast1(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis)
 {
     double min1, min2, max1, max2, temp;
     min1 = max1 = v3_dot(axis, v3_add(r2_r1, get_offset(i, 0)));
     min2 = max2 = v3_dot(axis, get_offset(j, 0));
-    if (which_axis <= 4) { // check the first cube along the given axis only once
-        temp = v3_dot(axis, v3_add(r2_r1, get_offset(i, which_axis)));
+
+    temp = v3_dot(axis, v3_add(r2_r1, get_offset(i, which_axis)));
+    min1 = fmin(min1, temp);
+    max1 = fmax(max1, temp);
+    if (which_axis != 2) { // special case for slanted cubes
+        temp = v3_dot(axis, v3_add(r2_r1, get_offset(i, 5)));
         min1 = fmin(min1, temp);
         max1 = fmax(max1, temp);
-        if (which_axis != 2) {
-            temp = v3_dot(axis, v3_add(r2_r1, get_offset(i, 5)));
-            min1 = fmin(min1, temp);
-            max1 = fmax(max1, temp);
-        }
-        for (int n = 1; n < 8; n++) {
-            temp = v3_dot(axis, get_offset(j, n));
-            min2 = fmin(min2, temp);
-            max2 = fmax(max2, temp);
-        }
-    } else { // check the second cube along the given axis only once
-        which_axis -= 4;
-        temp = v3_dot(axis, get_offset(j, which_axis));
+    }
+    for (int n = 1; n < 8; n++) {
+        temp = v3_dot(axis, get_offset(j, n));
         min2 = fmin(min2, temp);
         max2 = fmax(max2, temp);
-        if (which_axis != 2) {
-            temp = v3_dot(axis, get_offset(j, 5));
-            min2 = fmin(min2, temp);
-            max2 = fmax(max2, temp);
-        }
-        for (int n = 1; n < 8; n++) {
-            temp = v3_dot(axis, v3_add(r2_r1, get_offset(i, n)));
-            min1 = fmin(min1, temp);
-            max1 = fmax(max1, temp);
-        }
     }
 
     if (max1 < min2 || max2 < min1) {
-        return false; // separation!
+        return true; // separation!
     } else {
-        return true; // collision
+        return false; // collision
+    }
+}
+
+/// same as above but now the axis is from the second cube
+bool is_separation_along_axis_fast2(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis)
+{
+    double min1, min2, max1, max2, temp;
+    min1 = max1 = v3_dot(axis, v3_add(r2_r1, get_offset(i, 0)));
+    min2 = max2 = v3_dot(axis, get_offset(j, 0));
+
+    temp = v3_dot(axis, get_offset(j, which_axis));
+    min2 = fmin(min2, temp);
+    max2 = fmax(max2, temp);
+    if (which_axis != 2) { // special case for slanted cubes
+        temp = v3_dot(axis, get_offset(j, 5));
+        min2 = fmin(min2, temp);
+        max2 = fmax(max2, temp);
+    }
+    for (int n = 1; n < 8; n++) {
+        temp = v3_dot(axis, v3_add(r2_r1, get_offset(i, n)));
+        min1 = fmin(min1, temp);
+        max1 = fmax(max1, temp);
+    }
+
+    if (max1 < min2 || max2 < min1) {
+        return true; // separation!
+    } else {
+        return false; // collision
     }
 }
 
@@ -383,15 +395,15 @@ bool is_overlap_between(int i, int j)
         axes[k + 6] = v3_cross(edges1[k / 3], edges2[k % 3]);
     }
 
-    if (!is_collision_along_axis_check_first_cube_only_twice(axes[0], i, j, r2_r1, 1)
-        || !is_collision_along_axis_check_first_cube_only_twice(axes[1], i, j, r2_r1, 2)
-        || !is_collision_along_axis_check_first_cube_only_twice(axes[2], i, j, r2_r1, 4)
-        || !is_collision_along_axis_check_first_cube_only_twice(axes[3], i, j, r2_r1, 5)
-        || !is_collision_along_axis_check_first_cube_only_twice(axes[4], i, j, r2_r1, 6)
-        || !is_collision_along_axis_check_first_cube_only_twice(axes[5], i, j, r2_r1, 8))
+    if (is_separation_along_axis_fast1(axes[0], i, j, r2_r1, 1)
+        || is_separation_along_axis_fast1(axes[1], i, j, r2_r1, 2)
+        || is_separation_along_axis_fast1(axes[2], i, j, r2_r1, 4)
+        || is_separation_along_axis_fast2(axes[3], i, j, r2_r1, 1)
+        || is_separation_along_axis_fast2(axes[4], i, j, r2_r1, 2)
+        || is_separation_along_axis_fast2(axes[5], i, j, r2_r1, 4))
         return false; // found separation, no overlap!
     for (int k = 6; k < 15; k++)
-        if (!is_collision_along_axis(axes[k], i, j, r2_r1))
+        if (is_separation_along_axis(axes[k], i, j, r2_r1))
             return false; // found separation, no overlap!
 
     // overlap on all axes ==> the cubes overlap
@@ -716,7 +728,9 @@ int move_particle_cell_list(void)
     // and check for overlaps
     if (is_overlap_from(index)) {
         sim->r[index] = r_old; // move back
-        update_cell_list(index); // and re-update the cell list. // TODO: make more efficient
+        update_cell_list(index); // and re-update the cell list.
+        // inefficient but < 5% speed gain at a massive cost in readability
+        // if this is improved, see vp27_sim.c or vp28_sim.c
         return 0; // unsuccesful move
     } else {
         // remember to update (Num/Which)CubesInCell and InWhichCellIsThisCube

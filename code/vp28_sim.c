@@ -1,5 +1,4 @@
-#include "17.h"
-#include "crystal_coords_v18_for_v17.c" // int biggest_cluster_size(int what_order) returns the largest cluster this step
+#include "21.h"
 #include "math_3d.h" // https://github.com/arkanis/single-header-file-c-libs/blob/master/math_3d.h
 #include "mt19937.h" // Mersenne Twister (dsmft_genrand();)
 #include <malloc.h>
@@ -23,17 +22,17 @@
 #define NBINS 200 // number of bins for g(r)
 
 /* Initialization variables */
-int mc_steps;
+static int mc_steps;
 static double packing_fraction;
 static double BetaP;
-double Phi; // angle of slanted cube
+static double Phi; // angle of slanted cube
 
-const char labelstring[] = "v23_%02d_pf%04.2lf_p%04.1lf_a%04.2lf_%c_t%04d_c%5.3lf";
-// CubesPerDim, pack_frac, pressure, angle, order_mode, target cl.sz., npt/nvt, coupling_parameter
+const char labelstring[] = "vp28_%02dpf%04.2lfp%04.1lfa%04.2lf";
+// e.g. sl10pf0.50p08.0a1.25:
+// 10 CubesPerDim, pack_frac 0.50, pressure 8.0, angle 1.25
 // if p == -1, it means NVT ensemble
-const char usage_string[] = "usage: program.exe (r for read / c for create) \
-(readfile / # cubes per dim) (output_folder / packing_fraction) mc_steps output_steps BetaP/NVT Phi order_mode \
-target_cluster_size coupling_parameter\norder_mode: transl = 1, sl = 2, unsl = 3, edge = 4\n";
+const char usage_string[] = "usage: program.exe (read / create) \
+(readfile / CubesPerDim) (output_folder / packing_fraction) mc_steps output_steps BetaP/NVT Phi\n";
 char output_folder[128] = "";
 
 int output_steps = 100;
@@ -51,21 +50,17 @@ static bool IsCreated; // Did we create a system or read a file
 static bool IsNVT; // do or do not do volume moves
 
 static int CellsPerDim; // number of cells per dimension
-vec3_t Normal[3]; // the normal vector of an unrotated cube. Normal[0] is the normal in the x-dir, etc.
-int n_particles = 0;
-int CubesPerDim;
-double ParticleVolume;
-double CosPhi; // cos and sin of Phi appear a lot, and are expensive to calculate.
-double SinPhi; // Since Phi doesn't change, it's faster to calculate only once.
-
+static vec3_t Normal[3]; // the normal vector of an unrotated cube. Normal[0] is the normal in the x-dir, etc.
+static int n_particles = 0;
+static int CubesPerDim;
+static double ParticleVolume;
+static double CosPhi; // cos and sin of Phi appear a lot, and are expensive to calculate.
+static double SinPhi; // Since Phi doesn't change, it's faster to calculate only once.
 static double gof[NBINS];
 
-int what_order = 0; // transl = 1, sl = 2, unsl = 3, edge = 4
-char order_character;
-int target_cluster_size = 0;
-double coupling_parameter = 0.01;
-
 /* Functions */
+void print_celllists(void);
+
 inline static double ran(double low, double high);
 void scale(double scale_factor);
 
@@ -77,6 +72,7 @@ void set_packing_fraction(void);
 void set_random_orientation(void);
 void remove_overlap(void);
 void remove_overlap_smart(void);
+void initialize_phi_normal_offset(void);
 void initialize_cell_list(void);
 vec3_t random_cube_axis(void);
 
@@ -90,10 +86,12 @@ void sample_g_of_r(void);
 
 // collision detection
 bool is_overlap_between(int i, int j);
-bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1);
-vec3_t get_offset(int i, int j);
+bool is_separation_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1);
+bool is_separation_along_axis_check_1st_cube_only_twice(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis);
+bool is_separation_along_axis_check_2nd_cube_only_twice(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis);
+inline vec3_t get_offset(int i, int j);
 bool is_overlap_from(int index);
-void update_cell_list(int index);
+// void update_cell_list(int index);
 inline static void update_CellLength(void);
 bool is_overlap(void);
 
@@ -101,11 +99,9 @@ bool is_overlap(void);
 
 int main(int argc, char* argv[])
 {
-    dsfmt_seed(time(NULL));
+    dsfmt_seed(1234); // TODO
 
-    // allocate room for two systems. The second system will be the old system
-    // to jump back to, if the umbrella sampling potential rejects the new system.
-    sim = (system_t*)malloc(2 * sizeof(system_t));
+    sim = (system_t*)malloc(sizeof(*sim));
 
     if (parse_commandline(argc, argv)) { // if ... parsing fails
         printf(usage_string);
@@ -127,10 +123,7 @@ int main(int argc, char* argv[])
         }
     }
     initialize_cell_list();
-
-    sim->clust_size = biggest_cluster_size(what_order);
-    int diff = biggest_cluster_size(what_order) - target_cluster_size;
-    sim->energy = 0.5 * coupling_parameter * diff * diff;
+    printf("celllength: %lf\nboxsize: %lf\ncellsperdim: %d\n\n", sim->CellLength, sim->box[0], CellsPerDim);
 
     char datafolder_name[128] = "";
     char densityfile_name[128] = "";
@@ -140,8 +133,8 @@ int main(int argc, char* argv[])
         strcat(buffer_df, labelstring);
         strcat(buffer_rho, labelstring);
         // replace all %d, %lf in the buffers with values and put in density_filename
-        sprintf(datafolder_name, buffer_df, CubesPerDim, packing_fraction, BetaP, Phi, order_character, target_cluster_size, coupling_parameter);
-        sprintf(densityfile_name, buffer_rho, CubesPerDim, packing_fraction, BetaP, Phi, order_character, target_cluster_size, coupling_parameter);
+        sprintf(datafolder_name, buffer_df, CubesPerDim, packing_fraction, BetaP, Phi);
+        sprintf(densityfile_name, buffer_rho, CubesPerDim, packing_fraction, BetaP, Phi);
     } else {
         sprintf(datafolder_name, "datafolder/%s", output_folder);
         sprintf(densityfile_name, "densities/%s", output_folder);
@@ -176,20 +169,15 @@ int main(int argc, char* argv[])
     // the way I implement nvt/npt simulations
     const int max_ran = IsNVT ? 2 * n_particles : 2 * n_particles + 2;
 
-    system_t* previous_step = sim + 1;
-    copy_system(previous_step, sim); // copy to previous_step: sim
+    // hacky way of acceptances
+    double acceptances[3];
 
+    printf("#Step\tVolume\t acceptances\t\t\t deltas\n");
     for (int step = 0; step <= mc_steps; ++step) {
-        if (step % (50 * output_steps) == 0) {
-            printf("\n#step\tclsize\tE diff\tsz diff");
-        }
-
         if (step % output_steps == 0) {
-            printf("\n%d\t", step);
             sample_g_of_r();
             write_data(step, fp_density, fp_g, datafolder_name);
         }
-
         for (int n = 0; n < 2 * n_particles + 2; ++n) {
             // Have to randomize order of moves to obey detailed balance
             int temp_ran = (int)ran(0, max_ran);
@@ -205,33 +193,14 @@ int main(int argc, char* argv[])
             }
         }
 
-        // we do an umbrella sampling step every two MC sweeps
-        if (step % 2) {
-            // difference in cluster size
-            int diff = biggest_cluster_size(what_order) - target_cluster_size;
-            // bias potential energy
-            double new_energy = 0.5 * coupling_parameter * diff * diff;
-            double boltzmann = exp(sim->energy - new_energy); // beta absorbed in coupling_parameter
-
-            if (step % output_steps == 1) { //diff + target_cluster_size; = clust_size
-                printf("%d\t%7.2lf\t%d", diff + target_cluster_size, new_energy - sim->energy, diff);
-            }
-
-            if (ran(0, 1) < boltzmann) { // if move is accepted
-                printf(" v");
-                copy_system(previous_step, sim); // new previous step
-                sim->clust_size = diff + target_cluster_size; // == biggest_cluster_size(what_order);
-                sim->energy = new_energy;
-            } else {
-                copy_system(sim, previous_step); // go back
-            }
-        }
-
         if (step % 100 == 0) {
             double move_acceptance = (double)mov_accepted / mov_attempted;
             double rotation_acceptance = (double)rot_accepted / rot_attempted;
             double volume_acceptance = (double)vol_accepted / vol_attempted;
 
+            acceptances[0] = move_acceptance;
+            acceptances[1] = rotation_acceptance;
+            acceptances[2] = volume_acceptance;
             // Here is where delta, deltaR, deltaV might get changed if necessary
             nudge_deltas(move_acceptance, volume_acceptance, rotation_acceptance);
             // And reset for the next loop
@@ -243,8 +212,16 @@ int main(int argc, char* argv[])
                 }
             }
         }
+
+        if (step % output_steps == 0) {
+            printf("%d\t%.3lf\t %.3lf\t%.3lf\t%.3lf\t %.3lf\t%.3lf\t%.3lf\n",
+                step, sim->box[0] * sim->box[1] * sim->box[2],
+                acceptances[0],
+                acceptances[1],
+                acceptances[2],
+                Delta, DeltaR, DeltaV);
+        }
     }
-    printf("\n");
 
     fclose(fp_density); // densities/...
     fclose(fp_g); // datafolder/.../g.txt
@@ -266,9 +243,8 @@ void scale(double scale_factor)
 {
     for (int n = 0; n < n_particles; ++n) {
         // We use pointers to loop over the x, y, z members of the vec3_t type.
-        double* pgarbage = &(sim->r[n].x);
         for (int d = 0; d < NDIM; ++d)
-            *(pgarbage + d) *= scale_factor;
+            *(&(sim->r[n].x) + d) *= scale_factor;
     }
     for (int d = 0; d < NDIM; ++d)
         sim->box[d] *= scale_factor;
@@ -283,27 +259,14 @@ void scale(double scale_factor)
 ///     0----x                          0----4
 /// The angle Phi is the angle ∠104 in the picture above, i.e. the angle of
 /// "the z-axis of the cube" with "the x-axis of the cube"
-vec3_t get_offset(int i, int j)
+inline vec3_t get_offset(int i, int j)
 {
-    vec3_t offset = vec3(-0.5 * (1 + CosPhi), -0.5, -0.5 * SinPhi);
-    if (j & 4) //   x+ = 4, 5, 6, 7
-        offset.x += 1;
-    if (j & 2) //   y+ = 2, 3, 6, 7
-        offset.y += 1;
-    if (j & 1) { // z+ = 1, 3, 5, 7
-        offset.z += SinPhi;
-        offset.x += CosPhi;
-    }
-    // offset = v3_muls(offset, Edge_Length); // Edge_Length == 1
-
-    offset = m4_mul_dir(sim->m[i], offset);
-
-    return offset;
+    return m4_mul_dir(sim->m[i], sim->offsets[j]);
 }
 
 /// Checks if there is overlap between cubes along axis, between cubes i, j.
 /// Also the difference vector r2-r1 is given as it has already been calculated
-bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
+bool is_separation_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
 {
     // The axis doesn't need to be normalized, source:
     // https://gamedevelopment.tutsplus.com/tutorials/collision-detection-using-the-separating-axis-theorem--gamedev-169)
@@ -322,9 +285,69 @@ bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
     }
 
     if (max1 < min2 || max2 < min1) {
-        return false; // separation!
+        return true; // separation!
     } else {
-        return true; // collision
+        return false; // collision
+    }
+}
+
+/// same as above, but when we check normals,
+/// we only need to check two (or three) points of the first or second cube
+/// if the axis in question is not the y-axis, we also need vertex number 5
+/// don't worry don't touch it works exactly the same as the "dumb" algorithm
+/// for a 12^3 system for 1000 MC sweeps
+bool is_separation_along_axis_check_1st_cube_only_twice(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis)
+{
+    double min1, min2, max1, max2, temp;
+    min1 = max1 = v3_dot(axis, v3_add(r2_r1, get_offset(i, 0)));
+    min2 = max2 = v3_dot(axis, get_offset(j, 0));
+
+    temp = v3_dot(axis, v3_add(r2_r1, get_offset(i, which_axis)));
+    min1 = fmin(min1, temp);
+    max1 = fmax(max1, temp);
+    if (which_axis != 2) {
+        temp = v3_dot(axis, v3_add(r2_r1, get_offset(i, 5)));
+        min1 = fmin(min1, temp);
+        max1 = fmax(max1, temp);
+    }
+    for (int n = 1; n < 8; n++) {
+        temp = v3_dot(axis, get_offset(j, n));
+        min2 = fmin(min2, temp);
+        max2 = fmax(max2, temp);
+    }
+
+    if (max1 < min2 || max2 < min1) {
+        return true; // separation!
+    } else {
+        return false; // collision
+    }
+}
+
+/// same as above, but check second
+bool is_separation_along_axis_check_2nd_cube_only_twice(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis)
+{
+    double min1, min2, max1, max2, temp;
+    min1 = max1 = v3_dot(axis, v3_add(r2_r1, get_offset(i, 0)));
+    min2 = max2 = v3_dot(axis, get_offset(j, 0));
+
+    temp = v3_dot(axis, get_offset(j, which_axis));
+    min2 = fmin(min2, temp);
+    max2 = fmax(max2, temp);
+    if (which_axis != 2) {
+        temp = v3_dot(axis, get_offset(j, 5));
+        min2 = fmin(min2, temp);
+        max2 = fmax(max2, temp);
+    }
+    for (int n = 1; n < 8; n++) {
+        temp = v3_dot(axis, v3_add(r2_r1, get_offset(i, n)));
+        min1 = fmin(min1, temp);
+        max1 = fmax(max1, temp);
+    }
+
+    if (max1 < min2 || max2 < min1) {
+        return true; // separation!
+    } else {
+        return false; // collision
     }
 }
 
@@ -337,12 +360,11 @@ bool is_overlap_between(int i, int j)
 
     // We need to apply nearest image convention to r2_r1.
     // We use pointers to loop over the x, y, z members of the vec3_t type.
-    double* pdist = &(r2_r1.x);
     for (int d = 0; d < NDIM; d++) {
-        if (*(pdist + d) > 0.5 * sim->box[d])
-            *(pdist + d) -= sim->box[d];
-        if (*(pdist + d) < -0.5 * sim->box[d])
-            *(pdist + d) += sim->box[d];
+        if (*(&(r2_r1.x) + d) > 0.5 * sim->box[d])
+            *(&(r2_r1.x) + d) -= sim->box[d];
+        if (*(&(r2_r1.x) + d) < -0.5 * sim->box[d])
+            *(&(r2_r1.x) + d) += sim->box[d];
     }
 
     // If the cubes are more than their circumscribed sphere apart, they couldn't possibly overlap.
@@ -364,9 +386,9 @@ bool is_overlap_between(int i, int j)
 
     // Now load the cross products between edges
     vec3_t edges1[3], edges2[3];
-    edges1[0] = v3_sub(get_offset(i, 0), get_offset(i, 1));
-    edges1[1] = v3_sub(get_offset(i, 0), get_offset(i, 2));
-    edges1[2] = v3_sub(get_offset(i, 0), get_offset(i, 4));
+    edges1[0] = v3_sub(get_offset(i, 0), get_offset(i, 1)); // z
+    edges1[1] = v3_sub(get_offset(i, 0), get_offset(i, 2)); // y
+    edges1[2] = v3_sub(get_offset(i, 0), get_offset(i, 4)); // x
     edges2[0] = v3_sub(get_offset(j, 0), get_offset(j, 1));
     edges2[1] = v3_sub(get_offset(j, 0), get_offset(j, 2));
     edges2[2] = v3_sub(get_offset(j, 0), get_offset(j, 4));
@@ -375,10 +397,16 @@ bool is_overlap_between(int i, int j)
         axes[k + 6] = v3_cross(edges1[k / 3], edges2[k % 3]);
     }
 
-    for (int k = 0; k < 15; k++)
-        if (!is_collision_along_axis(axes[k], i, j, r2_r1))
+    if (is_separation_along_axis_check_1st_cube_only_twice(axes[0], i, j, r2_r1, 1)
+        || is_separation_along_axis_check_1st_cube_only_twice(axes[1], i, j, r2_r1, 2)
+        || is_separation_along_axis_check_1st_cube_only_twice(axes[2], i, j, r2_r1, 4)
+        || is_separation_along_axis_check_2nd_cube_only_twice(axes[3], i, j, r2_r1, 1)
+        || is_separation_along_axis_check_2nd_cube_only_twice(axes[4], i, j, r2_r1, 2)
+        || is_separation_along_axis_check_2nd_cube_only_twice(axes[5], i, j, r2_r1, 4))
+        return false; // found separation, no overlap!
+    for (int k = 6; k < 15; k++)
+        if (is_separation_along_axis(axes[k], i, j, r2_r1))
             return false; // found separation, no overlap!
-    // TODO: make smarter e.g. check only 2 points from first cube
 
     // overlap on all axes ==> the cubes overlap
     return true;
@@ -489,9 +517,8 @@ void read_data2(char* init_file)
     bool rf = true; // read flag. if false, something went wrong
     for (int n = 0; n < n_particles; ++n) {
         // We use pointers to loop over the x, y, z members of the vec3_t type.
-        double* pgarbage = &(sim->r[n].x);
         for (int d = 0; d < NDIM; ++d) // the position of the center of cube
-            rf = rf && fscanf(pFile, "%lf\t", (pgarbage + d));
+            rf = rf && fscanf(pFile, "%lf\t", (&(sim->r[n].x) + d));
         rf = rf && fscanf(pFile, "%lf\t", &garbagef); // Edge_Length == 1
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
@@ -514,18 +541,7 @@ void read_data2(char* init_file)
     }
     fclose(pFile);
 
-    SinPhi = sin(Phi);
-    CosPhi = cos(Phi);
-    ParticleVolume = SinPhi; // Edge_Length == 1
-
-    // now initialize the normals, put everything to zero first:
-    for (int i = 0; i < 3; i++) {
-        Normal[i].x = Normal[i].y = Normal[i].z = 0;
-    }
-    Normal[0].x = SinPhi; // normal on x-dir
-    Normal[0].z = -CosPhi;
-    Normal[1].y = 1.; // normal on y-dir
-    Normal[2].z = 1.; // normal on z-dir
+    initialize_phi_normal_offset();
 }
 
 /// This function creates the initial configuration of the system.
@@ -556,6 +572,22 @@ void create_system(void)
         }
     }
 
+    initialize_phi_normal_offset();
+
+    // now initialize the rotation matrices
+    for (int i = 0; i < n_particles; i++) {
+        for (int temp = 0; temp < 16; temp++)
+            sim->m[i].m[temp % 4][temp / 4] = 0; // everything zero first
+        for (int d = 0; d < NDIM; d++) {
+            sim->m[i].m[d][d] = 1; // 1 on the diagonal
+        }
+    }
+}
+
+/// initializes a couple of things, made into own function to avoid duplicate code:
+/// SinPhi, CosPhi, ParticleVolume, Normal[3], sim->offsets[8]
+void initialize_phi_normal_offset(void)
+{
     SinPhi = sin(Phi);
     CosPhi = cos(Phi);
     ParticleVolume = SinPhi; // Edge_Length == 1
@@ -569,13 +601,19 @@ void create_system(void)
     Normal[1].y = 1.; // normal on y-dir
     Normal[2].z = 1.; // normal on z-dir
 
-    // now initialize the rotation matrices
-    for (int i = 0; i < n_particles; i++) {
-        for (int temp = 0; temp < 16; temp++)
-            sim->m[i].m[temp % 4][temp / 4] = 0; // everything zero first
-        for (int d = 0; d < NDIM; d++) {
-            sim->m[i].m[d][d] = 1; // 1 on the diagonal
+    // offsets are calculated only once because the only thing that changes is the
+    // orientation of the cubes. Thus no need to calculate these every time, so do it here
+    for (int i = 0; i < 8; i++) {
+        vec3_t offset = vec3(-0.5 * (1 + CosPhi), -0.5, -0.5 * SinPhi);
+        if (i & 4) //   x+ = 4, 5, 6, 7
+            offset.x += 1;
+        if (i & 2) //   y+ = 2, 3, 6, 7
+            offset.y += 1;
+        if (i & 1) { // z+ = 1, 3, 5, 7
+            offset.z += SinPhi;
+            offset.x += CosPhi;
         }
+        sim->offsets[i] = offset;
     }
 }
 
@@ -617,7 +655,7 @@ void initialize_cell_list(void)
         int z = sim->r[i].z / sim->CellLength;
         // add particle i to WhichCubesInCell at the end of the list
         // and add one to the counter of cubes of this cell (hence the ++)
-        sim->WhichCubesInCell[x][y][z][sim->NumCubesInCell[x][y][z]++] = i;
+        sim->WhichCubesInCell[x][y][z][(sim->NumCubesInCell[x][y][z])++] = i;
         // and keep track of in which cell this cube is
         sim->InWhichCellIsThisCube[i] = NC * NC * x + NC * y + z;
     }
@@ -632,7 +670,7 @@ inline static void update_CellLength(void)
 /// This function returns if cube number index overlaps, using cell lists
 bool is_overlap_from(int index)
 {
-    bool is_collision = false;
+    // bool is_collision = false;
     int cell = sim->InWhichCellIsThisCube[index];
     // convert cell number to x, y, z coordinates
     int x = cell / (NC * NC);
@@ -643,29 +681,66 @@ bool is_overlap_from(int index)
         for (int j = -1; j < 2; j++) {
             for (int k = -1; k < 2; k++) {
                 // now loop over all cubes in this cell, remember periodic boundary conditions
-                int loop_x = (x + i + CellsPerDim) % CellsPerDim;
-                int loop_y = (y + j + CellsPerDim) % CellsPerDim;
-                int loop_z = (z + k + CellsPerDim) % CellsPerDim;
+                int loop_x = (x == 0 || x == CellsPerDim - 1) ? (x + i + CellsPerDim) % CellsPerDim : x + i;
+                int loop_y = (y == 0 || y == CellsPerDim - 1) ? (y + j + CellsPerDim) % CellsPerDim : y + j;
+                int loop_z = (z == 0 || z == CellsPerDim - 1) ? (z + k + CellsPerDim) % CellsPerDim : z + k;
                 int num_cubes = sim->NumCubesInCell[loop_x][loop_y][loop_z];
                 for (int cube = 0; cube < num_cubes; cube++) {
                     int index2 = sim->WhichCubesInCell[loop_x][loop_y][loop_z][cube];
                     // if checking your own cell, do not check overlap with yourself
                     if (index == index2) {
-                        continue; // TODO: is this efficient enough?
+                        continue;
                     }
 
                     if (is_overlap_between(index, index2)) {
-                        is_collision = true;
-                        // and break out of all loops
-                        cube = N;
-                        i = j = k = 2;
+                        return true;
+                        // is_collision = true;
+                        // // and break out of all loops
+                        // cube = N;
+                        // i = j = k = 2;
                     }
                 }
             }
         }
     }
-    return is_collision;
+    // return is_collision;
+    return false;
 }
+
+/// This function returns if cube number index overlaps, using cell lists
+bool is_overlap_from_this_cell(int index, int x, int y, int z)
+{
+    // loop over all neighbouring cells
+    for (int i = -1; i < 2; i++) {
+        for (int j = -1; j < 2; j++) {
+            for (int k = -1; k < 2; k++) {
+                // now loop over all cubes in this cell, remember periodic boundary conditions
+                int loop_x = (x == 0 || x == CellsPerDim - 1) ? (x + i + CellsPerDim) % CellsPerDim : x + i;
+                int loop_y = (y == 0 || y == CellsPerDim - 1) ? (y + j + CellsPerDim) % CellsPerDim : y + j;
+                int loop_z = (z == 0 || z == CellsPerDim - 1) ? (z + k + CellsPerDim) % CellsPerDim : z + k;
+                int num_cubes = sim->NumCubesInCell[loop_x][loop_y][loop_z];
+                for (int cube = 0; cube < num_cubes; cube++) {
+                    int index2 = sim->WhichCubesInCell[loop_x][loop_y][loop_z][cube];
+                    // if checking your own cell, do not check overlap with yourself
+                    if (index == index2) {
+                        continue;
+                    }
+
+                    if (is_overlap_between(index, index2)) {
+                        return true;
+                        // is_collision = true;
+                        // // and break out of all loops
+                        // cube = N;
+                        // i = j = k = 2;
+                    }
+                }
+            }
+        }
+    }
+    // return is_collision;
+    return false;
+}
+
 
 /// This moves a random particle in a cube of volume (2 * delta)^3.
 /// Note this gives particles a tendency to move to one of the 8 corners of the cube,
@@ -680,24 +755,59 @@ int move_particle_cell_list(void)
 
     // move the cube
     // We use pointers to loop over the x, y, z members of the vec3_t type.
-    double* pgarbage = &(sim->r[index].x);
     for (int d = 0; d < NDIM; d++) {
-        *(pgarbage + d) += ran(-Delta, Delta);
+        *(&(sim->r[index].x) + d) += ran(-Delta, Delta);
         // periodic boundary conditions happen here. Since delta < box[dim],
         // the following expression will always return a positive number.
-        *(pgarbage + d) = fmodf(*(pgarbage + d) + sim->box[d], sim->box[d]);
-        // TODO: maybe make faster by only checking on boundary cells
+        *(&(sim->r[index].x) + d) = fmodf(*(&(sim->r[index].x) + d) + sim->box[d], sim->box[d]);
     }
 
-    update_cell_list(index);
+    // update_cell_list(index);
+
+    int x_new = sim->r[index].x / sim->CellLength;
+    int y_new = sim->r[index].y / sim->CellLength;
+    int z_new = sim->r[index].z / sim->CellLength;
+    if (x_new == CellsPerDim || y_new == CellsPerDim || z_new == CellsPerDim) {
+        printf(" !");
+        // exit(6); // yeah so this actually happens for floats.
+        // and apparently it happens enough for doubles as well
+        x_new = x_new % CellsPerDim;
+        y_new = y_new % CellsPerDim;
+        z_new = z_new % CellsPerDim;
+    }
 
     // and check for overlaps
-    if (is_overlap_from(index)) {
+    if (is_overlap_from_this_cell(index, x_new, y_new, z_new)) {
         sim->r[index] = r_old; // move back
-        update_cell_list(index); // and re-update the cell list. // TODO: make more efficient
         return 0; // unsuccesful move
     } else {
-        // remember to update (Num/Which)CubesInCell and InWhichCellIsThisCube
+        int cell_old = sim->InWhichCellIsThisCube[index];
+        int x_old = cell_old / (NC * NC);
+        int y_old = (cell_old / NC) % NC;
+        int z_old = cell_old % NC;
+        if (x_old == x_new && y_old == y_new && z_old == z_new) {
+            // still in same box, don't have to change anything
+        } else {
+            // update in which cell this cube is
+            sim->InWhichCellIsThisCube[index] = NC * NC * x_new + NC * y_new + z_new;
+            // update WhichCubesInCell, first check at what index the moved cube was
+            int cube = 0;
+            while (index != sim->WhichCubesInCell[x_old][y_old][z_old][cube]) {
+                cube++;
+                if (cube >= MAXPC) {
+                    printf("infinite loop in update_cell_list\n");
+                    exit(5); // not so infinite anymore eh
+                }
+            }
+            // now cube contains the index in the cell list
+
+            // add the cube to the new cell and add one to the counter (hence ++)
+            sim->WhichCubesInCell[x_new][y_new][z_new][(sim->NumCubesInCell[x_new][y_new][z_new])++] = index;
+            // and remove the cube in the old cell by replacing it with the last
+            // in the list and remove one from the counter (hence --)
+            int last_in_list = sim->WhichCubesInCell[x_old][y_old][z_old][--(sim->NumCubesInCell[x_old][y_old][z_old])];
+            sim->WhichCubesInCell[x_old][y_old][z_old][cube] = last_in_list;
+        }
         return 1; // succesful move
     }
 }
@@ -705,7 +815,7 @@ int move_particle_cell_list(void)
 /// This function updates the cell list. At this point, r[index] contains the new
 /// (accepted) position, and we need to check if is in the same cell as before.
 /// If not, update (Num/Which)CubesInCell and InWhichCellIsThisCube.
-void update_cell_list(int index)
+/* void update_cell_list(int index)
 {
     int cell_old = sim->InWhichCellIsThisCube[index];
     int x_old = cell_old / (NC * NC);
@@ -747,7 +857,7 @@ void update_cell_list(int index)
         sim->WhichCubesInCell[x_old][y_old][z_old][cube] = last_in_list;
         return;
     }
-}
+} */
 
 /// This rotates a random particle around a random axis
 /// by a random angle \in [-DeltaR, DeltaR]
@@ -819,9 +929,8 @@ void write_data(int step, FILE* fp_density, FILE* fp_g, char datafolder_name[128
     }
     for (int n = 0; n < n_particles; ++n) {
         // We use pointers to loop over the x, y, z members of the vec3_t type.
-        double* pgarbage = &(sim->r[n].x);
         for (int d = 0; d < NDIM; ++d)
-            fprintf(fp, "%lf\t", *(pgarbage + d)); // the position of the center of cube
+            fprintf(fp, "%lf\t", *(&(sim->r[n].x) + d)); // the position of the center of cube
         fprintf(fp, "1\t"); // Edge_Length == 1
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
@@ -844,12 +953,11 @@ void sample_g_of_r(void)
         for (int j = i + 1; j < n_particles; j++) {
             vec3_t r2_r1 = v3_sub(sim->r[i], sim->r[j]);
             // We use pointers to loop over the x, y, z members of the vec3_t type.
-            double* pdist = &(r2_r1.x);
             for (int d = 0; d < NDIM; d++) {
-                if (*(pdist + d) > 0.5 * sim->box[d])
-                    *(pdist + d) -= sim->box[d];
-                if (*(pdist + d) < -0.5 * sim->box[d])
-                    *(pdist + d) += sim->box[d];
+                if (*(&(r2_r1.x) + d) > 0.5 * sim->box[d])
+                    *(&(r2_r1.x) + d) -= sim->box[d];
+                if (*(&(r2_r1.x) + d) < -0.5 * sim->box[d])
+                    *(&(r2_r1.x) + d) += sim->box[d];
             }
 
             double dist2 = v3_length2(r2_r1); // square of the distance for computational efficiency
@@ -1002,41 +1110,9 @@ void remove_overlap_smart(void)
 /// If something goes wrong, return != 0
 int parse_commandline(int argc, char* argv[])
 {
-    if (argc != 11) {
-        printf("need 10 arguments:\n");
+    if (argc != 8) {
+        printf("need 7 arguments:\n");
         return 3;
-    }
-
-    if (EOF == sscanf(argv[7], "%lf", &Phi)) {
-        printf("reading Phi has failed\n");
-        return 1;
-    }
-    // read data from a file or create a system with CubesPerDim cubes per dimension
-    if (strcmp(argv[1], "read") == 0 || strcmp(argv[1], "r") == 0) {
-        printf("reading file %s...\n", argv[2]);
-        read_data2(argv[2]);
-        IsCreated = false;
-    } else if (strcmp(argv[1], "create") == 0 || strcmp(argv[1], "c") == 0) {
-        CubesPerDim = atoi(argv[2]);
-        if (CubesPerDim < 4 || CubesPerDim > 41) {
-            printf("3 < CubesPerDim < 42, integer!\n%s", usage_string);
-            return 1;
-        }
-        create_system();
-        IsCreated = true;
-        printf("creating system with %d cubes...\n", n_particles);
-    } else {
-        printf("error reading first argument: %s\n", argv[1]);
-        return 1;
-    }
-    if (IsCreated) {
-        if (EOF == sscanf(argv[3], "%lf", &packing_fraction)) {
-            printf("reading packing_fraction has failed\n");
-            return 1;
-        }
-    } else { // read ==> give output_folder
-        sscanf(argv[3], "%s", output_folder);
-        printf("saving to datafolder/%s", output_folder);
     }
     if (EOF == sscanf(argv[4], "%d", &mc_steps)) {
         printf("reading mc_steps has failed\n");
@@ -1051,52 +1127,8 @@ int parse_commandline(int argc, char* argv[])
         printf("reading BetaP has failed\n");
         return 1;
     }
-    if (BetaP == -1.) { // i.e. if we didn't give a pressure, we want an NVT sim
-        IsNVT = true;
-    } else if (BetaP <= 0 || BetaP >= 100) {
-        printf("0 < BetaP < 100\n");
-        return 2; // exits the program so doesn't need to know IsNVT
-    } else {
-        IsNVT = false;
-    }
-
-    char whatorder_string[64] = "";
-    switch (argv[8][0]) {
-    case '1':
-    case 't': // t = transl
-        what_order = 1;
-        order_character = 't';
-        strcat(whatorder_string, "translational");
-        break;
-    case '2':
-    case 's': // s = slanted face normals
-        what_order = 2;
-        order_character = 's';
-        strcat(whatorder_string, "orientational (slanted face normals)");
-        break;
-    case '3':
-    case 'u': // u = unslanted face normals
-        what_order = 3;
-        strcat(whatorder_string, "orientational (unslanted face normals)");
-        order_character = 'u';
-        break;
-    case '4':
-    case 'e': // e = edges
-        what_order = 4;
-        order_character = 'e';
-        strcat(whatorder_string, "orientational (edges)");
-        break;
-    default:
-        printf("reading what_order has failed\n");
-        return 1;
-    }
-
-    if (EOF == sscanf(argv[9], "%d", &target_cluster_size)) {
-        printf("reading target_cluster_size has failed\n");
-        return 1;
-    }
-    if (EOF == sscanf(argv[11], "%lf", &coupling_parameter)) {
-        printf("reading coupling_parameter has failed\n");
+    if (EOF == sscanf(argv[7], "%lf", &Phi)) {
+        printf("reading Phi has failed\n");
         return 1;
     }
 
@@ -1104,15 +1136,13 @@ int parse_commandline(int argc, char* argv[])
         printf("mc_steps > 99\n");
         return 2;
     }
-    if (IsCreated) { // create ==> give starting packing_fraction
-        if (packing_fraction <= 0.01 || packing_fraction > 1) {
-            printf("0.01 < packing_fraction <= 1\n");
-            return 2;
-        }
-    }
-    if (BetaP <= 0 || BetaP >= 100) {
+    if (BetaP == -1.) { // i.e. if we didn't give a pressure, we want an NVT sim
+        IsNVT = true;
+    } else if (BetaP <= 0 || BetaP >= 100) {
         printf("0 < BetaP < 100\n");
-        return 2;
+        return 2; // exits the program so doesn't need to know IsNVT
+    } else {
+        IsNVT = false;
     }
     if (Phi <= 0 || Phi > M_PI / 2) {
         printf("0 < Phi < 1.57079632679\n");
@@ -1122,17 +1152,34 @@ int parse_commandline(int argc, char* argv[])
         printf("1 <= output_steps <= 1000\n");
         return 2;
     }
-    if (what_order < 1 || what_order > 4) {
-        printf("1 <= what_order <= 4\n(transl = 1, sl = 2, unsl = 3, edge = 4)\n");
-        return 2;
-    }
-    if (target_cluster_size < 1 || target_cluster_size > n_particles) {
-        printf("1 <= target_cluster_size <= 4\n");
-        return 2;
-    }
-    if (coupling_parameter <= 0 || coupling_parameter >= 1) {
-        printf("0 < coupling_parameter < 1\n");
-        return 2;
+
+    // read data from a file or create a system with CubesPerDim cubes per dimension
+    if (strcmp(argv[1], "read") == 0 || strcmp(argv[1], "r") == 0) {
+        printf("reading file %s...\n", argv[2]);
+        read_data2(argv[2]);
+
+        sscanf(argv[3], "%s", output_folder);
+        IsCreated = false;
+    } else if (strcmp(argv[1], "create") == 0 || strcmp(argv[1], "c") == 0) {
+        CubesPerDim = atoi(argv[2]);
+        if (CubesPerDim < 4 || CubesPerDim > 41) {
+            printf("3 < CubesPerDim < 42, integer!\n%s", usage_string);
+            return 1;
+        }
+        if (EOF == sscanf(argv[3], "%lf", &packing_fraction)) {
+            printf("reading packing_fraction has failed\n");
+            return 1;
+        }
+        if (packing_fraction <= 0 || packing_fraction > 1) {
+            printf("0 < packing_fraction <= 1\n");
+            return 2;
+        }
+        create_system();
+        IsCreated = true;
+        printf("creating system with %d cubes...\n", n_particles);
+    } else {
+        printf("error reading first argument: %s\n", argv[1]);
+        return 1;
     }
 
     printf("\nmc_steps\t\t%d\n", mc_steps);
@@ -1141,8 +1188,6 @@ int parse_commandline(int argc, char* argv[])
     printf("BetaP\t\t\t%lf (-1 means NVT)\n", BetaP);
     printf("sim\t\t\t%s\n", IsNVT ? "NVT" : "NpT");
     printf("Phi\t\t\t%lf\n", Phi);
-    printf("what_order\t\t%s\n", whatorder_string);
-    printf("target_cluster_size\t%d\n", target_cluster_size);
 
     return 0; // no exceptions, run the program
 }

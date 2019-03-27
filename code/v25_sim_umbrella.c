@@ -1,5 +1,5 @@
-#include "17.h"
-#include "crystal_coords_v18_for_v17.c" // int biggest_cluster_size(int what_order) returns the largest cluster this step
+#include "21.h"
+#include "crystal_coords_v18_for_v21.c" // int biggest_cluster_size(int what_order) returns the largest cluster this step
 #include "math_3d.h" // https://github.com/arkanis/single-header-file-c-libs/blob/master/math_3d.h
 #include "mt19937.h" // Mersenne Twister (dsmft_genrand();)
 #include <malloc.h>
@@ -28,7 +28,7 @@ static double packing_fraction;
 static double BetaP;
 double Phi; // angle of slanted cube
 
-const char labelstring[] = "v23_%02d_pf%04.2lf_p%04.1lf_a%04.2lf_%c_t%04d_c%5.3lf";
+const char labelstring[] = "v25_%02d_pf%04.2lf_p%04.1lf_a%04.2lf_%c_t%04d_c%5.3lf";
 // CubesPerDim, pack_frac, pressure, angle, order_mode, target cl.sz., npt/nvt, coupling_parameter
 // if p == -1, it means NVT ensemble
 const char usage_string[] = "usage: program.exe (r for read / c for create) \
@@ -77,6 +77,7 @@ void set_packing_fraction(void);
 void set_random_orientation(void);
 void remove_overlap(void);
 void remove_overlap_smart(void);
+void initialize_phi_normal_offset(void);
 void initialize_cell_list(void);
 vec3_t random_cube_axis(void);
 
@@ -90,8 +91,10 @@ void sample_g_of_r(void);
 
 // collision detection
 bool is_overlap_between(int i, int j);
-bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1);
-vec3_t get_offset(int i, int j);
+bool is_separation_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1);
+bool is_separation_along_axis_fast1(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis);
+bool is_separation_along_axis_fast2(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis);
+inline vec3_t get_offset(int i, int j);
 bool is_overlap_from(int index);
 void update_cell_list(int index);
 inline static void update_CellLength(void);
@@ -283,27 +286,14 @@ void scale(double scale_factor)
 ///     0----x                          0----4
 /// The angle Phi is the angle ∠104 in the picture above, i.e. the angle of
 /// "the z-axis of the cube" with "the x-axis of the cube"
-vec3_t get_offset(int i, int j)
+inline vec3_t get_offset(int i, int j)
 {
-    vec3_t offset = vec3(-0.5 * (1 + CosPhi), -0.5, -0.5 * SinPhi);
-    if (j & 4) //   x+ = 4, 5, 6, 7
-        offset.x += 1;
-    if (j & 2) //   y+ = 2, 3, 6, 7
-        offset.y += 1;
-    if (j & 1) { // z+ = 1, 3, 5, 7
-        offset.z += SinPhi;
-        offset.x += CosPhi;
-    }
-    // offset = v3_muls(offset, Edge_Length); // Edge_Length == 1
-
-    offset = m4_mul_dir(sim->m[i], offset);
-
-    return offset;
+    return m4_mul_dir(sim->m[i], sim->offsets[j]);
 }
 
-/// Checks if there is overlap between cubes along axis, between cubes i, j.
+/// Checks if there is separation between cubes along axis, between cubes i, j.
 /// Also the difference vector r2-r1 is given as it has already been calculated
-bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
+bool is_separation_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
 {
     // The axis doesn't need to be normalized, source:
     // https://gamedevelopment.tutsplus.com/tutorials/collision-detection-using-the-separating-axis-theorem--gamedev-169)
@@ -322,12 +312,71 @@ bool is_collision_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1)
     }
 
     if (max1 < min2 || max2 < min1) {
-        return false; // separation!
+        return true; // separation!
     } else {
-        return true; // collision
+        return false; // collision
     }
 }
 
+/// same as above, but when we check normals,
+/// we only need to check two (or three) points of the first or second cube
+/// if the axis in question is not the y-axis, we also need vertex number 5
+/// don't worry don't touch it works exactly the same as the "dumb" algorithm
+/// for a 12^3 system for 1000 MC sweeps
+bool is_separation_along_axis_fast1(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis)
+{
+    double min1, min2, max1, max2, temp;
+    min1 = max1 = v3_dot(axis, v3_add(r2_r1, get_offset(i, 0)));
+    min2 = max2 = v3_dot(axis, get_offset(j, 0));
+
+    temp = v3_dot(axis, v3_add(r2_r1, get_offset(i, which_axis)));
+    min1 = fmin(min1, temp);
+    max1 = fmax(max1, temp);
+    if (which_axis != 2) { // special case for slanted cubes
+        temp = v3_dot(axis, v3_add(r2_r1, get_offset(i, 5)));
+        min1 = fmin(min1, temp);
+        max1 = fmax(max1, temp);
+    }
+    for (int n = 1; n < 8; n++) {
+        temp = v3_dot(axis, get_offset(j, n));
+        min2 = fmin(min2, temp);
+        max2 = fmax(max2, temp);
+    }
+
+    if (max1 < min2 || max2 < min1) {
+        return true; // separation!
+    } else {
+        return false; // collision
+    }
+}
+
+/// same as above but now the axis is from the second cube
+bool is_separation_along_axis_fast2(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis)
+{
+    double min1, min2, max1, max2, temp;
+    min1 = max1 = v3_dot(axis, v3_add(r2_r1, get_offset(i, 0)));
+    min2 = max2 = v3_dot(axis, get_offset(j, 0));
+
+    temp = v3_dot(axis, get_offset(j, which_axis));
+    min2 = fmin(min2, temp);
+    max2 = fmax(max2, temp);
+    if (which_axis != 2) { // special case for slanted cubes
+        temp = v3_dot(axis, get_offset(j, 5));
+        min2 = fmin(min2, temp);
+        max2 = fmax(max2, temp);
+    }
+    for (int n = 1; n < 8; n++) {
+        temp = v3_dot(axis, v3_add(r2_r1, get_offset(i, n)));
+        min1 = fmin(min1, temp);
+        max1 = fmax(max1, temp);
+    }
+
+    if (max1 < min2 || max2 < min1) {
+        return true; // separation!
+    } else {
+        return false; // collision
+    }
+}
 /// Checks if cube i and cube j overlap using the separating axis theorem
 bool is_overlap_between(int i, int j)
 {
@@ -364,9 +413,9 @@ bool is_overlap_between(int i, int j)
 
     // Now load the cross products between edges
     vec3_t edges1[3], edges2[3];
-    edges1[0] = v3_sub(get_offset(i, 0), get_offset(i, 1));
-    edges1[1] = v3_sub(get_offset(i, 0), get_offset(i, 2));
-    edges1[2] = v3_sub(get_offset(i, 0), get_offset(i, 4));
+    edges1[0] = v3_sub(get_offset(i, 0), get_offset(i, 1)); // z
+    edges1[1] = v3_sub(get_offset(i, 0), get_offset(i, 2)); // y
+    edges1[2] = v3_sub(get_offset(i, 0), get_offset(i, 4)); // x
     edges2[0] = v3_sub(get_offset(j, 0), get_offset(j, 1));
     edges2[1] = v3_sub(get_offset(j, 0), get_offset(j, 2));
     edges2[2] = v3_sub(get_offset(j, 0), get_offset(j, 4));
@@ -375,10 +424,16 @@ bool is_overlap_between(int i, int j)
         axes[k + 6] = v3_cross(edges1[k / 3], edges2[k % 3]);
     }
 
-    for (int k = 0; k < 15; k++)
-        if (!is_collision_along_axis(axes[k], i, j, r2_r1))
+    if (is_separation_along_axis_fast1(axes[0], i, j, r2_r1, 1)
+        || is_separation_along_axis_fast1(axes[1], i, j, r2_r1, 2)
+        || is_separation_along_axis_fast1(axes[2], i, j, r2_r1, 4)
+        || is_separation_along_axis_fast2(axes[3], i, j, r2_r1, 1)
+        || is_separation_along_axis_fast2(axes[4], i, j, r2_r1, 2)
+        || is_separation_along_axis_fast2(axes[5], i, j, r2_r1, 4))
+        return false; // found separation, no overlap!
+    for (int k = 6; k < 15; k++)
+        if (is_separation_along_axis(axes[k], i, j, r2_r1))
             return false; // found separation, no overlap!
-    // TODO: make smarter e.g. check only 2 points from first cube
 
     // overlap on all axes ==> the cubes overlap
     return true;
@@ -514,18 +569,7 @@ void read_data2(char* init_file)
     }
     fclose(pFile);
 
-    SinPhi = sin(Phi);
-    CosPhi = cos(Phi);
-    ParticleVolume = SinPhi; // Edge_Length == 1
-
-    // now initialize the normals, put everything to zero first:
-    for (int i = 0; i < 3; i++) {
-        Normal[i].x = Normal[i].y = Normal[i].z = 0;
-    }
-    Normal[0].x = SinPhi; // normal on x-dir
-    Normal[0].z = -CosPhi;
-    Normal[1].y = 1.; // normal on y-dir
-    Normal[2].z = 1.; // normal on z-dir
+    initialize_phi_normal_offset();
 }
 
 /// This function creates the initial configuration of the system.
@@ -556,8 +600,25 @@ void create_system(void)
         }
     }
 
+    initialize_phi_normal_offset();
+
+    // now initialize the rotation matrices
+    for (int i = 0; i < n_particles; i++) {
+        for (int temp = 0; temp < 16; temp++)
+            sim->m[i].m[temp % 4][temp / 4] = 0; // everything zero first
+        for (int d = 0; d < NDIM; d++) {
+            sim->m[i].m[d][d] = 1; // 1 on the diagonal
+        }
+    }
+}
+
+/// initializes a couple of things, made into own function to avoid duplicate code:
+/// SinPhi, CosPhi, ParticleVolume, Normal[3], sim->offsets[8]
+void initialize_phi_normal_offset(void)
+{
     SinPhi = sin(Phi);
     CosPhi = cos(Phi);
+
     ParticleVolume = SinPhi; // Edge_Length == 1
 
     // now initialize the normals, put everything to zero first:
@@ -569,13 +630,19 @@ void create_system(void)
     Normal[1].y = 1.; // normal on y-dir
     Normal[2].z = 1.; // normal on z-dir
 
-    // now initialize the rotation matrices
-    for (int i = 0; i < n_particles; i++) {
-        for (int temp = 0; temp < 16; temp++)
-            sim->m[i].m[temp % 4][temp / 4] = 0; // everything zero first
-        for (int d = 0; d < NDIM; d++) {
-            sim->m[i].m[d][d] = 1; // 1 on the diagonal
+    // offsets are calculated only once because the only thing that changes is the
+    // orientation of the cubes. Thus no need to calculate these every time, so do it here
+    for (int i = 0; i < 8; i++) {
+        vec3_t offset = vec3(-0.5 * (1 + CosPhi), -0.5, -0.5 * SinPhi);
+        if (i & 4) //   x+ = 4, 5, 6, 7
+            offset.x += 1;
+        if (i & 2) //   y+ = 2, 3, 6, 7
+            offset.y += 1;
+        if (i & 1) { // z+ = 1, 3, 5, 7
+            offset.z += SinPhi;
+            offset.x += CosPhi;
         }
+        sim->offsets[i] = offset;
     }
 }
 
@@ -643,15 +710,15 @@ bool is_overlap_from(int index)
         for (int j = -1; j < 2; j++) {
             for (int k = -1; k < 2; k++) {
                 // now loop over all cubes in this cell, remember periodic boundary conditions
-                int loop_x = (x + i + CellsPerDim) % CellsPerDim;
-                int loop_y = (y + j + CellsPerDim) % CellsPerDim;
-                int loop_z = (z + k + CellsPerDim) % CellsPerDim;
+                int loop_x = (x == 0 || x == CellsPerDim - 1) ? (x + i + CellsPerDim) % CellsPerDim : x + i;
+                int loop_y = (y == 0 || y == CellsPerDim - 1) ? (y + j + CellsPerDim) % CellsPerDim : y + j;
+                int loop_z = (z == 0 || z == CellsPerDim - 1) ? (z + k + CellsPerDim) % CellsPerDim : z + k;
                 int num_cubes = sim->NumCubesInCell[loop_x][loop_y][loop_z];
                 for (int cube = 0; cube < num_cubes; cube++) {
                     int index2 = sim->WhichCubesInCell[loop_x][loop_y][loop_z][cube];
                     // if checking your own cell, do not check overlap with yourself
                     if (index == index2) {
-                        continue; // TODO: is this efficient enough?
+                        continue;
                     }
 
                     if (is_overlap_between(index, index2)) {
@@ -686,7 +753,6 @@ int move_particle_cell_list(void)
         // periodic boundary conditions happen here. Since delta < box[dim],
         // the following expression will always return a positive number.
         *(pgarbage + d) = fmodf(*(pgarbage + d) + sim->box[d], sim->box[d]);
-        // TODO: maybe make faster by only checking on boundary cells
     }
 
     update_cell_list(index);
@@ -694,7 +760,9 @@ int move_particle_cell_list(void)
     // and check for overlaps
     if (is_overlap_from(index)) {
         sim->r[index] = r_old; // move back
-        update_cell_list(index); // and re-update the cell list. // TODO: make more efficient
+        update_cell_list(index); // and re-update the cell list.
+        // inefficient but < 5% speed gain at a massive cost in readability
+        // if this is improved, see vp27_sim.c or vp28_sim.c
         return 0; // unsuccesful move
     } else {
         // remember to update (Num/Which)CubesInCell and InWhichCellIsThisCube
