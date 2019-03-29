@@ -269,9 +269,8 @@ void scale(double scale_factor)
 {
     for (int n = 0; n < n_particles; ++n) {
         // We use pointers to loop over the x, y, z members of the vec3_t type.
-        double* pgarbage = &(sim->r[n].x);
         for (int d = 0; d < NDIM; ++d)
-            *(pgarbage + d) *= scale_factor;
+            *(&(sim->r[n].x) + d) *= scale_factor;
     }
     for (int d = 0; d < NDIM; ++d)
         sim->box[d] *= scale_factor;
@@ -377,6 +376,7 @@ bool is_separation_along_axis_fast2(vec3_t axis, int i, int j, vec3_t r2_r1, int
         return false; // collision
     }
 }
+
 /// Checks if cube i and cube j overlap using the separating axis theorem
 bool is_overlap_between(int i, int j)
 {
@@ -386,12 +386,11 @@ bool is_overlap_between(int i, int j)
 
     // We need to apply nearest image convention to r2_r1.
     // We use pointers to loop over the x, y, z members of the vec3_t type.
-    double* pdist = &(r2_r1.x);
     for (int d = 0; d < NDIM; d++) {
-        if (*(pdist + d) > 0.5 * sim->box[d])
-            *(pdist + d) -= sim->box[d];
-        if (*(pdist + d) < -0.5 * sim->box[d])
-            *(pdist + d) += sim->box[d];
+        if (*(&(r2_r1.x) + d) > 0.5 * sim->box[d])
+            *(&(r2_r1.x) + d) -= sim->box[d];
+        if (*(&(r2_r1.x) + d) < -0.5 * sim->box[d])
+            *(&(r2_r1.x) + d) += sim->box[d];
     }
 
     // If the cubes are more than their circumscribed sphere apart, they couldn't possibly overlap.
@@ -544,9 +543,8 @@ void read_data2(char* init_file)
     bool rf = true; // read flag. if false, something went wrong
     for (int n = 0; n < n_particles; ++n) {
         // We use pointers to loop over the x, y, z members of the vec3_t type.
-        double* pgarbage = &(sim->r[n].x);
         for (int d = 0; d < NDIM; ++d) // the position of the center of cube
-            rf = rf && fscanf(pFile, "%lf\t", (pgarbage + d));
+            rf = rf && fscanf(pFile, "%lf\t", (&(sim->r[n].x) + d));
         rf = rf && fscanf(pFile, "%lf\t", &garbagef); // Edge_Length == 1
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
@@ -684,7 +682,7 @@ void initialize_cell_list(void)
         int z = sim->r[i].z / sim->CellLength;
         // add particle i to WhichCubesInCell at the end of the list
         // and add one to the counter of cubes of this cell (hence the ++)
-        sim->WhichCubesInCell[x][y][z][sim->NumCubesInCell[x][y][z]++] = i;
+        sim->WhichCubesInCell[x][y][z][(sim->NumCubesInCell[x][y][z])++] = i;
         // and keep track of in which cell this cube is
         sim->InWhichCellIsThisCube[i] = NC * NC * x + NC * y + z;
     }
@@ -747,12 +745,11 @@ int move_particle_cell_list(void)
 
     // move the cube
     // We use pointers to loop over the x, y, z members of the vec3_t type.
-    double* pgarbage = &(sim->r[index].x);
     for (int d = 0; d < NDIM; d++) {
-        *(pgarbage + d) += ran(-Delta, Delta);
+        *(&(sim->r[index].x) + d) += ran(-Delta, Delta);
         // periodic boundary conditions happen here. Since delta < box[dim],
         // the following expression will always return a positive number.
-        *(pgarbage + d) = fmodf(*(pgarbage + d) + sim->box[d], sim->box[d]);
+        *(&(sim->r[index].x) + d) = fmodf(*(&(sim->r[index].x) + d) + sim->box[d], sim->box[d]);
     }
 
     update_cell_list(index);
@@ -887,9 +884,8 @@ void write_data(int step, FILE* fp_density, FILE* fp_g, char datafolder_name[128
     }
     for (int n = 0; n < n_particles; ++n) {
         // We use pointers to loop over the x, y, z members of the vec3_t type.
-        double* pgarbage = &(sim->r[n].x);
         for (int d = 0; d < NDIM; ++d)
-            fprintf(fp, "%lf\t", *(pgarbage + d)); // the position of the center of cube
+            fprintf(fp, "%lf\t", *(&(sim->r[n].x) + d)); // the position of the center of cube
         fprintf(fp, "1\t"); // Edge_Length == 1
         for (int d1 = 0; d1 < NDIM; d1++) {
             for (int d2 = 0; d2 < NDIM; d2++) {
@@ -912,12 +908,11 @@ void sample_g_of_r(void)
         for (int j = i + 1; j < n_particles; j++) {
             vec3_t r2_r1 = v3_sub(sim->r[i], sim->r[j]);
             // We use pointers to loop over the x, y, z members of the vec3_t type.
-            double* pdist = &(r2_r1.x);
             for (int d = 0; d < NDIM; d++) {
-                if (*(pdist + d) > 0.5 * sim->box[d])
-                    *(pdist + d) -= sim->box[d];
-                if (*(pdist + d) < -0.5 * sim->box[d])
-                    *(pdist + d) += sim->box[d];
+                if (*(&(r2_r1.x) + d) > 0.5 * sim->box[d])
+                    *(&(r2_r1.x) + d) -= sim->box[d];
+                if (*(&(r2_r1.x) + d) < -0.5 * sim->box[d])
+                    *(&(r2_r1.x) + d) += sim->box[d];
             }
 
             double dist2 = v3_length2(r2_r1); // square of the distance for computational efficiency
@@ -1163,7 +1158,7 @@ int parse_commandline(int argc, char* argv[])
         printf("reading target_cluster_size has failed\n");
         return 1;
     }
-    if (EOF == sscanf(argv[11], "%lf", &coupling_parameter)) {
+    if (EOF == sscanf(argv[10], "%lf", &coupling_parameter)) {
         printf("reading coupling_parameter has failed\n");
         return 1;
     }

@@ -1095,7 +1095,7 @@ int parse_commandline(int argc, char* argv[])
         printf("reading target_cluster_size has failed\n");
         return 1;
     }
-    if (EOF == sscanf(argv[11], "%lf", &coupling_parameter)) {
+    if (EOF == sscanf(argv[10], "%lf", &coupling_parameter)) {
         printf("reading coupling_parameter has failed\n");
         return 1;
     }

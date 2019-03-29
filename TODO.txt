@@ -23,6 +23,8 @@ TODO:
 - somehow write transl_order and orient_order as the same function, because there is a lot of
 	duplicate code in v10 <- v11 <- v14 <- v18 <- v20 <- v22.
 
+- clean up the parse_commandline function
+
 ##(part of do umbrella sampling)make nice fluids for pressures 6-9 (go as high as possible) and differing angles (see notes):
 	##make v3 do: stop volume moves after reaching desired pf, i.e. make it do NVT
 	= make v5 do: do one run and save inside a file at which snapshots/after how many

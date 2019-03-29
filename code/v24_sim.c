@@ -87,7 +87,8 @@ void sample_g_of_r(void);
 // collision detection
 bool is_overlap_between(int i, int j);
 bool is_separation_along_axis(vec3_t axis, int i, int j, vec3_t r2_r1);
-bool is_separation_along_axis_check_first_cube_only_twice(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis);
+bool is_separation_along_axis_fast1(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis);
+bool is_separation_along_axis_fast2(vec3_t axis, int i, int j, vec3_t r2_r1, int which_axis);
 inline vec3_t get_offset(int i, int j);
 bool is_overlap_from(int index);
 void update_cell_list(int index);

@@ -753,8 +753,8 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
     int i;
     const int l = 4;
 
-    char buffer[256] = "datafolder/"; // the coordinates filename
-    char buffern[256] = "datafolder/"; // the other data filename
+    char buffer[256] = ""; // the coordinates filename
+    char buffern[256] = ""; // the other data filename
     strcat(buffer, datafolder_name);
     strcat(buffern, datafolder_name);
     if (mode & transl) {
@@ -1245,7 +1245,7 @@ int main(int argc, char** argv)
     };
 
     // printf("datafolder_name: %s\n", datafolder_name);
-    char buffer[256] = "datafolder/";
+    char buffer[256] = "";
     strcat(buffer, datafolder_name);
     strcat(buffer, "/coords_step%07d.poly");
 
@@ -1258,7 +1258,7 @@ int main(int argc, char** argv)
 
         int status = read_data2(datafile_name, step);
         if (status == 1) {
-            printf("last file number %d\n", step);
+            printf("last file number %d\n", step - read_per);
             return 0;
         } else if (status == 2) {
             printf("something wrong with filename %s\n", datafile_name);

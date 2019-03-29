@@ -19,3 +19,4 @@ tex/*
 !tex/*.tex
 pov.txt
 code/timenull.c
+start_positions
