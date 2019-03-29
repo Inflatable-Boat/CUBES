@@ -28,12 +28,9 @@ int nbnd_cuttoff = 4; //Number of correlated bonds for a crystalline particle
 double obnd_cuttoff = 0.0; //Order to be in the same cluster (0.0 for all touching clusters 0.9 to see defects)
 
 //////////////////////////////////////////////////////////////// my additions
-const char usage_string[] = "usage: program.exe datafolder read_per output_per \
-(t/transl or o/orient or b/both) (sl_norm or unsl_norm or edge)\n\
-output_per = 0 means don't save snapshots\n";
+const char usage_string[] = "usage: program.exe datafolder output_per (p/pos or o/orient) \n";
 static double Phi;
 static int output_per;
-static int read_per;
 static int n_particles;
 static double ruud_box[3];
 static vec3_t ruud_r[N]; // position of center of cube
@@ -42,13 +39,8 @@ static vec3_t Normal[3];
 static double SinPhi;
 static double CosPhi;
 static double ParticleVolume;
-typedef enum { transl = 1,
-    orient = 2,
-    axes_slanted_normals = 4,
-    axes_unslanted_normals = 8,
-    axes_edges = 16 } order_mode_enum_t;
-order_mode_enum_t order_mode;
-static char datafolder_name[256];
+bool is_pos = true;
+static char datafolder_name[128];
 //////////////////////////////////////////////////////////////// end of my additions
 
 typedef struct {
@@ -60,12 +52,12 @@ typedef struct {
     double si;
     double co;
     int n;
-} bnd_t;
+} bndT_t;
 typedef struct {
     int n;
-    bnd_t* bnd;
-} blist_t;
-blist_t* blist;
+    bndT_t* bnd;
+} blistT_t;
+blistT_t* blist;
 int* numconn;
 double xsize, ysize, zsize;
 
@@ -155,10 +147,8 @@ float plgndr(int l, int m, double x)
 {
     double fact, pll = 0.0, pmm, pmmp1, somx2;
     int i, ll;
-    if (m < 0 || m > l || fabs(x) > 1.0) {
+    if (m < 0 || m > l || fabs(x) > 1.0)
         printf("Bad arguments in routine plgndr %i %i %f\n", l, m, fabs(x));
-        x *= 0.99999;
-    }
     pmm = 1.0;
     if (m > 0) {
         somx2 = sqrt((1.0 - x) * (1.0 + x));
@@ -207,7 +197,7 @@ double gammln(double xx)
 
 /************************************************
  *             FACS
- * Calculate factorials (l - m)! / (l + m)!
+ * Calculate factorials
  ***********************************************/
 double facs(int l, int m)
 {
@@ -239,50 +229,23 @@ double minpow(int m)
  *             ORIENT_ORDER
  * Calculate i for a particle along one axis
  ***********************************************/
+// TODO: choose the normal axes or box-edge aligned axes?
 void orient_order(int l, int i, compl_t* res, int axis)
 {
-    vec3_t dir; // = v3_norm(m4_mul_dir(ruud_m[i], Normal[axis]));
-    if (order_mode & axes_slanted_normals) {
-        // take the normal of the slanted cube and rotate it
-        dir = m4_mul_dir(ruud_m[i], Normal[axis]);
-    } else if (order_mode & axes_unslanted_normals) {
-        // we need to construct the new vector. we do it using pointers:
-        dir = vec3(0, 0, 0);
-        // now set the axis-th member of dir to 1 in the ugliest way possible
-        *(&(dir.x) + axis) = 1.;
-        // now we have constructed the vector, rotate it
-        dir = m4_mul_dir(ruud_m[i], dir);
-    } else if (order_mode & axes_edges) {
-        // we need to construct an edge of the cube
-        if (axis == 0) {
-            dir = vec3(1, 0, 0);
-        } else if (axis == 1) {
-            dir = vec3(0, 1, 0);
-        } else if (axis == 2) {
-            dir = vec3(CosPhi, 0, SinPhi);
-        } else {
-            printf("this message shouldn't be visible 2\n");
-            exit(6);
-        }
-        // now we have constructed the vector, rotate it
-        dir = m4_mul_dir(ruud_m[i], dir);
-    } else {
-        printf("this message shouldn't be visible 1\n");
-        exit(5);
-    }
+    vec3_t dir = v3_norm(m4_mul_dir(ruud_m[i], Normal[axis]));
     double fc, p, f, s, r, sp, spp, c, cp, cpp;
     double z;
     int m = 0;
     // z = bnd->nz;
     z = dir.z;
-    double si, co; // sin and cosine of azimuthal angle
+    double si, co;
     if (dir.x == 0 && dir.y == 0) {
         si = 0;
         co = 1;
     } else {
-        double dxy = 1.0 / sqrt(dir.x * dir.x + dir.y * dir.y);
-        si = dir.y * dxy;
-        co = dir.x * dxy;
+        double norm = 1.0 / sqrt(dir.x * dir.x + dir.y * dir.y);
+        si = dir.x > 0 ? dir.y * norm : -dir.y * norm;
+        co = fabs(dir.x) * norm;
     }
 
     //for m=0
@@ -292,6 +255,8 @@ void orient_order(int l, int i, compl_t* res, int axis)
     r = p * f;
     (res + 0)->re += r;
     (res + 0)->im += 0;
+    // (res2 + 0)->re += r * minpow(l);
+    // (res2 + 0)->im += 0;
     s = 0;
     sp = 0;
     c = 1;
@@ -306,34 +271,42 @@ void orient_order(int l, int i, compl_t* res, int axis)
         cpp = cp;
         cp = c;
         if (m == 1)
+            // c = bnd->co;
             c = co;
         else
+            // c = 2.0 * bnd->co * cp - cpp; //some cosine tricks
             c = 2.0 * co * cp - cpp; //some cosine tricks
 
         spp = sp;
         sp = s;
         if (m == 1)
+            // s = bnd->si;
             s = si;
         else
+            // s = 2.0 * bnd->co * sp - spp; //some sine tricks
             s = 2.0 * co * sp - spp; //some sine tricks
 
         (res + m)->re += r * c;
         (res + m)->im += r * s;
+        // (res2 + m)->re += r * c;
+        // (res2 + m)->im += r * s;
 
         //negative m
         r *= minpow(m);
         (res - m)->re += r * c;
         (res - m)->im += -r * s;
+        // (res2 - m)->re += r * c;
+        // (res2 - m)->im += -r * s;
 
         //printf ("Test: %d, %lf, %lf (cumu: %lf, %lf) \n", m, r*c,-r*s, (res1-m)->re, (res1-m)->im);
     }
 }
 
 /************************************************
- *             TRANSL_ORDER
+ *             POS_ORDER
  * Calculate q for a pair of particles
  ***********************************************/
-void transl_order(int l, bnd_t* bnd, compl_t* res1, compl_t* res2)
+void pos_order(int l, bndT_t* bnd, compl_t* res1, compl_t* res2)
 {
     double fc, p, f, s, r, sp, spp, c, cp, cpp;
     double z;
@@ -394,7 +367,6 @@ void transl_order(int l, bnd_t* bnd, compl_t* res1, compl_t* res2)
  *             DOTPROD
  * Dot product
  ***********************************************/
-// expects pointer to the start of vectors
 double dotprod(compl_t* vec1, compl_t* vec2, int l)
 {
     double res = 0;
@@ -421,7 +393,7 @@ int coords2cell(double x, double y, double z)
 void update_nblistp(int p)
 {
     int i, j, c, cellp, id;
-    bnd_t* bnd;
+    bndT_t* bnd;
     double d, dxy, dx, dy, dz;
     cellp = part[p].cell;
     blist[p].n = 0;
@@ -490,14 +462,13 @@ void update_nblist(void)
  *             INIT_NBLIST
  * Initialize the neighbor list
  ***********************************************/
-// mallocs blist, numconn, blist[i].bnd
 void init_nblist(void)
 {
     int p;
-    blist = (blist_t*)malloc(sizeof(blist_t) * n_particles);
+    blist = (blistT_t*)malloc(sizeof(blistT_t) * n_particles);
     numconn = (int*)malloc(sizeof(int) * n_particles);
     for (p = n_particles - 1; p >= 0; p--) {
-        blist[p].bnd = (bnd_t*)malloc(sizeof(bnd_t) * MAX_NEIGHBORS);
+        blist[p].bnd = (bndT_t*)malloc(sizeof(bndT_t) * MAX_NEIGHBORS);
         numconn[p] = 0;
         update_nblistp(p);
     }
@@ -507,7 +478,6 @@ void init_nblist(void)
  *             INIT_CELLS
  * Initialize the cell list
  ***********************************************/
-// mallocs cells
 void init_cells(void)
 {
     n_cells = 0;
@@ -572,7 +542,7 @@ void init_cells(void)
         j = coords2cell(part[i].x, part[i].y, part[i].z);
         if (cells[j].n + 1 >= MAX_PART_CELL) {
             printf("ERROR: Too many particles in a cell!\n");
-            exit(7);
+            exit(666);
         }
         cells[j].particles[cells[j].n] = i;
         part[i].cell = j;
@@ -623,8 +593,6 @@ void init_box(double x_box, double y_box, double z_box)
  *             CONVERT_DATA
  * converts data from my type to this file's weird type
  ***********************************************/
-// mallocs part,
-// indirect malloc cells, blist, numconn, blist[i].bnd
 int convert_data()
 {
     // n_part = particlestocount = n_particles;
@@ -648,21 +616,20 @@ int convert_data()
  *             CALC_ORIENT_ORDER
  * Calculate i_4 for all particles
  ***********************************************/
-// mallocs (return value) orderp
 compl_t* calc_orient_order(void)
 {
     compl_t *q1, *q2, *q3;
     const int l = 4;
     // allocate two spaces too many to make place for q2, q3
     compl_t* orderp = (compl_t*)malloc(sizeof(compl_t) * (n_particles + 2) * (l * 2 + 1));
-    memset(orderp, (int)0.0, sizeof(compl_t) * (n_particles + 2) * (l * 2 + 1));
+    memset(orderp, (int)0.0, sizeof(compl_t) * n_particles * (l * 2 + 1));
     for (int i = 0; i < n_particles; i++) {
         q1 = (orderp + i * (2 * l + 1) + l);
         q2 = (orderp + (i + 1) * (2 * l + 1) + l); // temporary place for q2, q3
         q3 = (orderp + (i + 2) * (2 * l + 1) + l); // will be overwritten next loop
-
+        
         // the folling gives order vectors i_{4,m} corresponding to the three particle axes
-        // and stores them in q1, q2, q3. Next we have to add q2, q3 to q1 and normalize
+        // and stores them in q1, q2, q3. Next we have to add q2, q3 to q1 and normalize 
         orient_order(l, i, q1, 0);
         orient_order(l, i, q2, 1);
         orient_order(l, i, q3, 2);
@@ -671,8 +638,8 @@ compl_t* calc_orient_order(void)
             (q1 + m)->im += (q2 + m)->im + (q3 + m)->im;
         }
         //normalize vector
-        double temp = 1.0 / sqrt(dotprod(q1 - l, q1 - l, l));
-        for (int m = -l; m <= l; m++) {
+        double temp = 1.0 / sqrt(dotprod(q1, q1, l));
+        for (int m = -l; m < l; m++) {
             (q1 + m)->re *= temp;
             (q1 + m)->im *= temp;
         }
@@ -681,11 +648,10 @@ compl_t* calc_orient_order(void)
 }
 
 /************************************************
- *             CALC_TRANSL_ORDER
+ *             CALC_POS_ORDER
  * Calculate q_4 for all particles
  ***********************************************/
-// mallocs (return value) orderp
-compl_t* calc_transl_order(void)
+compl_t* calc_pos_order(void)
 {
     int i, j, m;
     compl_t *q1, *q2;
@@ -698,7 +664,7 @@ compl_t* calc_transl_order(void)
         for (j = 0; j < blist[i].n; j++) {
             if (blist[i].bnd[j].n > i) {
                 q2 = (orderp + blist[i].bnd[j].n * (2 * l + 1) + l);
-                transl_order(l, &(blist[i].bnd[j]), q1, q2);
+                pos_order(l, &(blist[i].bnd[j]), q1, q2);
             }
         }
     }
@@ -718,7 +684,6 @@ compl_t* calc_transl_order(void)
  *             CALC_CONN
  * Find crystalline bonds between particles
  ***********************************************/
-// mallocs (return value) conn
 int* calc_conn(compl_t* orderp) //calculates "connected" particles
 {
     int i, j, z, np = 0;
@@ -748,192 +713,33 @@ int* calc_conn(compl_t* orderp) //calculates "connected" particles
  * Output snapshot in which clusters are colored
  * Fluid particles printed small
  ***********************************************/
-void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, compl_t* orderp)
+void save_cluss(int step, int* cluss, int* size, int big, int nn)
 {
     int i;
-    const int l = 4;
 
-    char buffer[256] = ""; // the coordinates filename
-    char buffern[256] = ""; // the other data filename
+    char buffer[128] = "datafolder/";
     strcat(buffer, datafolder_name);
-    strcat(buffern, datafolder_name);
-    if (mode & transl) {
-        strcat(buffer, "/clust_transl");
-        strcat(buffern, "/v22_transl");
-    } else if (mode & orient) {
-        strcat(buffer, "/clust_orient");
-        strcat(buffern, "/v22_orient");
-        if (order_mode & axes_slanted_normals) {
-            strcat(buffer, "_sl_normals");
-            strcat(buffern, "_sl_normals");
-        } else if (order_mode & axes_unslanted_normals) {
-            strcat(buffer, "_unsl_normals");
-            strcat(buffern, "_unsl_normals");
-        } else if (order_mode & axes_edges) {
-            strcat(buffer, "_edges");
-            strcat(buffern, "_edges");
-        } else {
-            printf("invalid axes order_mode in save_cluss: %d", order_mode);
-            printf(" mode: %d\n", mode);
-            exit(4);
-        }
+    if (is_pos) {
+        strcat(buffer, "/clust_pos_coords%07d.poly");
     } else {
-        printf("invalid order_mode in save_cluss: %d", order_mode);
-        printf(" mode: %d\n", mode);
-        exit(3);
+        strcat(buffer, "/clust_orient_coords%07d.poly");
     }
-    strcat(buffer, "_coords%07d.poly");
-
-    char fn[256] = "";
+    char fn[128] = "";
     sprintf(fn, buffer, step);
-
-    if (!step) { // if first step
-        remove(buffern); // remove the data-for-each-step-file
-    }
+    char dfn[128] = "datafolder/";
+    strcat(dfn, datafolder_name);
+    strcat(dfn, "/npos");
 
     FILE* data_file;
-    if ((data_file = fopen(buffern, "a")) == NULL) {
-        printf("couldn't open clust_file buffern = %s\n", buffern);
+    if ((data_file = fopen(dfn, "a")) == NULL) {
+        printf("couldn't open clust_file dfn = %s\n", dfn);
         exit(-2);
     }
     fprintf(data_file, "%lf  %d  %d\n", percentage, numclus, maxsize);
-
-    // now make and print the histogram of number of neighbours to file
-    // note: prints fraction of cubes with this amount of neighbours
-    {
-        // make local scope to avoid clutter of random variables
-        // make a histogram of number of neighbours:
-        double nb_hist[MAX_NEIGHBORS + 1];
-        memset(nb_hist, 0, (MAX_NEIGHBORS + 1) * sizeof(double));
-        for (int i = 0; i < n_particles; i++) {
-            // blist[i].n is the # of neighbours of particle i
-            nb_hist[blist[i].n]++;
-        }
-        double oneovern_particles = 1.0 / n_particles;
-        for (int i = 0; i <= MAX_NEIGHBORS; i++) {
-            nb_hist[i] *= oneovern_particles;
-        }
-        for (int i = 0; i <= MAX_NEIGHBORS; i++) {
-            fprintf(data_file, "%lf ", nb_hist[i]);
-        }
-        fprintf(data_file, "\n");
-    }
-
-    // now make and print the histogram of number of crystalline neighbours to file
-    // note: prints fraction of cubes with this amount of neighbours
-    {
-        // make local scope to avoid clutter of random variables
-        // make a histogram of number of neighbours:
-        double xtal_nb_hist[MAX_NEIGHBORS + 1];
-        memset(xtal_nb_hist, 0, (MAX_NEIGHBORS + 1) * sizeof(double));
-        for (int i = 0; i < n_particles; i++) {
-            // numconn[i] is the # of crystalline neighbours of particle i
-            xtal_nb_hist[numconn[i]]++;
-        }
-        double oneovern_particles = 1.0 / n_particles;
-        for (int i = 0; i <= MAX_NEIGHBORS; i++) {
-            xtal_nb_hist[i] *= oneovern_particles;
-        }
-        for (int i = 0; i <= MAX_NEIGHBORS; i++) {
-            fprintf(data_file, "%lf ", xtal_nb_hist[i]);
-        }
-        fprintf(data_file, "\n");
-    }
-
-    // now we make and print the |q_4|^2 histogram.
-    // note: prints fraction of cubes with this |q_4|^2
-    {
-        const int NBINS = 100;
-        double q4_hist[NBINS];
-        memset(q4_hist, 0, NBINS * sizeof(double));
-        int count = 0;
-        for (int i = 0; i < n_particles; i++) {
-            // printf("particle i: %d\n", i);
-            for (int j = 0; j < blist[i].n; j++) {
-                // printf("j = %d ", j);
-                if (blist[i].bnd[j].n > i) {
-                    // printf("yes blist.bnd.n > %d\n", i);
-                    double order = dotprod(orderp + i * (2 * l + 1),
-                        orderp + blist[i].bnd[j].n * (2 * l + 1), l);
-                    // printf("order = %lf\n", order);
-                        
-                    if (order > 1.00001 || order < -1.00001) {
-                        printf("unexpected order dotprod between %d and %d: %lf\nExiting.\n", i, blist[i].bnd[j].n, order);
-                        exit(7);
-                    }
-                    if (order >= 1)
-                        order = 0.999999; // to avoid rounding errors in the next step
-                    if (order <= -1)
-                        order = -0.999999;
-                    q4_hist[(int) (NBINS * (order + 1) * 0.5)]++;
-                    count++;
-                }
-            }
-        }
-        double oneovercount = 1;
-        if (count)
-            oneovercount = 1.0 / count;
-        for (int i = 0; i < NBINS; i++) {
-            q4_hist[i] *= oneovercount;
-        }
-        fprintf(data_file, "%d ", count);
-        for (int i = 0; i < NBINS; i++) {
-            fprintf(data_file, "%lf ", q4_hist[i]);
-        }
-        fprintf(data_file, "\n");
-    }
-
-    // now we make and print the |q_4|^2 histogram, averaged per particle.
-    // note: prints fraction of cubes with this |q_4|^2
-    {
-        const int NBINS = 100;
-        double avg_q4_hist[NBINS];
-        memset(avg_q4_hist, 0, NBINS * sizeof(double));
-        for (int i = 0; i < n_particles; i++) {
-            // printf("particle i: %d\n", i);
-            double order = 0;
-            for (int j = 0; j < blist[i].n; j++) {
-                // printf("j = %d ", j);
-                order += dotprod(orderp + i * (2 * l + 1),
-                    orderp + blist[i].bnd[j].n * (2 * l + 1), l);
-                // printf("order = %lf\n", order);
-            }
-            if (blist[i].n) {
-                order /= blist[i].n; // take the average
-            }
-            if (order > 1.00001 || order < -1.00001) {
-                printf("unexpected order of particle %d: %lf\nExiting.\n", i, order);
-                exit(7);
-            }
-            if (order >= 1)
-                order = 0.999999; // to avoid rounding errors in the next step
-            if (order <= -1)
-                order = -0.999999;
-            avg_q4_hist[(int) (NBINS * (order + 1) * 0.5)]++;
-        }
-        double oneovern_particles = 1.0 / n_particles;
-        for (int i = 0; i < NBINS; i++) {
-            avg_q4_hist[i] *= oneovern_particles;
-        }
-        for (int i = 0; i < NBINS; i++) {
-            fprintf(data_file, "%lf ", avg_q4_hist[i]);
-        }
-        fprintf(data_file, "\n");
-    }
-
-    // now make and print all clustersizes
-    for (int i = 1; i < nn; i++) {
-        fprintf(data_file, "%d ", size[i]);
-    }
-    fprintf(data_file, "\n");
-
     fclose(data_file);
 
-    if (output_per == 0) { // 0 means no save
-        return;
-    }
     FILE* clust_file;
-    if ((step % (output_per)) == 0) {
+    if ((step % (100 * output_per)) == 0) {
         if ((clust_file = fopen(fn, "w")) == NULL) {
             printf("couldn't open clust_file fn = %s\n", fn);
             exit(-2);
@@ -941,8 +747,7 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
     } else {
         return;
     }
-    // printf("step %d, saving to file %s\n", step, fn);
-    printf("step %d, ", step);
+    printf("step %d, saving to file %s\n", step, fn);
     fprintf(clust_file, "%d\n0 0 0\n", n_particles);
     fprintf(clust_file, "%lf 0 0\n0 %lf 0\n0 0 %lf\n", box.x, box.y, box.z);
 
@@ -979,9 +784,8 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
             rnk = rank[cluss[i]];
             if (rnk > 0)
                 rnk = ((rnk - 1) % 25) + 1;
-            part[i].d = 1.0;
         } else {
-            part[i].d = 0.1;
+            part[i].d *= 0.1;
         }
         fprintf(clust_file, "%lf %lf %lf %lf ", part[i].x, part[i].y, part[i].z, part[i].d);
         for (int d1 = 0; d1 < NDIM; d1++) {
@@ -989,7 +793,6 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
                 fprintf(clust_file, "%lf ", ruud_m[i].m[d1][d2]);
             }
         }
-        // 10 = slanted cube, phi = angle, rnk = color
         fprintf(clust_file, "10 %lf %d\n", Phi, rnk);
     }
     fclose(clust_file);
@@ -1001,7 +804,7 @@ void save_cluss(int step, int* cluss, int* size, int big, int nn, int mode, comp
  *             CALC_CLUSTERS
  * Find clusters of bonded particles
  ***********************************************/
-void calc_clusters(int step, int* conn, compl_t* orderp, int mode)
+void calc_clusters(int step, int* conn, compl_t* orderp)
 {
     int* cluss = malloc(sizeof(int) * n_particles);
     int* size = malloc(sizeof(int) * n_particles);
@@ -1052,13 +855,14 @@ void calc_clusters(int step, int* conn, compl_t* orderp, int mode)
     }
 
     // printf("save_cluss\n");
+    // if (dontsave == 0) {
+    save_cluss(step, cluss, size, big, cn);
+    // }
     percentage = tcs / (double)n_particles;
     maxsize = big;
     numclus = cn - 1;
-    save_cluss(step, cluss, size, big, cn, mode, orderp);
-    printf("%i clusters, Max size: %i, Percentage of crystalline particles %f\n", numclus, big, percentage);
+    printf("% i clusters, Max size: %i, Percentage of crystalline particles %f\n", numclus, big, percentage);
 
-    // final point where data starts getting freed
     free(cluss);
     free(size);
 }
@@ -1157,76 +961,35 @@ int read_data2(char* init_file, int is_not_first_time)
 /// If something goes wrong, return != 0
 int parse_commandline(int argc, char* argv[])
 {
-    if (argc != 6) {
-        printf("need 5 arguments:\n");
+    if (argc != 4) {
+        printf("need 3 arguments:\n");
         return 3;
     }
     if (EOF == sscanf(argv[1], "%s", datafolder_name)) {
-        printf("reading datafolder_name has failed\n");
+        printf("reading Phi has failed\n");
         return 1;
     }
-    if (EOF == sscanf(argv[2], "%d", &read_per)) {
-        printf("reading read_per has failed\n");
-        return 1;
-    }
-    output_per = 0;
-    if (EOF == sscanf(argv[3], "%d", &output_per)) {
+    if (EOF == sscanf(argv[2], "%d", &output_per)) {
         printf("reading output_per has failed\n");
         return 1;
     }
-    if (read_per <= 0 || read_per > 1000) {
-        printf("0 < read_per < 1001\n");
+    if (output_per <= 0 || output_per > 100) {
+        printf("0 < output_per < 101\n");
         return 2;
     }
-    if (output_per < 0 || output_per > 1000) {
-        printf("0 <= output_per < 1001\n");
-        return 2;
-    }
-
-    if (output_per) {
-        if (output_per < read_per) {
-            printf("\nWARNING\n\noutput_per < read_per, this is not what you want. Exiting\n");
-            return 4;
-        }
-    }
-    if (output_per % read_per != 0) {
-        printf("warning, output_per %% read_per != 0, \
-you want to print at other intervals than possible. Exiting\n");
-        return 5;
-    } 
-
-    if (strcmp(argv[4], "t") == 0 || strcmp(argv[4], "transl") == 0 || strcmp(argv[4], "translation") == 0
-        || strcmp(argv[4], "p") == 0 || strcmp(argv[4], "pos") == 0 || strcmp(argv[4], "position") == 0) {
-        printf("doing translational ordering\n");
-        order_mode = transl;
-    } else if (strcmp(argv[4], "o") == 0 || strcmp(argv[4], "orient") == 0 || strcmp(argv[4], "orientation") == 0) {
+    if (strcmp(argv[3], "p") == 0 || strcmp(argv[3], "pos") == 0 || strcmp(argv[3], "position") == 0) {
+        printf("doing positionional ordering\n");
+        is_pos = true;
+        return 0;
+    } else if (strcmp(argv[3], "o") == 0 || strcmp(argv[3], "orient") == 0 || strcmp(argv[3], "orientation") == 0) {
         printf("doing orientational ordering\n");
-        order_mode = orient;
-    } else if (strcmp(argv[4], "b") == 0 || strcmp(argv[4], "both") == 0) {
-        printf("doing both translational and orientational ordering\n");
-        order_mode = transl | orient;
-    } else if (strcmp(argv[4], "a") == 0 || strcmp(argv[4], "all") == 0) {
-        printf("all not yet implemented\n");
-        return 3;
+        is_pos = false;
+        // printf("not implemented yet\n");
+        // return -1;
+        return 0;
     } else {
-        printf("reading third argument failed\n");
+        printf("reading last argument failed\n");
         return 1;
-    }
-
-    if (order_mode & orient) {
-        if (strcmp(argv[5], "s") == 0 || strcmp(argv[5], "sl") == 0 || strcmp(argv[5], "sl_norm") == 0 || strcmp(argv[5], "slanted_normals") == 0) {
-            printf("taking slanted normals as axes for orientational ordering\n");
-            order_mode |= axes_slanted_normals;
-        } else if (strcmp(argv[5], "u") == 0 || strcmp(argv[5], "unsl") == 0 || strcmp(argv[5], "unsl_norm") == 0 || strcmp(argv[5], "unslanted_normals") == 0) {
-            printf("taking unslanted normals as axes for orientational ordering\n");
-            order_mode |= axes_unslanted_normals;
-        } else if (strcmp(argv[5], "e") == 0 || strcmp(argv[5], "edge") == 0 || strcmp(argv[5], "edges") == 0) {
-            printf("taking (slanted) cube edges as axes for orientational ordering\n");
-            order_mode |= axes_edges;
-        } else {
-            printf("reading fourth argument failed\n");
-            return 1;
-        }
     }
 
     return 0; // no exceptions, run the program
@@ -1237,6 +1000,7 @@ you want to print at other intervals than possible. Exiting\n");
  ***********************************************/
 int main(int argc, char** argv)
 {
+    // int f = 0, i = 0;
     compl_t* order = NULL;
     int* connections = NULL;
 
@@ -1245,44 +1009,47 @@ int main(int argc, char** argv)
         return 1;
     };
 
-    // printf("datafolder_name: %s\n", datafolder_name);
-    char buffer[256] = "";
+    printf("datafolder_name: %s\n", datafolder_name);
+    char buffer2[128] = "";
+    if (is_pos) {
+        strcat(buffer2, "/v10_pos");
+    } else {
+        strcat(buffer2, "/v10_orient");
+    }
+    remove(buffer2);
+    char buffer[128] = "datafolder/";
     strcat(buffer, datafolder_name);
     strcat(buffer, "/coords_step%07d.poly");
 
     // int loop_count = 0;
-    for (int step = 0; step <= 5000000; step += read_per) {
-        char datafile_name[256] = "";
+    for (int step = 0; step <= 5000000; step += 100) {
+        char datafile_name[128] = "";
         // replace all %d, %lf in buffer with values and put in datafile_name
         sprintf(datafile_name, buffer, step);
         // printf("datafile_name: %s\n", datafile_name);
 
         int status = read_data2(datafile_name, step);
         if (status == 1) {
-            printf("last file number %d\n", step - read_per);
+            printf("last file number %d\n", step);
             return 0;
         } else if (status == 2) {
             printf("something wrong with filename %s\n", datafile_name);
             return 2;
         }
 
-        convert_data(); // mallocs part, indirectly cells, blist, numconn, blist[i].bnd
-
-        if (order_mode & transl) {
-            order = calc_transl_order(); // mallocs order
-            connections = calc_conn(order); // mallocs connections
-            calc_clusters(step, connections, order, transl); // and save if output_per > 0
-            free(order);
-            free(connections);
+        convert_data();
+        // printf("calculating order\n");
+        if (is_pos) {
+            order = calc_pos_order();
+        } else {
+            order = calc_orient_order();
         }
-        if (order_mode & orient) {
-            order = calc_orient_order(); // mallocs order
-            connections = calc_conn(order); // mallocs connections
-            calc_clusters(step, connections, order, orient); // and save if output_per > 0
-            free(order);
-            free(connections);
-        }
-
+        // printf("calculating connections\n");
+        connections = calc_conn(order);
+        // printf("calculating clusters\n");
+        calc_clusters(step, connections, order); // and save
+        free(order);
+        free(connections);
         free(part);
         free(cells);
         free(numconn);
