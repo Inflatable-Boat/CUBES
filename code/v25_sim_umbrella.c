@@ -121,10 +121,9 @@ int main(int argc, char* argv[])
         remove_overlap_smart(); // due to too high a packing fraction or rotation
     } else {
         if (is_overlap()) {
-            printf("\n\n\tWARNING\n\n\nThe read file contains overlap.\n\
-            Exiting\n");
+            printf("\n\n\tWARNING\n\n\nThe read file contains overlap.\n");
             // remove_overlap();
-            return 2;
+            // return 2;
         } else {
             printf("No overlap detected, continuing simulation.\n");
         }
@@ -153,7 +152,11 @@ int main(int argc, char* argv[])
     char gofrfile_name[128] = "";
     strcat(gofrfile_name, datafolder_name);
     strcat(gofrfile_name, "/g.txt");
-    printf("saving to:\n%s\n%s\n%s...\n", datafolder_name, densityfile_name, gofrfile_name);
+    char largest_clusterfile_name[128] = "";
+    strcat(largest_clusterfile_name, datafolder_name);
+    strcat(largest_clusterfile_name, "/clsz.txt");
+    printf("saving to:\n%s\n%s\n%s\n%s\n",
+        datafolder_name, densityfile_name, gofrfile_name, largest_clusterfile_name);
 
 // make the folder to store all the data in, if it already exists do nothing.
 #ifdef _WIN32
@@ -172,6 +175,7 @@ int main(int argc, char* argv[])
 
     FILE* fp_density = fopen(densityfile_name, "w");
     FILE* fp_g = fopen(gofrfile_name, "w");
+    FILE* fp_clsz = fopen(largest_clusterfile_name, "w");
 
     int mov_accepted = 0, vol_accepted = 0, rot_accepted = 0;
     int mov_attempted = 0, vol_attempted = 0, rot_attempted = 0;
@@ -231,6 +235,9 @@ int main(int argc, char* argv[])
         }
 
         if (step % 100 == 0) {
+            fprintf(fp_clsz,"%d\n", sim->clust_size);
+            fflush(fp_clsz);
+
             double move_acceptance = (double)mov_accepted / mov_attempted;
             double rotation_acceptance = (double)rot_accepted / rot_attempted;
             double volume_acceptance = (double)vol_accepted / vol_attempted;
@@ -251,6 +258,7 @@ int main(int argc, char* argv[])
 
     fclose(fp_density); // densities/...
     fclose(fp_g); // datafolder/.../g.txt
+    fclose(fp_clsz); // datafolder/.../clsz.txt
     free(sim);
 
     return 0;
