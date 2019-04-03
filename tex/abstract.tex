@@ -1,0 +1,27 @@
+% Credit: TeXniCie A-eskwadraat
+\documentclass[thesis]{subfiles}
+\newgeometry{margin=2.5cm} %% We declare the margin another times to catch away all runaway bugs from the titlepage. Titlepages have a tendency to throw bugs around.
+\begin{document}
+	
+	\begin{abstract}
+		
+		\noindent My abstract
+	\end{abstract}
+	
+	\thispagestyle{plain} %% Removes the header for this page; a header on a page without a well-defined section is strange.
+	
+	\restoregeometry %% pairs with the \newgeometry at the top of the page.
+	
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+

@@ -211,6 +211,7 @@ v9: read all coord files from a datafolder and give orient. or transl. order dat
 Version explanation:
 ================================================================================================
 ================================================================================================
+- v25 is just v23 but based on v24 (i.e. optimized). Also prints max cl sz to a file every 100 steps
 - v24 is just v21 but optimized
 - v23 is just v17 but based on v21 (it still does umbrella)
 - v22 is just v20 but prints all clustersizes rather than making a hist.

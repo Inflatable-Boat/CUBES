@@ -1,0 +1,3 @@
+time -o times/v25_20p6.17a1.57_step1_t050 -f %Et%Ut%S,t%Pn ./v25_sim_umbrella.exe r start_positions/v21_20p6.17a1.57.poly v25_20p6.17a1.57_step1_t050 300000 1000 6.17 1 t 50 0.005 > logs/v25_20p6.17a1.57_step1_t050 &
+time -o times/v25_20p6.17a1.57_step2_t070 -f %Et%Ut%S,t%Pn ./v25_sim_umbrella.exe r datafolder/v25_20p6.17a1.57_step1_t050/coords_step0028000.poly v25_20p6.17a1.57_step2_t070 300000 1000 6.17 1 t 70 0.005 > logs/v25_20p6.17a1.57_step2_t070 &
+time -o times/v25_20p6.17a1.57_step3_t090 -f %Et%Ut%S,t%Pn ./v25_sim_umbrella.exe r datafolder/v25_20p6.17a1.57_step2_t070/coords_step0052000.poly v25_20p6.17a1.57_step3_t090 300000 1000 6.17 1 t 90 0.005 > logs/v25_20p6.17a1.57_step3_t090 &
