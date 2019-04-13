@@ -105,13 +105,19 @@ DONE
 Which versions are being used:
 ================================================================================================
 ================================================================================================
+	Currently (2019-04-12) in use:
+v22: v20 (make order param data + extra histograms + read_per implemented + save if (!output_per)
+     histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
+     instead of making a histogram of the clustersizes.
+v26: v24, but doesn't break detailed balance
+v27: v25, but doesn't break detailed balance
+
 	Currently (2019-03-27) in use:
 v22: v20 (make order param data + extra histograms + read_per implemented + save if (!output_per)
      histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
      instead of making a histogram of the clustersizes.
 v24: v21 optimized (~25-33% faster)
 v25: v23, but based on v24 (v17 (umbrella) based on v24).
-
 	Currently (2019-03-15) in use:
 v13: slowly increase pressure
 v16: v6 (fast crush), but don't save cluster snapshots (v14/v18/v20 does this)
@@ -211,6 +217,8 @@ v9: read all coord files from a datafolder and give orient. or transl. order dat
 Version explanation:
 ================================================================================================
 ================================================================================================
+- v27 is just v25 but doesn't break detailed balance by nudging the deltas
+- v26 is just v24 but doesn't break detailed balance by nudging the deltas
 - v25 is just v23 but based on v24 (i.e. optimized). Also prints max cl sz to a file every 100 steps
 - v24 is just v21 but optimized
 - v23 is just v17 but based on v21 (it still does umbrella)

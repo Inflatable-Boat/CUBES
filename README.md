@@ -1,3 +1,6 @@
+CUBES: Cubes Umbrella Biasing Entropic Simulation
+=================================================
+
 Usage of this repository
 ========================
 
