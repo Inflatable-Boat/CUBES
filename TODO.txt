@@ -10,7 +10,7 @@ TODO:
 ================================================================================================
 = do umbrella sampling
 	= is v17 <- v25
-	- 
+	- doing both local and on the cluster at the moment
 	##find suitable configurations/parameters
 	##implement a nudgeable coupling parameter (if too strong->weaker and vice versa)
 
@@ -110,7 +110,7 @@ v22: v20 (make order param data + extra histograms + read_per implemented + save
      histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
      instead of making a histogram of the clustersizes.
 v24: v21 optimized (~25-33% faster)
-v25: v23, but based on v25 (v17 (umbrella) based on v25).
+v25: v23, but based on v24 (v17 (umbrella) based on v24).
 
 	Currently (2019-03-15) in use:
 v13: slowly increase pressure
@@ -264,6 +264,19 @@ Version explanation:
 Notes:
 ================================================================================================
 ================================================================================================	
+Last meeting (2019-04-11):
+Clusters are ugly. What happens if we simulate at an order cutoff of 0.5, or 0.7?
+Need more statistics. > 2 million steps is probably necessary.
+
+Oops! I break detailed balance. Nudging the delta, deltaR and deltaV is only supposed to happen
+in the equilibration phase. After that they should stay fixed, otherwise we can't do the same
+steps back and forth ==> detailed balance is broken. Easy to fix though, done in v25 and v26.
+
+------------------------------------------------------------------------------------------------
+NOTE for umbrella sampling step 6 (target 150): accidentally gave wrong target value.
+it's stopped halfway and started again.
+
+------------------------------------------------------------------------------------------------
 Last meeting:
 From the results of the crushing simulation: start at density 0.49, let it run to equilibrate,
 and to check that it doesn't crystallize already.
