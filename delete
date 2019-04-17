@@ -1,1 +1,0 @@
-split -a 1 --additional-suffix=.bat -l 1 --numeric-suffixes=1 umbrall.bat umbr

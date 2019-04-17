@@ -111,6 +111,8 @@ v22: v20 (make order param data + extra histograms + read_per implemented + save
      instead of making a histogram of the clustersizes.
 v26: v24, but doesn't break detailed balance
 v27: v25, but doesn't break detailed balance
+c2*: same as v2*, but doesn't flush
+d2*: same as v2*, but only flushes clsz.txt once every 10k steps.
 
 	Currently (2019-03-27) in use:
 v22: v20 (make order param data + extra histograms + read_per implemented + save if (!output_per)
@@ -217,6 +219,8 @@ v9: read all coord files from a datafolder and give orient. or transl. order dat
 Version explanation:
 ================================================================================================
 ================================================================================================
+- d2* is just v2*, but only flushes clsz.txt once every 10k steps.
+- c2* is just v2*, but doesn't flush
 - v27 is just v25 but doesn't break detailed balance by nudging the deltas
 - v26 is just v24 but doesn't break detailed balance by nudging the deltas
 - v25 is just v23 but based on v24 (i.e. optimized). Also prints max cl sz to a file every 100 steps

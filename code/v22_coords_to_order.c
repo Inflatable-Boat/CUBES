@@ -1176,12 +1176,12 @@ int parse_commandline(int argc, char* argv[])
         printf("reading output_per has failed\n");
         return 1;
     }
-    if (read_per <= 0 || read_per > 1000) {
-        printf("0 < read_per < 1001\n");
+    if (read_per <= 0) {
+        printf("read_per >= 1\n");
         return 2;
     }
-    if (output_per < 0 || output_per > 1000) {
-        printf("0 <= output_per < 1001\n");
+    if (output_per < 0) {
+        printf("output_per >= 1\n");
         return 2;
     }
 
