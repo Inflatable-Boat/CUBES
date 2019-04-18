@@ -8,6 +8,8 @@ Key:
 TODO:
 ================================================================================================
 ================================================================================================
+- somehow get nice cluster size statistics from non-umbrella-sampled (slanted) cubes
+
 = do umbrella sampling
 	= is v17 <- v25
 	- doing both local and on the cluster at the moment
@@ -105,6 +107,14 @@ DONE
 Which versions are being used:
 ================================================================================================
 ================================================================================================
+	Currently (2019-04-18) in use:
+v22: v20 (make order param data + extra histograms + read_per implemented + save if (!output_per)
+     histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
+     instead of making a histogram of the clustersizes.
+v26: v24, but doesn't break detailed balance
+v28: v27, but also applies umbrella sampling to the equilibration steps
+d2*: same as v2*, but only flushes clsz.txt once every 10k steps.
+
 	Currently (2019-04-12) in use:
 v22: v20 (make order param data + extra histograms + read_per implemented + save if (!output_per)
      histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
@@ -113,7 +123,6 @@ v26: v24, but doesn't break detailed balance
 v27: v25, but doesn't break detailed balance
 c2*: same as v2*, but doesn't flush
 d2*: same as v2*, but only flushes clsz.txt once every 10k steps.
-
 	Currently (2019-03-27) in use:
 v22: v20 (make order param data + extra histograms + read_per implemented + save if (!output_per)
      histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
@@ -219,8 +228,9 @@ v9: read all coord files from a datafolder and give orient. or transl. order dat
 Version explanation:
 ================================================================================================
 ================================================================================================
-- d2* is just v2*, but only flushes clsz.txt once every 10k steps.
-- c2* is just v2*, but doesn't flush
+- v28 is just v27 but also does umbrella steps during the equilibration
+- d2* is just v2* but only flushes clsz.txt once every 10k steps.
+- c2* is just v2* but doesn't flush
 - v27 is just v25 but doesn't break detailed balance by nudging the deltas
 - v26 is just v24 but doesn't break detailed balance by nudging the deltas
 - v25 is just v23 but based on v24 (i.e. optimized). Also prints max cl sz to a file every 100 steps
