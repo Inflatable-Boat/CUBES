@@ -405,7 +405,7 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
     for (int i = 0; i < 1000; i++) {
         printf("%d\t%lf\n", i, aap[i]);
     } */
-    
+
     // two pointers to one object test
     /* compl_t aap;
     aap.re = 1; aap.im = 2;
@@ -417,10 +417,10 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
     pmies->im = 4;
     printf("aap = %4.2lf + %4.2lfi\n", aap.re, aap.im); // aap = 3.00 + 4.00i */
 
-// #define groottevan sizeof
-// #define dubbel double
+    // #define groottevan sizeof
+    // #define dubbel double
 
-//     printf("grootte van dubbel: %d\n", groottevan(dubbel));
+    //     printf("grootte van dubbel: %d\n", groottevan(dubbel));
 
     /* compl_t aap;
     printf("size of compl_t = %ld\n", sizeof(aap)); // 16
@@ -590,6 +590,16 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
         *(pgarbage + i) += 3 - i;
     } // equivalent, so we don't need the pointer
     printf("aap.xyz = %lf, %lf, %lf\n", aap.x, aap.y, aap.z); // 6 5 4 */
+
+    /* typedef enum { aap = 1,
+        noot = 2,
+        mies = 4,
+    } dikke_enum_t;
+
+    dikke_enum_t wim = aap;
+    int zus = aap;
+
+    printf("wim = %d, zus = %d\n", wim, zus); // wim = 1, zus = 1 */
 
     return 0;
 }

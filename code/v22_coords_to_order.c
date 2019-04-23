@@ -1185,12 +1185,6 @@ int parse_commandline(int argc, char* argv[])
         return 2;
     }
 
-    if (output_per) {
-        if (output_per < read_per) {
-            printf("\nWARNING\n\noutput_per < read_per, this is not what you want. Exiting\n");
-            return 4;
-        }
-    }
     if (output_per % read_per != 0) {
         printf("warning, output_per %% read_per != 0, \
 you want to print at other intervals than possible. Exiting\n");

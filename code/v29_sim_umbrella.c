@@ -28,7 +28,7 @@ static double packing_fraction;
 static double BetaP;
 double Phi; // angle of slanted cube
 
-const char labelstring[] = "d29_%02d_pf%04.2lf_p%04.1lf_a%04.2lf_%c_t%04d_c%5.3lf_0.6";
+const char labelstring[] = "v29_%02d_pf%04.2lf_p%04.1lf_a%04.2lf_%c_t%04d_c%5.3lf_0.6";
 // CubesPerDim, pack_frac, pressure, angle, order_mode, target cl.sz., npt/nvt, coupling_parameter
 // if p == -1, it means NVT ensemble
 const char usage_string[] = "\nusage: program.exe (r for read / c for create) \
@@ -155,8 +155,12 @@ int main(int argc, char* argv[])
     char largest_clusterfile_name[128] = "";
     strcat(largest_clusterfile_name, datafolder_name);
     strcat(largest_clusterfile_name, "/clsz.txt");
-    printf("saving to:\n%s\n%s\n%s\n%s\n",
-        datafolder_name, densityfile_name, gofrfile_name, largest_clusterfile_name);
+    char orderfile_name[128] = "";
+    strcat(orderfile_name, datafolder_name);
+    strcat(orderfile_name, "/order.txt");
+
+    printf("saving to:\n%s\n%s\n%s\n%s\n%s\n",
+        datafolder_name, densityfile_name, gofrfile_name, largest_clusterfile_name, orderfile_name);
 
 // make the folder to store all the data in, if it already exists do nothing.
 #ifdef _WIN32
@@ -176,6 +180,7 @@ int main(int argc, char* argv[])
     FILE* fp_density = fopen(densityfile_name, "w");
     FILE* fp_g = fopen(gofrfile_name, "w");
     FILE* fp_clsz = fopen(largest_clusterfile_name, "w");
+    FILE* fp_order = fopen(orderfile_name, "w");
 
     int mov_accepted = 0, vol_accepted = 0, rot_accepted = 0;
     int mov_attempted = 0, vol_attempted = 0, rot_attempted = 0;
@@ -318,7 +323,12 @@ int main(int argc, char* argv[])
 
         if (step % 100 == 0) {
             fprintf(fp_clsz, "%d\n", sim->clust_size);
-            fflush(fp_clsz);
+            if (step % 10000 == 0) {
+                fflush(fp_density);
+                fflush(fp_g);
+                fflush(fp_clsz);
+                fflush(fp_order);
+            }
         }
 
         if (step % output_steps == 0) {
@@ -953,7 +963,7 @@ void write_data(int step, FILE* fp_density, FILE* fp_g, char datafolder_name[128
 {
     if (fp_density) {
         fprintf(fp_density, "%lf\n", n_particles * ParticleVolume / (sim->box[0] * sim->box[1] * sim->box[2]));
-        fflush(fp_density); // write the densities everytime we have one, otherwise it waits for ~400 lines
+        // fflush(fp_density); // write the densities everytime we have one, otherwise it waits for ~400 lines
     }
 
     if (fp_g) {
@@ -962,7 +972,7 @@ void write_data(int step, FILE* fp_density, FILE* fp_g, char datafolder_name[128
             fprintf(fp_g, "%lf ", gof[i]);
         }
         fprintf(fp_g, "\n");
-        fflush(fp_g); // blablabla same text as 9 lines up // I'm going to regret this line aren't I
+        // fflush(fp_g); // blablabla same text as 9 lines up // I'm going to regret this line aren't I
     }
 
     char buffer[128];
