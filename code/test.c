@@ -37,10 +37,10 @@ typedef struct {
 
 const char labelstring[] = "v1_%02dpf%04.2lfp%04.1lfa%04.2lf"; */
 
-int compare_test(const void* a, const void* b)
+/* int compare_test(const void* a, const void* b)
 {
     return -(*(int*)a - *(int*)b);
-}
+} */
 
 // static char chars[128] = "";
 
@@ -600,6 +600,9 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
     int zus = aap;
 
     printf("wim = %d, zus = %d\n", wim, zus); // wim = 1, zus = 1 */
+
+    /* int あ = 3; // doesn't work
+    printf("%d\n", あ);*/
 
     return 0;
 }

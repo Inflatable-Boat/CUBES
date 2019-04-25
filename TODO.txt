@@ -26,6 +26,7 @@ TODO:
 	duplicate code in v10 <- v11 <- v14 <- v18 <- v20 <- v22.
 
 - clean up the parse_commandline function
+	- clean up the read/create functionality
 
 ##(part of do umbrella sampling)make nice fluids for pressures 6-9 (go as high as possible) and differing angles (see notes):
 	##make v3 do: stop volume moves after reaching desired pf, i.e. make it do NVT
@@ -107,6 +108,15 @@ DONE
 Which versions are being used:
 ================================================================================================
 ================================================================================================
+	Currently (2019-04-24) in use:
+v22: v20 (make order param data + extra histograms + read_per implemented + save if (!output_per)
+     histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
+     instead of making a histogram of the clustersizes.
+v26: v24, but doesn't break detailed balance
+v29: v28, but no longer makes g.txt. Also give the order_cutoff on the commandline. Also now 
+     samples clsz and order every 50 steps instead of 100. Also flushes clsz.txt, order.txt once 
+     every 10k steps. (probably happens automatically much earlier due to small buffer)
+
 	Currently (2019-04-18) in use:
 v22: v20 (make order param data + extra histograms + read_per implemented + save if (!output_per)
      histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
@@ -114,7 +124,6 @@ v22: v20 (make order param data + extra histograms + read_per implemented + save
 v26: v24, but doesn't break detailed balance
 v28: v27, but also applies umbrella sampling to the equilibration steps
 d2*: same as v2*, but only flushes clsz.txt once every 10k steps.
-
 	Currently (2019-04-12) in use:
 v22: v20 (make order param data + extra histograms + read_per implemented + save if (!output_per)
      histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
@@ -228,6 +237,8 @@ v9: read all coord files from a datafolder and give orient. or transl. order dat
 Version explanation:
 ================================================================================================
 ================================================================================================
+- v29 is just v28 but also samples everything that v22_coords_to_order.exe samples. 
+  Also choose order_cutoff on the commandline, and no longer writes g.txt
 - v28 is just v27 but also does umbrella steps during the equilibration
 - d2* is just v2* but only flushes clsz.txt once every 10k steps.
 - c2* is just v2* but doesn't flush

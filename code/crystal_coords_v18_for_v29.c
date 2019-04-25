@@ -24,9 +24,10 @@
 
 //tunable parameters:
 double bndLength = 1.55; //distance cutoff for bonds
-double bnd_cuttoff = 0.6; //Order to be called a correlated bond
 int nbnd_cuttoff = 4; //Number of correlated bonds for a crystalline particle
 double obnd_cuttoff = 0.0; //Order to be in the same cluster (0.0 for all touching clusters 0.9 to see defects)
+// the following is now extern order_cutoff:
+// double bnd_cuttoff; //Order to be called a correlated bond // to be given by v29_sim_umbrella.c
 
 //////////////////////////////////////////////////////////////// my additions
 // const char usage_string[] = "usage: program.exe datafolder read_per output_per
@@ -50,12 +51,15 @@ double obnd_cuttoff = 0.0; //Order to be in the same cluster (0.0 for all touchi
 //     axes_edges = 16 } order_mode_enum_t;
 // order_mode_enum_t order_mode;
 // static char datafolder_name[256];
+extern double order_cutoff;
 extern int n_particles;
 extern vec3_t Normal[3];
 extern double CosPhi;
 extern double SinPhi;
 extern system_t* sim;
-int order_mode; // transl = 1, sl = 2, unsl = 3, edge = 4
+// the following is now extern int what_order:
+// int order_mode; // transl = 1, sl = 2, unsl = 3, edge = 4
+extern int what_order;
 
 //////////////////////////////////////////////////////////////// end of my additions
 
@@ -226,18 +230,18 @@ double minpow(int m)
 void orient_order(int l, int i, compl_t* res, int axis)
 {
     vec3_t dir; // = v3_norm(m4_mul_dir(ruud_m[i], Normal[axis]));
-    // order_mode: transl = 1, sl = 2, unsl = 3, edge = 4
-    if (order_mode == 2) {
+    // what_order: transl = 1, sl = 2, unsl = 3, edge = 4
+    if (what_order == 2) {
         // take the normal of the slanted cube and rotate it
         dir = m4_mul_dir(sim->m[i], Normal[axis]);
-    } else if (order_mode == 3) {
+    } else if (what_order == 3) {
         // we need to construct the new vector. we do it using pointers:
         dir = vec3(0, 0, 0);
         // now set the axis-th member of dir to 1 in the ugliest way possible
         *(&(dir.x) + axis) = 1.;
         // now we have constructed the vector, rotate it
         dir = m4_mul_dir(sim->m[i], dir);
-    } else if (order_mode == 4) {
+    } else if (what_order == 4) {
         // we need to construct an edge of the cube
         if (axis == 0) {
             dir = vec3(1, 0, 0);
@@ -712,7 +716,7 @@ int* calc_conn(compl_t* orderp) //calculates "connected" particles
     for (i = 0; i < n_particles; i++) {
         z = 0;
         for (j = 0; j < blist[i].n; j++) {
-            if (dotprod(orderp + i * (2 * l + 1), orderp + blist[i].bnd[j].n * (2 * l + 1), l) > bnd_cuttoff) {
+            if (dotprod(orderp + i * (2 * l + 1), orderp + blist[i].bnd[j].n * (2 * l + 1), l) > order_cutoff) {
                 z++;
                 //        printf ("Test %d, %d\n", i, particlestocount);
             }
@@ -730,7 +734,7 @@ int* calc_conn(compl_t* orderp) //calculates "connected" particles
 
 /************************************************
  *             SAVE_CLUSS_DATA
- * Output order data: every 100 steps output 6 lines:
+ * Output order data: every 50 steps output 6 lines:
  * frac X, # clusters, max cluster size
  * # of neighbours histogram, 0-50
  * # of crystalline neighbours histogram, 0-50
@@ -738,56 +742,10 @@ int* calc_conn(compl_t* orderp) //calculates "connected" particles
  * q_4.q_4 of all bonds, averaged for each cube histogram
  * all cluster sizes
  ***********************************************/
-void save_cluss_data(int step, int* cluss, int* size, int big, int nn, int mode, compl_t* orderp)
+void save_cluss_data(int* size, int nn, compl_t* orderp, FILE* data_file)
 {
-    int i;
     const int l = 4;
 
-    char buffer[256] = ""; // the coordinates filename
-    char buffern[256] = ""; // the other data filename
-    strcat(buffer, datafolder_name);
-    strcat(buffern, datafolder_name);
-    if (mode & transl) {
-        strcat(buffer, "/clust_transl");
-        strcat(buffern, "/v22_transl");
-    } else if (mode & orient) {
-        strcat(buffer, "/clust_orient");
-        strcat(buffern, "/v22_orient");
-        if (order_mode & axes_slanted_normals) {
-            strcat(buffer, "_sl_normals");
-            strcat(buffern, "_sl_normals");
-        } else if (order_mode & axes_unslanted_normals) {
-            strcat(buffer, "_unsl_normals");
-            strcat(buffern, "_unsl_normals");
-        } else if (order_mode & axes_edges) {
-            strcat(buffer, "_edges");
-            strcat(buffern, "_edges");
-        } else {
-            printf("invalid axes order_mode in save_cluss: %d", order_mode);
-            printf(" mode: %d\n", mode);
-            exit(4);
-        }
-    } else {
-        printf("invalid order_mode in save_cluss: %d", order_mode);
-        printf(" mode: %d\n", mode);
-        exit(3);
-    }
-    strcat(buffer, "6");
-    strcat(buffern, "6");
-    strcat(buffer, "_coords%07d.poly");
-
-    char fn[256] = "";
-    sprintf(fn, buffer, step);
-
-    if (!step) { // if first step
-        remove(buffern); // remove the data-for-each-step-file
-    }
-
-    FILE* data_file;
-    if ((data_file = fopen(buffern, "a")) == NULL) {
-        printf("couldn't open clust_file buffern = %s\n", buffern);
-        exit(-2);
-    }
     fprintf(data_file, "%lf  %d  %d\n", percentage, numclus, maxsize);
 
     // now make and print the histogram of number of neighbours to file
@@ -893,15 +851,15 @@ void save_cluss_data(int step, int* cluss, int* size, int big, int nn, int mode,
             if (blist[i].n) {
                 order /= blist[i].n; // take the average
             }
-            if (order > 1.00001 || order < -1.00001) {
+            if (order > 1.0001 || order < -1.0001) {
                 printf("unexpected order of particle %d: %lf\nExiting.\n", i, order);
                 exit(7);
             }
-            if (order >= 1)
+            if (order >= 0.999999)
                 order = 0.999999; // to avoid rounding errors in the next step
-            if (order <= -1)
+            if (order <= -0.999999)
                 order = -0.999999;
-            avg_q4_hist[(int) (NBINS * (order + 1) * 0.5)]++;
+            avg_q4_hist[(int) (NBINS * (order + 1.) * 0.5)]++;
         }
         double oneovern_particles = 1.0 / n_particles;
         for (int i = 0; i < NBINS; i++) {
@@ -918,82 +876,13 @@ void save_cluss_data(int step, int* cluss, int* size, int big, int nn, int mode,
         fprintf(data_file, "%d ", size[i]);
     }
     fprintf(data_file, "\n");
-
-    fclose(data_file);
-
-    if (output_per == 0) { // 0 means no save
-        return;
-    }
-    FILE* clust_file;
-    if ((step % (output_per)) == 0) {
-        if ((clust_file = fopen(fn, "w")) == NULL) {
-            printf("couldn't open clust_file fn = %s\n", fn);
-            exit(-2);
-        }
-    } else {
-        return;
-    }
-    // printf("step %d, saving to file %s\n", step, fn);
-    printf("step %d, ", step);
-    fprintf(clust_file, "%d\n0 0 0\n", n_particles);
-    fprintf(clust_file, "%lf 0 0\n0 %lf 0\n0 0 %lf\n", box.x, box.y, box.z);
-
-    // printf("defining sorta ");
-    int* sorta = malloc(sizeof(int) * nn);
-    // printf("and rank\n");
-    int* rank = malloc(sizeof(int) * nn);
-    // printf("looping over sorta\n");
-    for (i = 0; i < nn; i++)
-        sorta[i] = i;
-
-    int cmpr(const void* a, const void* b)
-    {
-        return -size[*((int*)a)] + size[*((int*)b)];
-    }
-
-    // printf("sorting sorta[] if nn = %d >= 2\n", nn);
-    // if (nn >= 2)
-    //     qsort(sorta, nn, sizeof(int), &cmpr);
-    // printf("sorting sorta[]\n");
-    qsort(sorta, nn, sizeof(int), &cmpr);
-
-    for (i = 0; i < nn; i++) {
-        int bha;
-        for (bha = 0; sorta[bha] != i; bha++)
-            ;
-        rank[i] = bha;
-    }
-
-    // printf("saving to files\n");
-    for (i = 0; i < n_particles; i++) {
-        int rnk = 0;
-        if (cluss[i] && size[cluss[i]] > 2) {
-            rnk = rank[cluss[i]];
-            if (rnk > 0)
-                rnk = ((rnk - 1) % 25) + 1;
-            part[i].d = 1.0;
-        } else {
-            part[i].d = 0.1;
-        }
-        fprintf(clust_file, "%lf %lf %lf %lf ", sim->r[i].x, sim->r[i].y, sim->r[i].z, part[i].d);
-        for (int d1 = 0; d1 < NDIM; d1++) {
-            for (int d2 = 0; d2 < NDIM; d2++) {
-                fprintf(clust_file, "%lf ", ruud_m[i].m[d1][d2]);
-            }
-        }
-        // 10 = slanted cube, phi = angle, rnk = color
-        fprintf(clust_file, "10 %lf %d\n", Phi, rnk);
-    }
-    fclose(clust_file);
-    free(sorta);
-    free(rank);
 }
 
 /************************************************
  *             CALC_CLUSTERS
  * Find clusters of bonded particles
  ***********************************************/
-void calc_clusters(int* conn, compl_t* orderp, int mode)
+void calc_clusters(int step, int* conn, compl_t* orderp, FILE* fp_order)
 {
     int* cluss = malloc(sizeof(int) * n_particles);
     int* size = malloc(sizeof(int) * n_particles);
@@ -1047,6 +936,10 @@ void calc_clusters(int* conn, compl_t* orderp, int mode)
     maxsize = big;
     numclus = cn - 1;
 
+    if ((step % 50 == 0) && fp_order && step > 2) {
+        save_cluss_data(size, cn, orderp, fp_order);
+    }
+
     // final point where data starts getting freed
     free(cluss);
     free(size);
@@ -1055,22 +948,20 @@ void calc_clusters(int* conn, compl_t* orderp, int mode)
 /************************************************
  *             MAIN
  ***********************************************/
-int biggest_cluster_size_and_order(int what_order)
+int biggest_cluster_size_and_order(int step, FILE* fp_order)
 {
-    order_mode = what_order; // transl = 1, sl = 2, unsl = 3, edge = 4
     compl_t* order = NULL;
     int* connections = NULL;
 
     convert_data(); // mallocs part, indirectly cells, blist, numconn, blist[i].bnd
 
-    if (order_mode == 1) { // translational order
+    if (what_order == 1) { // translational order
         order = calc_transl_order(); // mallocs order
-        connections = calc_conn(order); // mallocs connections
-    } else if (order_mode >= 2) { // orientational order
+    } else if (what_order >= 2) { // orientational order
         order = calc_orient_order(); // mallocs order
-        connections = calc_conn(order); // mallocs connections
     }
-    calc_clusters(connections, order, order_mode); // and save if output_per > 0
+    connections = calc_conn(order); // mallocs connections
+    calc_clusters(step, connections, order, fp_order); // and save if step % 50 == 0
     free(order);
     free(connections);
     free(part);
