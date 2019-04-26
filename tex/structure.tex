@@ -8,6 +8,8 @@
 % Write the body of the chapter/section/other. You CAN NOT define preamble stuff in here (like \newcommand or \usepackage), that should be done in the preamble.tex instead (which will automatically apply to all subfiles).
 \begin{document}
 
+\newpage
+
 \section{Structure in a fluid}
 
 A thermodynamic system is in a fluid phase when it is homogeneous and isotropic averaged over time, i.e. when there is no order in the system. At any moment in time, however, a fluid does have local structure. For example in a system of hard cubes, by simple chance we should find a small cluster of cubes which are more or less aligned with each other. These clusters appear and disappear at low pressure. At high enough pressures, neighbouring cubes simply ``push" these clusters together, as it is more space-efficient for cubes to be aligned. In free energy terms, at high density it is entropically favourable for the system to be in a crystal phase, because there are more configurations where the cubes are aligned than where they are randomly oriented\todo{maybe this part is too tangential}. This can be seen by considering the excluded volume of two cubes: A hard cube's existence blocks a volume---the \emph{excluded volume}---where other cubes can be. If we want more possible configurations, having the excluded volume of two cubes overlap makes more total space available, since doubly excluded volume does not make doubly less space for other cubes.
@@ -35,8 +37,8 @@ where the density $\rho$ of particles in the system has been factored out. This 
 	\item Dilute gas of hard spheres of diameter $\sigma$: $g(r) = \begin{cases} 0 & \textrm{if } r < \sigma, \\ 1 & \textrm{else.} \end{cases}$\\
 	Since hard spheres cannot overlap, we won't find any within one diameter of another (hence the $g(r)$ is zero there). But because the gas is dilute, there is very little interaction, and it'll be equally likely to find a sphere anywhere else.
 \end{comment}
-	\item Perfect one dimensional crystal with lattice constant $\sigma$: $g(x) = \sum_{i = 1}^\infty \delta(x - i\sigma)$.\\
-	In a perfect crystal, all particle positions are static. In this particular crystal, each particle sees exactly one particle at an integer amount times $\sigma$ away. This manifests itself in the $g(r)$ by becoming $\delta$-peaks.
+	\item Perfect one dimensional crystal with lattice constant $\sigma$: $g(x) = \sum_{i = 1}^\infty \delta(x - i\sigma)$, where $\delta(x)$ is the Dirac-$\delta$ function.\\
+	In a perfect crystal, all particle positions are static. In this particular crystal, each particle sees two particles at exactly an integer amount times $\sigma$ away. This manifests itself in the $g(r)$ by becoming $\delta$-peaks.
 \end{itemize}
 
 With some imagination, after looking at the last example, one can see how on a 2-dimensional square lattice, we would also see peaks at distances of $\sqrt 2\sigma, \sqrt 5\sigma$, and other distances between square lattice sites. With even more imagination, one can see that the more relevant 3-dimensional cubic crystal would also give peaks at $\sqrt 3 \sigma, \sqrt 6 \sigma$ and other distances between cubic lattice sites.
@@ -47,37 +49,48 @@ Before we look at the $g(r)$ of our system, let's motivate why. In order to dete
 %\newpage
 \subsection{Measurements of \texorpdfstring{$g(r)$}{g(r)}}
 
-So let's take a look at the $g(r)$ of a typical system we are studying: hard cubes in an $NpT$ simulation. We look at a low pressure (resulting in a liquid state), and a high pressure (resulting in a crystal).
+So let's take a look at the $g(r)$ of a typical system we are studying: hard cubes in an $NpT$ simulation with periodic boundary conditions. We look at a high pressure (resulting in a crystal), and a low pressure (resulting in a liquid state). In either case, there are no cubes within a distance of 1, as this is not allowed.
 
-\begin{figure}[h]
-\begin{subfigure}{0.4\textwidth}
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.3\textwidth}
+		\centering
+		\includegraphics[width=0.815\linewidth]{images/gofr_90_X_snapshot}
+		\caption{A snapshot of the system. $\rho = 0.644$.}
+	\end{subfigure}
+	\begin{subfigure}{0.5\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{images/gofr_90_X}
+		\caption{The $g(r)$ averaged over numerous Monte Carlo steps.}
+		\label{fig:gofr_crystal_b}
+	\end{subfigure}
+	\caption{A crystal of cubes with side length 1. On the left is a typical snapshot of the system. On the right the $g(r)$, averaged over many \todo[inline]{is \emph{many} too vague? or is it unimportant?} snapshots is plotted. There is a sharp peak at roughly 1.1, and at roughly $1.1 \sqrt 2 \approx 1.55$ is a peak where we expect the second-nearest neighbours. A small bump at $1.1 \sqrt 3 \approx 1.9$ is also visible, which corresponds to the third-nearest neighbours. The first minimum at roughly 1.4 is also marked, signifying where we should put our cutoff for the nearest neighbours.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\vspace{-8pt}
+\begin{subfigure}{0.3\textwidth}
 	\centering
 	\vspace{8pt}
 	\includegraphics[width=0.815\linewidth]{images/gofr_90_l_snapshot}
 	\vspace{10pt}
 	\caption{A snapshot of the system. $\rho = 0.413$.}
 \end{subfigure}
-\begin{subfigure}{0.6\textwidth}
+\begin{subfigure}{0.5\textwidth}
 	\centering
 	\includegraphics[width=\linewidth]{images/gofr_90_l}
 	\caption{The $g(r)$ averaged over numerous Monte Carlo steps.}
 \end{subfigure}
-\caption{A disordered liquid of cubes with side length 1. On the right, we can see that there are no cubes within a distance of 1, as this is not allowed. Furthermore, we don't see a cubic crystal structure (we'd expect peaks at $1, \sqrt 2, \sqrt 3$ times the lattice spacing), but rather, we see \emph{neighbour shells}. We see a peak at roughly 1.2, which corresponds to the first neighbour shell. At a distance of 2.05 the minimum between the first two neighbour shells is marked.}
+\caption{A disordered liquid of cubes with side length 1. On the left is a typical snapshot of the system. On the right, the $g(r)$, averaged over many snapshots is plotted. We don't see a cubic crystal structure (we'd expect peaks at $1, \sqrt 2, \sqrt 3$ times the lattice spacing), but rather, we see \emph{neighbour shells}, as is typical of a fluid. We see a peak at roughly 1.2, which corresponds to the first neighbour shell. At a distance of 2.05 the minimum between the first two neighbour shells is marked.}
 \end{figure}
+From figure \ref{fig:gofr_crystal_b}, we infer that at a density of approximately 0.644, most first neighbours are within a distance of 1.4 edge lengths. A simple calculation shows \todo{maybe show this? it doesn't fit nicely on the page} that the lattice spacing of a crystal is proportional to $\rho^{-1/3}$. So, at a density of 0.45 (close to the transition between fluid and crystal for cubes \cite{van2017phase}), most first neighbours are within $1.4 \left( \frac{0.45}{0.644}\right)^{-1/3} \approx 1.58$ edge lengths. 
 
-\begin{figure}[h]
-	\begin{subfigure}{0.4\textwidth}
-		\centering
-		\includegraphics[width=0.815\linewidth]{images/gofr_90_X_snapshot}
-		\caption{A snapshot of the system. $\rho = 0.644$.}
-	\end{subfigure}
-	\begin{subfigure}{0.6\textwidth}
-		\centering
-		\includegraphics[width=\linewidth]{images/gofr_90_X}
-		\caption{The $g(r)$ averaged over numerous Monte Carlo steps.}
-	\end{subfigure}
-	\caption{A crystal of cubes with side length 1. Again we see that there are no cubes within a distance of 1. Now the $g(r)$ shows much more structure. We see a sharp peak at roughly 1.1, and at roughly $1.1 \sqrt 2 \approx 1.55$ is a peak where we expect the second-nearest neighbours. A small bump at $1.1 \sqrt 3 \approx 1.9$ is also visible, which corresponds to the third-nearest neighbours. The first minimum at roughly 1.4 is also marked, signifying where we should put our cutoff for the nearest neighbours.}
-\end{figure}
+\subsection{Order parameter}
+Now we have determined the distance to the closest neighbours in a crystal, we call two cubes \emph{neighbouring} or \emph{bonded} if they are within a distance of 1.55 edge lengths of each other\todo{is this a good idea/good way to word it?}\footnote{This was the preliminary value used, and since it's close enough to 1.58 (and the density should increase as a crystal forms, causing this 1.58 to decrease and come closer to 1.55), we stick to it}. Now that we know which cubes are neighbours, we need a rigorous way of distinguishing between crystalline and fluid cubes. Fortunately, there is already a lot of work done before on this subject \cite{steinhardt1983bond, lechner2008accurate, van2017phase, sharma2018disorder, mickel2013shortcomings}. We shall consider two kinds of order: \emph{translational} and \emph{orientational}.
+
+\subsubsection{translational order parameter \texorpdfstring{$q_4$}{q4}}
+
 
 \begin{comment}
 \begin{minipage}{0.4\textwidth}
