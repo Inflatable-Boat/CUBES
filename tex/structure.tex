@@ -87,20 +87,56 @@ So let's take a look at the $g(r)$ of a typical system we are studying: hard cub
 From figure \ref{fig:gofr_crystal_b}, we infer that at a density of approximately 0.644, most first neighbours are within a distance of 1.4 edge lengths. A simple calculation shows \todo{maybe show this? it doesn't fit nicely on the page} that the lattice spacing of a crystal is proportional to $\rho^{-1/3}$. So, at a density of 0.45 (close to the transition between fluid and crystal for cubes \cite{van2017phase}), most first neighbours are within $1.4 \left( \frac{0.45}{0.644}\right)^{-1/3} \approx 1.58$ edge lengths. 
 
 \subsection{Order parameter}
-Now we have determined the distance to the closest neighbours in a crystal, we call two cubes \emph{neighbouring} or \emph{bonded} if they are within a distance of 1.55 edge lengths of each other\todo{is this a good idea/good way to word it?}\footnote{This was the preliminary value used, and since it's close enough to 1.58 (and the density should increase as a crystal forms, causing this 1.58 to decrease and come closer to 1.55), we stick to it}. Now that we know which cubes are neighbours, we need a rigorous way of distinguishing between crystalline and fluid cubes. Fortunately, there is already a lot of work done before on this subject \cite{steinhardt1983bond, lechner2008accurate, van2017phase, sharma2018disorder, mickel2013shortcomings}. We shall consider two kinds of order: \emph{translational} and \emph{orientational}.
+Now we have determined the distance to the closest neighbours in a crystal, we call two cubes \emph{neighbouring} or \emph{bonded} if they are within a distance of 1.55 edge lengths of each other\todo{is this a good idea/good way to word it?}\footnote{This was the preliminary value used, and since it's close enough to 1.58 (and the density should increase as a crystal forms, causing this 1.58 to decrease and come closer to 1.55), we stick to it}. Now that we know which cubes are neighbours, we need a rigorous way of distinguishing between crystalline and fluid cubes. Fortunately, there is already a lot of work done before on this subject \cite{steinhardt1983bond, lechner2008accurate, van2017phase, sharma2018disorder, mickel2013shortcomings}. Because we consider cubes rather than spheres, our particles also have an orientation. Therefore, we shall consider two kinds of order: \emph{translational} and \emph{orientational}. The first takes into account only positions relative to each other (and is therefore called \emph{bond-orientational order} \cite{steinhardt1983bond}), and the latter one only considers the orientation of cubes. For translational order we will use the Steinhardt translational order parameter \cite{steinhardt1983bond} $q_4$, and for orientational order we use a slightly modified version we call $i_4$, just like in \cite{sharma2018disorder}. We choose the $\ell = 4$, because it is the smallest $\ell$ that still captures simple cubic order (see \cite{mickel2013shortcomings}, Table 1). Higher order would become more computationally expensive, and more sensitive to small changes in position.\todo{[citation needed]?}
 
-\subsubsection{translational order parameter \texorpdfstring{$q_4$}{q4}}
+\subsubsection{Translational order parameter \texorpdfstring{$q_4$}{q4}}
+In essence what this order parameter does, is doing an expansion of relative position in spherical harmonics. Following \cite{sharma2018disorder}, in general, for a nonnegative integer $\ell$ and integers $ -\ell \leq m \leq\ell$, we define, for cube $i$, the \emph{local translational order parameter}
+\begin{equation}
+	q_{\ell, m}(i) \coloneqq \sum_{j} Y_{\ell, m} (\theta_{i, j}, \phi_{i, j}),
+\end{equation}
+where the sum is over all neighbours of cube $i$, $\theta_{i, j}$ and $\phi_{i, j}$ are, respectively, the polar angle and the azimuthal angle of the vector from cube $i$'s centre to cube $j$'s centre. $Y_{\ell, m}$ are the spherical harmonics given by
+\begin{equation}
+	Y_{\ell, m}(\theta, \phi) \coloneqq \sqrt{\frac{2\ell + 1}{4\pi}\frac{(\ell + m)}{(\ell - m)!}}\ P_\ell^m(\cos(\theta)) \ \me^{im\phi},
+\end{equation}
+where $P_\ell^m(\cos(\theta))$ are the associated Legendre polynomials. \todo{find nice reference, define associated Legendre polynomial, maybe put this in seperate subsubsection on spherical harmonics.}
+
+Now we have defined the local translation order, we define the translational correlation between neighbouring cubes $i$ and $j$ by taking the dot product and normalizing:
+\begin{equation}
+	d_{q_\ell}(i, j) \coloneqq \frac{\sum_{m = -\ell}^\ell q_{\ell, m}(i) \cdot q^*_{\ell, m}(j)}{\sqrt{\left(\sum_{m = -\ell}^\ell \abs{q_{\ell, m}(i)}^2\right) \left(\sum_{m = -\ell}^\ell \abs{q_{\ell, m}(j)}^2\right)}}.
+\end{equation}
+
+This correlation between two cubes will be a value between -1 and 1, which correspond to anti-ordered to perfectly ordered (with respect to the fourth spherical harmonic), respectively. We then need to choose a cutoff between what we consider ordered and what disordered. For now, we choose every correlation above 0.6 to be an \emph{ordered bond}. In subsection \ref{subsec:order param cutoff} we shall argue why this value was chosen.
+Finally, we consider a cube \emph{ordered} if it has at least 4 ordered bonds. We can then group ordered cubes together on the criterium that all neighbouring ordered cubes are considered to be part of the same cluster. We can visualize the crystallization process by making liquid (i.e. not ordered) cubes small, and giving each cluster a different colour. See figure \ref{fig:sample_snapshot}.
+
+\begin{figure}
+	\centering
+	\begin{subfigure}{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{images/clus1}
+		\caption{A sample snapshot of a 1728 cubes in a liquid phase, with some ordered clusters.}
+	\end{subfigure}\hfill
+	\begin{subfigure}{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{images/clus3}
+		\caption{The same system, but at a higher density a large system-spanning cluster has formed.}
+	\end{subfigure}
+	\caption{Two examples of how our system of interest is visualized. Disordered cubes are drawn small and ordered cubes are drawn at true size, and colored depending on which cluster they belong to.}
+	\label{fig:sample_snapshot}
+\end{figure}
+
+\subsubsection{Orientational order parameter \texorpdfstring{$i_4$}{i4}}
+
+\subsection{Order parameter cutoff} \label{subsec:order param cutoff}
 
 
-\begin{comment}
-\begin{minipage}{0.4\textwidth}
-	\includegraphics[width=\linewidth]{images/gofr_90_l_snapshot}
-\end{minipage}
-\hfill
-\begin{minipage}{0.6\textwidth}\raggedleft
-	\includegraphics[width=\linewidth]{images/gofr_90_l}
-\end{minipage}
-\end{comment}
+\vspace{50pt}
+
+\printbibliography[% 
+% There are a lot of options for partial bibliographies, but you probably won't use them.
+% title = Optional custom title (not recommended)
+]
+
+\todo{note for me: don't forget to remove the refs here}
 
 \end{document}
 

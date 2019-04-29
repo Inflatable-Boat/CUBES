@@ -16,6 +16,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \usepackage{
+		mathtools,		% \coloneqq, \lvert, \rvert
 		float,			% \begin{figure}[H]
 		todonotes,		% \todo{this} orange todo notes 
 		%layout,		% Allow visualisation of all the margins
@@ -43,6 +44,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%\usepackage[utf8]{inputenc} % utf8 source
 \usepackage[british]{babel} % Correct language setting, 'british', 'american'='english' or 'dutch'.
 \usepackage[autostyle]{csquotes} % Fixes quotes to correspond to the babel language.
 % Note the difference between ``quotes'' and ''quotes'' when using different languages.
@@ -87,6 +89,8 @@
 
 % You can make short-hands like these. 
 
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}
+\newcommand{\me}{\mathrm{e}}
 \newcommand{\thm}[2]{\begin{theorem} #1 \begin{proof} #2 \end{proof} \end{theorem}}
 \newcommand{\lm}[2]{\begin{lemma} #1 \begin{proof} #2 \end{proof} \end{lemma}}
 \newcommand{\df}[1]{\begin{definition} #1 \end{definition}}
