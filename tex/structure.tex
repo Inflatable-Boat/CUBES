@@ -90,11 +90,11 @@ From figure \ref{fig:gofr_crystal_b}, we infer that at a density of approximatel
 Now we have determined the distance to the closest neighbours in a crystal, we call two cubes \emph{neighbouring} or \emph{bonded} if they are within a distance of 1.55 edge lengths of each other\todo{is this a good idea/good way to word it?}\footnote{This was the preliminary value used, and since it's close enough to 1.58 (and the density should increase as a crystal forms, causing this 1.58 to decrease and come closer to 1.55), we stick to it.}. Now that we know which cubes are neighbours, we need a rigorous way of distinguishing between crystalline and fluid cubes. Fortunately, there is already a lot of work done before on this subject \cite{steinhardt1983bond, lechner2008accurate, van2017phase, sharma2018disorder, mickel2013shortcomings}. Because we consider cubes rather than spheres, our particles also have an orientation. Therefore, we shall consider two kinds of order: \emph{translational} and \emph{orientational}. The first takes into account only positions relative to each other (and is therefore called \emph{bond-orientational order} \cite{steinhardt1983bond}), and the latter one only considers the orientation of cubes. For translational order we will use the Steinhardt translational order parameter \cite{steinhardt1983bond} $q_4$, and for orientational order we use a slightly modified version we call $i_4$, just like in \cite{sharma2018disorder}. We choose the $\ell = 4$, because it is the smallest $\ell$ that still captures simple cubic order (see \cite{mickel2013shortcomings}, Table 1). Higher order would become more computationally expensive, and more sensitive to small changes in position.\todo{[citation needed]?}
 
 \subsubsection{Translational order parameter \texorpdfstring{$q_4$}{q4}}
-In essence what this order parameter does, is doing an expansion of relative position in spherical harmonics. Following \cite{sharma2018disorder}, in general, for a nonnegative integer $\ell$ and integers $ -\ell \leq m \leq\ell$, we define, for cube $i$, the \emph{local translational order parameter}
+In essence what this order parameter does, is doing an expansion of relative position in spherical harmonics. Following \cite{sharma2018disorder}, in general, for a nonnegative integer $\ell$ and integers $ -\ell \leq m \leq\ell$, we define for cube $i$ the \emph{local translational order parameter}
 \begin{equation}
 	q_{\ell, m}(i) \coloneqq \sum_{j} Y_{\ell, m} (\theta_{i, j}, \phi_{i, j}),
 \end{equation}
-where the sum is over all neighbours of cube $i$, $\theta_{i, j}$ and $\phi_{i, j}$ are, respectively, the polar angle and the azimuthal angle of the vector from cube $i$'s centre to cube $j$'s centre. $Y_{\ell, m}$ are the spherical harmonics given by
+where the sum is over all neighbours of cube $i$, $\theta_{i, j}$ and $\phi_{i, j}$ are the polar angle and the azimuthal angle of the vector from cube $i$'s centre to cube $j$'s centre, respectively. $Y_{\ell, m}$ are the spherical harmonics given by
 \begin{equation}
 	Y_{\ell, m}(\theta, \phi) \coloneqq \sqrt{\frac{2\ell + 1}{4\pi}\frac{(\ell + m)!}{(\ell - m)!}}\ P_\ell^m(\cos(\theta)) \ \me^{im\phi},
 \end{equation}
@@ -105,9 +105,37 @@ Now we have defined the local translation order, we define the translational cor
 	d_{q_\ell}(i, j) \coloneqq \frac{\sum_{m = -\ell}^\ell q_{\ell, m}(i) \cdot q^*_{\ell, m}(j)}{\sqrt{\left(\sum_{m = -\ell}^\ell \abs{q_{\ell, m}(i)}^2\right) \left(\sum_{m = -\ell}^\ell \abs{q_{\ell, m}(j)}^2\right)}}.
 \end{equation}
 
-This translational correlation between two cubes will be a value between -1 and 1, which correspond to anti-ordered to perfectly ordered (with respect to the fourth spherical harmonic), respectively. We then need to choose a cutoff between what we consider ordered and what disordered. For now, we choose every bond with a correlation above 0.6 to be an \emph{ordered bond}. In subsection \ref{subsec:order param cutoff} we shall argue why this value was chosen.
-Finally, we consider a cube \emph{ordered} if it has at least 4 ordered bonds. We can then group ordered cubes together on the criterium that all neighbouring ordered cubes are considered to be part of the same cluster. We can visualize the crystallization process by making liquid (i.e. not ordered) cubes small, and giving each cluster a different colour. See figure \ref{fig:sample_snapshot}.
+Here the asterisk stands for complex conjugation. This translational correlation between two cubes will be a number between -1 and 1, which correspond to anti-ordered to perfectly ordered (with respect to the fourth spherical harmonic), respectively. We then need to choose a cutoff between what we consider ordered and what disordered. 
+This will be discussed in subsection \ref{subsec:order param cutoff}.
 
+\subsubsection{Orientational order parameter \texorpdfstring{$i_4$}{i4}}
+
+For orientational order we do something similar, but we need to take into account the symmetries of the cube. To this end, we define three vectors for each cube: the three unit vectors perpendicular to one of the faces of the cube and each other. This definition is ambiguous as for each face, there are two unit vectors (i.e. one pointing inward, the other pointing outward), however because we consider only even-$\ell$ spherical harmonics, which are invariant under inversion \cite{steinhardt1983bond}, this distinction disappears.\\
+For slanted cubes, there is a choice to make. The three vectors defined above could equivalently be defined as `the edges of the cube.' If we consider cubes with a slant angle, these two definitions would differ. This difference, and an alternative definition have been studied and will be discussed in subsection \ref{subsec:order param cutoff}, but the result is that we have chosen the normals on the faces of slanted cubes.\\
+Just like with the translational order parameter, in general for a nonnegative integer $\ell$ and integers $-\ell \leq m \leq \ell$, we define for cube $i$ the \emph{local orientational order parameter}
+\begin{equation}
+	i_{\ell, m}(i) \coloneqq \frac{\sum_{n = 1}^3 Y_{\ell, m}(\theta_n(i), \phi_n(i))}{\sqrt{\sum_{m = -\ell}^\ell \abs{\sum_{n = 1}^3 Y_{\ell, m}(\theta_n(i), \phi_n(i))}^2}}.
+\end{equation}
+Here the sum over $n$ means the sum over the three axes defined above, $Y_{\ell, m}$ are again the spherical harmonics, and now $\theta_n(i)$ and $\phi_n(i)$ are the polar angle and the azimuthal angle of the vector $n$ of cube $i$, respectively.\\
+Now again, we define the correlation between neighbouring cubes $i$ and $j$ by taking the dot product, where normalizing has already been done in the last step, so we define
+\begin{equation}
+	d_{i_\ell}(k,l) \coloneqq \sum_{m = -\ell}^\ell i_{\ell, m}(k) \cdot i^*_{\ell, m}(l).
+\end{equation}
+
+Just like with the translational correlation, this will be a number between -1 and 1, corresponding to perfect anti-ordering and ordering respectively.
+
+\subsection{Order parameter cutoff} \label{subsec:order param cutoff}
+
+Now we have a quantitative way of determining order between two cubes, we consider a two cubes to have an \emph{ordered bond} if they are bonded (i.e. their center-to-center distance is 1.55 or less), and their correlation is above a certain cutoff. To determine a good cutoff, we analyse the bond order distribution for a fluid system and a crystalline system. See figure \ref{fig:compression_cube_q}, in which data is shown from an $NpT$ simulation which starts in a low density fluid, but at high pressure, which causes the system to gradually become more dense. In figure \ref{fig:compression_cube_snapshots} snapshots of the liquid low density system. Because the order distribution in the liquid phase and the crystal phase overlap too much---as there are also bits of fluid which are very ordered---we also define, like in \cite{lechner2008accurate}, the average order for a cube $i$:
+\begin{equation}
+	\overline q_{4, m}(i) \coloneqq \frac{1}{N_b(i)} \sum_j q_{4, m}(i),
+\end{equation}
+and likewise for the orientational order averaged per cube $\overline i_4$. Here the sum is over its $N_b(i)$ neighbours. 
+
+%For now, we choose every bond with a correlation above 0.6 to be an \emph{ordered bond}. In subsection \ref{subsec:order param cutoff} we shall argue why this value was chosen.
+%Finally, we consider a cube \emph{ordered} if it has at least 4 ordered bonds. We can then group ordered cubes together on the criterium that all neighbouring ordered cubes are considered to be part of the same cluster. We can visualize the crystallization process by making liquid (i.e. not ordered) cubes small, and giving each cluster a different colour. See figure \ref{fig:sample_snapshot}.
+
+\begin{comment}
 \begin{figure}
 	\centering
 	\begin{subfigure}{0.48\textwidth}
@@ -123,32 +151,57 @@ Finally, we consider a cube \emph{ordered} if it has at least 4 ordered bonds. W
 	\caption{Two examples of how our system of interest is visualized. Disordered cubes are drawn small and ordered cubes are drawn at true size, and colored depending on which cluster they belong to.}
 	\label{fig:sample_snapshot}
 \end{figure}
-
-\subsubsection{Orientational order parameter \texorpdfstring{$i_4$}{i4}}
-
-For orientational order we do something similar, but we need to take into account the symmetries of the cube. To this end, we define three vectors for each cube: the three unit vectors perpendicular to one of the faces of the cube and each other. This definition is ambiguous as for each face, there are two unit vectors (i.e. one pointing inward, the other pointing outward), however because we consider only even-$\ell$ spherical harmonics, which are invariant under inversion \cite{steinhardt1983bond}, this distinction disappears.\\
-For slanted cubes, there is a choice to make. The three vectors defined above could equivalently be defined as `the edges of the cube.' If we consider cubes with a slant angle, these two definitions would differ. This difference, and an alternative definition have been studied and will be discussed in subsection \ref{subsec:order param cutoff}. \todo{todo}
-
-\subsection{Order parameter cutoff} \label{subsec:order param cutoff}
-
-\todo{todo}
+\end{comment}
 
 \begin{figure}[h]
 	\centering
 	\begin{subfigure}{0.48\textwidth}
 		\centering
-		\includegraphics[width=0.80\linewidth,height=10\baselineskip]{images/compression_cube_q1}
+		\includegraphics[width=0.80\linewidth,height=10\baselineskip]{images/compression_cube_q_}
 		\caption{placeholder}
 	\end{subfigure}
 	\begin{subfigure}{0.51\textwidth}
 		\centering
 		\includegraphics[width=\linewidth,height=10\baselineskip]{images/compression_cube_qbar}
 		\caption{placeholder}
+	\end{subfigure}\\\vspace{10pt}
+	\begin{subfigure}{0.48\textwidth}
+		\centering
+		\includegraphics[width=0.80\linewidth,height=10\baselineskip]{images/compression_cube_i_}
+		\caption{placeholder}
 	\end{subfigure}
-	\caption{placeholder}
+	\begin{subfigure}{0.51\textwidth}
+		\centering
+		\includegraphics[width=\linewidth,height=10\baselineskip]{images/compression_cube_ibar}
+		\caption{placeholder}
+	\end{subfigure}
+	\caption{The translational bond order distribution ranging from a low density fluid to a high density crystal. See figure \ref{fig:compression_cube_snapshots} for snapshots of the low density and high densities. An $NpT$ simulation of 8000 cubes starting at a density of 0.1 was run at a very high (dimensionless) pressure of $\beta p \sigma^3 = 10000$. This is done so the density increases as fast as possible. Then, when the density reaches 0.4, 0.41, etc., the translational and orientational order is calculated for all bonds. On the left the total distribution is plotted, on the right we take the average order for each cube, and plot this distribution. This is denoted with a bar above $q$ or $i$.}
+	\label{fig:compression_cube_q}
 \end{figure}
 
-%\vspace{50pt}
+
+
+
+
+\begin{figure}[h]
+	\centering
+	\begin{subfigure}{0.47\textwidth}
+		\centering
+		\includegraphics[width=0.9\linewidth]{images/compression_cube_pf040}
+		\caption{placeholder placeholder placeholder placeholder placeholder placeholder placeholder placeholder placeholder placeholder placeholder placeholder placeholder }
+	\end{subfigure}\hfill
+	\begin{subfigure}{0.47\textwidth}
+		\centering
+		\includegraphics[width=0.9\linewidth]{images/compression_cube_pf055}
+		\caption{placeholder placeholder placeholder placeholder placeholder placeholder placeholder placeholder placeholder placeholder placeholder}
+	\end{subfigure}
+	\caption{placeholder placeholder placeholder placeholder placeholder placeholder }
+	\label{fig:compression_cube_snapshots}
+\end{figure}
+
+
+
+\vspace{50pt}
 
 \printbibliography[% 
 % There are a lot of options for partial bibliographies, but you probably won't use them.

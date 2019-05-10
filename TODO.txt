@@ -108,6 +108,17 @@ DONE
 Which versions are being used:
 ================================================================================================
 ================================================================================================
+	Currently (2019-05-10) in use:
+v26: v24, but doesn't break detailed balance
+v29: v28, but no longer makes g.txt. Also give the order_cutoff on the commandline. Also now 
+     samples clsz and order every 50 steps instead of 100. Also flushes clsz.txt, order.txt once 
+     every 10k steps. (probably happens automatically much earlier due to small buffer)
+v32: v16, but optimized + doesn't break detailed balance
+v33: v22, but an extra argument: the first argument chooses the cutoff: 6 for 0.6, 7 for 0.7 etc.
+    (make order param data + extra histograms + read_per implemented + save if (!output_per)
+     histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
+     instead of making a histogram of the clustersizes.
+
 	Currently (2019-04-24) in use:
 v22: v20 (make order param data + extra histograms + read_per implemented + save if (!output_per)
      histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
@@ -116,7 +127,6 @@ v26: v24, but doesn't break detailed balance
 v29: v28, but no longer makes g.txt. Also give the order_cutoff on the commandline. Also now 
      samples clsz and order every 50 steps instead of 100. Also flushes clsz.txt, order.txt once 
      every 10k steps. (probably happens automatically much earlier due to small buffer)
-
 	Currently (2019-04-18) in use:
 v22: v20 (make order param data + extra histograms + read_per implemented + save if (!output_per)
      histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
@@ -237,6 +247,9 @@ v9: read all coord files from a datafolder and give orient. or transl. order dat
 Version explanation:
 ================================================================================================
 ================================================================================================
+- v33 is just v22 but can choose order cutoff on commandline (as first argument)
+- v32 is just v16 but based on v26 (so, with g.txt)
+- v30 is just v29 but no umbrella steps (i.e. v26 but samples order.txt and clsz.txt (redundant))
 - v29 is just v28 but also samples everything that v22_coords_to_order.exe samples. 
   Also choose order_cutoff on the commandline, and no longer writes g.txt
 - v28 is just v27 but also does umbrella steps during the equilibration
@@ -296,7 +309,23 @@ Version explanation:
 
 Notes:
 ================================================================================================
-================================================================================================	
+================================================================================================
+Last few discussions (2019-05-01):
+order cutoff of 0.5 is unfeasible. There is way too much noise from the fluid, as clusters 
+with an order parameter of >0.5 are very common in the fluid close to the critical point.
+order cutoff of 0.7 gives a much cleaner system, as there are not many clusters with an order 
+parameter of >0.7 in the fluid. However, an order cutoff of 0.7 is very strict and needs more 
+biasing (a higher lambda (coupling parameter/spring constant)) to keep the cluster around the 
+target size. For small cluster sizes, the cluster won't form at all if we use lambda = 0.005.
+Now we will run & analyze simulations for the following parameters:
+slant angle: 90 deg (cube). (If there is time do other slant angles as well)
+p = 6.17, 6.18, 6.19, 6.20.
+lambda = 0.005, 0.01, 0.02, 0.04.
+order cutoff = 0.6, 0.7.
+target_cluster_size = 30, 50, 70, 90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 300.
+
+
+
 Last meeting (2019-04-11):
 Clusters are ugly. What happens if we simulate at an order cutoff of 0.5, or 0.7?
 Need more statistics. > 2 million steps is probably necessary.

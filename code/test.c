@@ -604,5 +604,24 @@ jet[%d] = %d\n", i, aap[i], i, noot[i], i, mies[i], i, wim[i], i, zus[i], i, jet
     /* int あ = 3; // doesn't work
     printf("%d\n", あ);*/
 
+    /* int d_int = 0, i_int = 0;
+    if (argc != 3) {
+        puts("why");
+        exit(1);
+    }
+    if (EOF == sscanf(argv[1], "%d", &d_int)) {
+        printf("stop\n");
+        return 1;
+    }
+    if (EOF == sscanf(argv[2], "%i", &i_int)) {
+        printf("stop\n");
+        return 1;
+    }
+
+    printf("1st arg (%%d) = %d\n", d_int); // output printf %d or %i doesn't matter
+    printf("1st arg (%%i) = %i\n", d_int); // input %i interprets "020" as octal 20, i.e. decimal 16.
+    printf("2st arg (%%d) = %d\n", i_int);
+    printf("2st arg (%%i) = %i\n", i_int); */
+
     return 0;
 }
