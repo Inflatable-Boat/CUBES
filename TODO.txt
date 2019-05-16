@@ -8,18 +8,20 @@ Key:
 TODO:
 ================================================================================================
 ================================================================================================
-- somehow get nice cluster size statistics from non-umbrella-sampled (slanted) cubes
+= somehow get nice cluster size statistics from non-umbrella-sampled (slanted) cubes
+	= done in 
 
 = do umbrella sampling
-	= is v17 <- v25
+	= is v17 <- v25 <- 
 	- doing both local and on the cluster at the moment
 	##find suitable configurations/parameters
 	##implement a nudgeable coupling parameter (if too strong->weaker and vice versa)
 
-- crystal_coords_v18_for_v(17,21).c: try to make without nested function
-	- also rename?
+- crystal_coords_v18_for_v(17,21,v29).c: try to make without nested function
+	- also rename + make it so we don't save while sampling, but call the save function when needed
 
-- write latex on structure of the fluid (g(r), positional and orientational order param)
+= write latex on structure of the fluid (g(r), positional and orientational order param)
+	- waiting for feedback
 - write latex on monte carlo, classical nucleation theory, umbrella sampling
 
 - somehow write transl_order and orient_order as the same function, because there is a lot of
@@ -249,7 +251,7 @@ Version explanation:
 ================================================================================================
 - v33 is just v22 but can choose order cutoff on commandline (as first argument)
 - v32 is just v16 but based on v26 (so, with g.txt)
-- v30 is just v29 but no umbrella steps (i.e. v26 but samples order.txt and clsz.txt (redundant))
+- v30 is just v29 but no umbrella steps (i.e. v26 but samples order.txt and clsz.txt (NOT redundant))
 - v29 is just v28 but also samples everything that v22_coords_to_order.exe samples. 
   Also choose order_cutoff on the commandline, and no longer writes g.txt
 - v28 is just v27 but also does umbrella steps during the equilibration
@@ -310,6 +312,31 @@ Version explanation:
 Notes:
 ================================================================================================
 ================================================================================================
+Last meeting (2019-05-15):
+Put the energy barrier pieces corresponding to different coupling parameters on top of eachother, 
+they should overlap.
+Density doesn't change much during umbrella sampling, so much so that it is effectively an NVT 
+simulation which we wish to avoid (if a higher density crystal forms, but the total density 
+stays constant, the rest of the system decreases in density, effectively decreasing the pressure).
+A back of the envelope calculation gives us that in a system of 8000 particles, if we have a 
+cluster of 400 particles (5% of the system) and maybe some crystallinity in the rest (say 7% in total) 
+if the packing fraction in the liquid is 0.45 and in the crystal is 0.50, then the expected 
+equilibrium packing fraction would be ~0.45317. So actually, it's not too bad.
+
+Random stuff from paper notes (2019-05-15):
+v18_for_v21 is used in v25
+v18_for_v27 is used in v27, v28
+v18_for_v29 is used in v29, v30
+v32 input: r/c rfile/(#C/dim) outfolder/pf steps out_steps pressure Phi
+v29 naming scheme: v29_20p6.xxa1.xx_txxx_xl0.0x
+
+(2019-05-14):
+I found out that my umbrella sampling was actually not sampled well, I was also sampling the 
+snapshots which I did not accept! Now the cluster size distributions don't contain lumps and 
+the strong coupling parameter is no longer necessary (except at target size ~30)
+Also made pieces of the barrier, even at target 360 the top of the barrier is not in sight, 
+indicating that maybe we should use higher pressures.
+
 Last few discussions (2019-05-01):
 order cutoff of 0.5 is unfeasible. There is way too much noise from the fluid, as clusters 
 with an order parameter of >0.5 are very common in the fluid close to the critical point.
@@ -323,8 +350,6 @@ p = 6.17, 6.18, 6.19, 6.20.
 lambda = 0.005, 0.01, 0.02, 0.04.
 order cutoff = 0.6, 0.7.
 target_cluster_size = 30, 50, 70, 90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 300.
-
-
 
 Last meeting (2019-04-11):
 Clusters are ugly. What happens if we simulate at an order cutoff of 0.5, or 0.7?
