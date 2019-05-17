@@ -31,7 +31,7 @@ double Phi; // angle of slanted cube
 const char labelstring[] = "v30_%02d_pf%04.2lf_p%04.1lf_a%04.2lf_%c_%04.2lf";
 // CubesPerDim, pack_frac, BetaP, Phi, order_mode, order_cutoff
 // if p == -1, it means NVT ensemble
-const char usage_string[] = "\nusage: v29.exe r/c readf/#cube outputf/pf #steps #outsteps p/nvt phi order cutoff\n\
+const char usage_string[] = "\nusage: v30.exe r/c readf/#cube outputf/pf #steps #outsteps p/nvt phi order cutoff\n\
 more detailed usage: (readfile / # cubes per dim) (output_folder / packing_fraction) mc_steps output_steps BetaP/NVT Phi order_mode \
 order_cutoff\nhere order_mode: transl = 1, sl = 2, unsl = 3, edge = 4\n";
 char output_folder[128] = "";

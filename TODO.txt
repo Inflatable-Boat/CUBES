@@ -12,7 +12,7 @@ TODO:
 	= done in 
 
 = do umbrella sampling
-	= is v17 <- v25 <- 
+	= is v17 <- v25 <- v27 <- v28 <- v29 <- v31
 	- doing both local and on the cluster at the moment
 	##find suitable configurations/parameters
 	##implement a nudgeable coupling parameter (if too strong->weaker and vice versa)
@@ -111,6 +111,15 @@ Which versions are being used:
 ================================================================================================
 ================================================================================================
 	Currently (2019-05-10) in use:
+v30: v26, but samples order.txt
+v31: v29, but samples order.txt correctly
+v32: v16, but optimized + doesn't break detailed balance
+v33: v22, but an extra argument: the first argument chooses the cutoff: 6 for 0.6, 7 for 0.7 etc.
+    (make order param data + extra histograms + read_per implemented + save if (!output_per)
+     histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
+     instead of making a histogram of the clustersizes.
+
+	Currently (2019-05-10) in use:
 v26: v24, but doesn't break detailed balance
 v29: v28, but no longer makes g.txt. Also give the order_cutoff on the commandline. Also now 
      samples clsz and order every 50 steps instead of 100. Also flushes clsz.txt, order.txt once 
@@ -120,7 +129,6 @@ v33: v22, but an extra argument: the first argument chooses the cutoff: 6 for 0.
     (make order param data + extra histograms + read_per implemented + save if (!output_per)
      histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
      instead of making a histogram of the clustersizes.
-
 	Currently (2019-04-24) in use:
 v22: v20 (make order param data + extra histograms + read_per implemented + save if (!output_per)
      histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
@@ -251,6 +259,7 @@ Version explanation:
 ================================================================================================
 - v33 is just v22 but can choose order cutoff on commandline (as first argument)
 - v32 is just v16 but based on v26 (so, with g.txt)
+- v31 is just v29 but samples order.txt correctly
 - v30 is just v29 but no umbrella steps (i.e. v26 but samples order.txt and clsz.txt (NOT redundant))
 - v29 is just v28 but also samples everything that v22_coords_to_order.exe samples. 
   Also choose order_cutoff on the commandline, and no longer writes g.txt
@@ -329,6 +338,13 @@ v18_for_v27 is used in v27, v28
 v18_for_v29 is used in v29, v30
 v32 input: r/c rfile/(#C/dim) outfolder/pf steps out_steps pressure Phi
 v29 naming scheme: v29_20p6.xxa1.xx_txxx_xl0.0x
+simulation speed (8k cubes): ~25k/hr, i.e. ~600k/day, i.e. ~42hr for 1 million.
+the rotation symmetry group of the right rhombic prism is of order 4, and if we allow reflections, order 8.
+How to umbrella:
+- v32: Make fluids at various densities (start at low pf, e.g. 0.3 and let run for like 2m steps)
+- v30: NpT at various pressures to equilibrate at the given pressures (for cubes, p = 6.17, ... , 6.20)
+- v31: Umbrella sampling starting at target 30, lambda 0.005 and up the target by 20 until over barrier
+
 
 (2019-05-14):
 I found out that my umbrella sampling was actually not sampled well, I was also sampling the 
