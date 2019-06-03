@@ -343,8 +343,8 @@ int main(int argc, char* argv[])
             }
         }
 
-        if (step % 50 == 0) {
-            biggest_cluster_size_and_order(step, fp_order); // writes data for order
+        if (step % 50 == 0) { // step/2 so that it only samples every 100 steps instead of 50 (the %50==0 req. )
+            biggest_cluster_size_and_order(step/2, fp_order); // writes data for order
             fprintf(fp_clsz, "%d\n", sim->clust_size);
             if (step % 10000 == 0) {
                 fflush(fp_density);

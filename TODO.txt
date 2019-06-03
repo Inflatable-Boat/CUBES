@@ -13,9 +13,7 @@ TODO:
 
 = do umbrella sampling
 	= is v17 <- v25 <- v27 <- v28 <- v29 <- v31
-	- doing both local and on the cluster at the moment
-	##find suitable configurations/parameters
-	##implement a nudgeable coupling parameter (if too strong->weaker and vice versa)
+	- doing on the cluster, see umbrellas_ran.ods
 
 - crystal_coords_v18_for_v(17,21,v29).c: try to make without nested function
 	- also rename + make it so we don't save while sampling, but call the save function when needed
@@ -110,6 +108,16 @@ DONE
 Which versions are being used:
 ================================================================================================
 ================================================================================================
+	Currently (2019-05-21) in use:
+v30: v26, but samples order.txt
+v31: v29, but samples order.txt correctly
+v32: v16, but optimized + doesn't break detailed balance
+v33: v22, but an extra argument: the first argument chooses the cutoff: 6 for 0.6, 7 for 0.7 etc.
+    (make order param data + extra histograms + read_per implemented + save if (!output_per)
+     histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
+     instead of making a histogram of the clustersizes.
+v34: v30, but no order.txt (for densities for eq. of state)
+
 	Currently (2019-05-10) in use:
 v30: v26, but samples order.txt
 v31: v29, but samples order.txt correctly
@@ -118,7 +126,6 @@ v33: v22, but an extra argument: the first argument chooses the cutoff: 6 for 0.
     (make order param data + extra histograms + read_per implemented + save if (!output_per)
      histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
      instead of making a histogram of the clustersizes.
-
 	Currently (2019-05-10) in use:
 v26: v24, but doesn't break detailed balance
 v29: v28, but no longer makes g.txt. Also give the order_cutoff on the commandline. Also now 
@@ -257,9 +264,10 @@ v9: read all coord files from a datafolder and give orient. or transl. order dat
 Version explanation:
 ================================================================================================
 ================================================================================================
+- v34 is just v30 but no order.txt, no g.txt (i.e. just bare simulation to get snapshots + density)
 - v33 is just v22 but can choose order cutoff on commandline (as first argument)
 - v32 is just v16 but based on v26 (so, with g.txt)
-- v31 is just v29 but samples order.txt correctly
+- v31 is just v29 but samples order.txt correctly, and only once every 100 steps
 - v30 is just v29 but no umbrella steps (i.e. v26 but samples order.txt and clsz.txt (NOT redundant))
 - v29 is just v28 but also samples everything that v22_coords_to_order.exe samples. 
   Also choose order_cutoff on the commandline, and no longer writes g.txt
@@ -333,11 +341,13 @@ if the packing fraction in the liquid is 0.45 and in the crystal is 0.50, then t
 equilibrium packing fraction would be ~0.45317. So actually, it's not too bad.
 
 Random stuff from paper notes (2019-05-15):
+v29 <- v31 (umbr) is actually only suitable for reading files
+v22 <- v33 transl_order doesn't normalize before taking dot prod, no problem, right?
 v18_for_v21 is used in v25
 v18_for_v27 is used in v27, v28
 v18_for_v29 is used in v29, v30
 v32 input: r/c rfile/(#C/dim) outfolder/pf steps out_steps pressure Phi
-v29 naming scheme: v29_20p6.xxa1.xx_txxx_xl0.0x
+v29 <- v31 naming scheme: v29_20p6.xxa1.xx_txxx_xl0.0x
 simulation speed (8k cubes): ~25k/hr, i.e. ~600k/day, i.e. ~42hr for 1 million.
 the rotation symmetry group of the right rhombic prism is of order 4, and if we allow reflections, order 8.
 How to umbrella:
