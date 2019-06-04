@@ -34,108 +34,129 @@ where the density $\rho$ of particles in the system has been factored out. This 
 
 Looking at Equation \ref{eq:gofr}, the radial distribution function goes to 1 in the limit of low densities. Additionally, for simple cubic crystals, like the ones formed by (slanted) cubes, we expect to see peaks in the radial distribution function at distances between simple cubic lattice sites, so at $1, \sqrt 2, \sqrt 3,\ 2,\ \ldots$ times the lattice constant, et cetera.
 
-\subsubsection{Results}
+\subsection{Results}
 
-We begin our study of the structure of the fluid by examining the radial distribution function in fluid phases for cubes  for a range of densities from ? to ?\todo{todo: make ranges. Need EoS?}. A snapshot of a typical configuration of such a fluid is shown in Figure \ref{fig:g(r)90lsnap}. Moreover, the resulting radial distribution functions are shown in Figure \ref{fig:g(r)90l}.  Each g(r) was obtained via MC simulations of an $NpT$ ensemble. To simulate a liquid, a relatively low pressure of $\beta p = 5$ was used. From Figure \ref{fig:g(r)90l}, we see that the density peaks at roughly $r = 1.4\sigma$, and has a minimum at $2.1\sigma$. Note that the next peaks are at about 2 and 3 times $1.4\sigma$, indicating that there are shells of neighbours around each cube. We conclude that the first neighbour shell of cubes ends at roughly $2.1\sigma$. 
+We begin our study of the structure of the fluid by examining the radial distribution function in fluid phases for cubes  for a range of densities from ? to ?\todo{todo} ,. A snapshot of the typical configuration of such a fluid is shown in Figure . Moreover,  the resulting radial distribution functions are shown in Figures ?.  Note that each g(r) was obtained via MC simulations ...  From Figures ? and ?, we see that the first shell of the 
+- compare shapes and densities, and talk about the importance of the first peak
+
+To see how much the particle shape influences the first shell, we now examine the g(r) for a range of slant angle from ? to ?.  CLealry, we observe that as the slant angle increases, ....
+
+
+The first neighbour shell of the fluid and crystal is expected to vary somewhat, hence, we now explore the g(r) for the crystal for a variety of particle shapes (see FIgure ?))
+AS seen in FIgure ?, the crystal g(r)'s exhibit a number of clear peaks, that correspond roughy to ...  MOreover, the first shell compare in some way to the fluid.))
+
+
+
+\section{HC SVNT DRACONES}
+
+\section{Structure in a fluid}
+
+In this chapter we examine different order parameters for measuring the local structure in systems of "slanted" cubes.  We start by exploring the radial distribution function, then examine ...
+
+
+%In this chapter we examine the structure of the fluid for a range of particle shapes.  
+
+
+
+%For example in a system of hard cubes, by simple chance we should find a small cluster of cubes which are more or less aligned with each other. These clusters appear and disappear at low pressure. At high enough pressures, neighbouring cubes simply `push' these clusters together, as it is more space-efficient for cubes to be aligned. In free energy terms, at high density it is entropically favourable for the system to be in a crystal phase, because there are more configurations where the cubes are aligned than where they are randomly oriented.
+%\todo{maybe this part is too tangential} This can be seen by considering the excluded volume of two cubes: A hard cube's existence blocks a volume---the \emph{excluded volume}---where other cubes can be. If we want more possible configurations, having the excluded volume of two cubes overlap makes more total space available, since doubly excluded volume does not make doubly less space for other cubes.
+
+Because we want to study crystallization, i.e. structure formation in a fluid, we should study the local structure fluctuations in the fluid. This is what will be done in this section.
+
+%\subsection{Radial distribution function}
+%
+%A simple way to look at the structure of a colloidal system is to look at the \emph{radial distribution function}, closely related to the \emph{pair correlation function}. We discuss the latter first, because it is more general. Loosely speaking, the pair correlation function $\rho^{(2)}(\bm r, \bm r')$ is the probability that there is a particle at position $\bm r$ and $\bm r'$ at the same time. Formally, we define the pair correlation function as 
+%\begin{equation}
+%	\rho^{(2)}(\bm r, \bm r') = \llangle \sum_i \sum_{j \neq i} \delta(\bm r - \bm r_i) \delta(\bm r' - \bm r_j) \rrangle.
+%\end{equation}
+%where $\langle \cdot \rangle$ denotes the ensemble average, $\bm r_i$ is the position of particle $i$, the sums are over all pairs of particles and $\delta$ is the Dirac delta function.
+%If the system is homogeneous and isotropic, then this function only depends on the distance between the particles. These simplifications lead to the radial distribution function $g(r):$
+%\begin{equation}
+%	\rho^{(2)}(\bm r, \bm r') = \rho^2 g(|\bm r - \bm r'|),
+%\end{equation}
+%where the density $\rho$ of particles in the system has been factored out. This is done so that $g$ is dimensionless and $g(r) \rightarrow 1$ as $r \rightarrow \infty$, so long as there is no long range order (e.g. in a liquid). A few typical examples of radial distribution functions:
+%
+%
+%\begin{itemize}
+%	\item Ideal gas: $g(r) \equiv 1$.\\
+%	Since there is no interaction between particles in an ideal gas, there is no correlation between one particle position and another.
+%\begin{comment}
+%	\item Dilute gas of hard spheres of diameter $\sigma$: $g(r) = \begin{cases} 0 & \textrm{if } r < \sigma, \\ 1 & \textrm{else.} \end{cases}$\\
+%	Since hard spheres cannot overlap, we won't find any within one diameter of another (hence the $g(r)$ is zero there). But because the gas is dilute, there is very little interaction, and it'll be equally likely to find a sphere anywhere else.
+%\end{comment}
+%	\item Perfect one dimensional crystal with lattice constant $\alpha$: $g(x) = \sum_{i = 1}^\infty \delta(x - i\alpha)$, where $\delta(x)$ is the Dirac-$\delta$ function.\\
+%	In a perfect crystal, all particle positions are static. In this particular crystal, each particle sees two particles at exactly every integer amount times $\alpha$ away. This manifests itself in the $g(r)$ by becoming $\delta$-peaks.
+%\end{itemize}
+%
+%With some imagination, after looking at the last example, one can see how on a 2-dimensional square lattice, we would also see peaks at distances of $\sqrt 2\sigma, \sqrt 5\sigma$, and other distances between square lattice sites. With even more imagination, one can see that the more relevant 3-dimensional cubic crystal would also give peaks at $\sqrt 3 \sigma, \sqrt 6 \sigma$ and other distances between cubic lattice sites.
+%If the particles were allowed to move a little bit (say e.g. due to heat), the $\delta$-peaks would broaden. This is what we will see in the next bit.
+%\bigbreak
+%Before we look at the $g(r)$ of our system, let's motivate why. In order to determine the degree of crystallinity in our system, we look at \emph{local} order in our system (be it translational or orientational). In order to determine \emph{how} local we need to look, we can consult the $g(r)$. If we want to only look at the nearest neighbours, we can infer from the $g(r)$ where the first neighbour shell (roughly) ends. This way we can choose the cutoff for neighbouring particles less arbitrarily.
+
+%\newpage
+\subsection{Fluid and crystal \texorpdfstring{$g(r)$}{g(r)}}
+
+
+
+
+We consider hard cubes in an $NpT$ simulation with periodic boundary conditions. We look at a high pressure (resulting in a crystal), and a low pressure (resulting in a liquid state). In either case, there are no cubes within a distance of 1, as this is not allowed.
 
 \begin{figure}[H]
 	\centering
-	\vspace{-8pt}
 	\begin{subfigure}{0.3\textwidth}
 		\centering
-		\vspace{8pt}
-		\includegraphics[width=0.815\linewidth]{images/gofr_90_l_snapshot}
-		\vspace{10pt}
-		\caption{A snapshot of the system.\\$\rho = 0.413$, $\beta p = 5$}  \label{fig:g(r)90lsnap}
-	\end{subfigure}
-	\begin{subfigure}{0.5\textwidth}
-		\centering
-		\includegraphics[width=\linewidth]{images/gofr_90_l}
-		\caption{The $g(r)$ averaged over numerous Monte Carlo steps. Note the minimum after the first peak is marked.} \label{fig:g(r)90l}
-	\end{subfigure}
-	\caption{A snapshot and the $g(r)$ of a liquid of cubes.}
-\end{figure}
-
-To see how much the particle shape influences the first shell, we now examine the $g(r)$ for a range of slant angle from 66$^\circ$ to 90$^\circ$. \todo{todo: make sim of other angles} In Figures \ref{fig:84}, \ref{fig:72}, \ref{fig:g(r)72l}, \ref{fig:66}, the $g(r)$ of the same system but with slant angles 66$^\circ$ to 84$^\circ$ are plotted. From this we can see 
-\todo{todo}
-
-\begin{figure}[H]
-	placeholder
-	\caption{84 degrees} \label{fig:84}
-\end{figure}
-\begin{figure}[H]
-	placeholder
-	\caption{78 degrees} \label{fig:72}
-\end{figure}
-\begin{figure}[H]
-	\centering
-%	\vspace{-8pt}
-%	\begin{subfigure}{0.3\textwidth}
-%		\centering
-%		\vspace{8pt}
-%		\includegraphics[width=0.815\linewidth]{images/gofr_72_l_snapshot}
-%		\vspace{10pt}
-%		\caption{A snapshot of the system.\\$\rho = 0.413$, $\beta p = 5$}  \label{fig:g(r)72lsnap}
-%	\end{subfigure}
-	\begin{subfigure}{0.5\textwidth}
-		\centering
-		\includegraphics[width=\linewidth]{images/gofr_72_l}
-		\caption{The $g(r)$ averaged over numerous Monte Carlo steps. Note the minimum after the first peak is marked.} \label{fig:g(r)72l}
-	\end{subfigure}
-	\caption{A snapshot and the $g(r)$ of a liquid of cubes.}
-\end{figure}
-\begin{figure}[H]
-	placeholder
-	\caption{66 degrees} \label{fig:66}
-\end{figure}
-
-The first neighbour shell of the fluid and crystal is expected to vary somewhat, hence, we now explore the $g(r)$ for the crystal for a variety of particle shapes. See Figure \ref{fig:g(r)90Xsnap} for a typical snapshot of such a system and Figure \ref{fig:g(r)90X} for the corresponding $g(r)$. Again, MC simulations of an $NpT$ ensemble were used to obtain the $g(r)$. To simulate a crystal, a relatively high pressure of $\beta p = 12$ was used.
-
-\begin{figure}[H]
-	\centering
-%	\vspace{-8pt}
-	\begin{subfigure}{0.3\textwidth}
-		\centering
-		\vspace{8pt}
 		\includegraphics[width=0.815\linewidth]{images/gofr_90_X_snapshot}
-		\vspace{10pt}
-		\caption{A snapshot of the system.\\$\rho = 0.644$, $\beta p = 12$}  \label{fig:g(r)90Xsnap}
+		\caption{A snapshot of the system. $\rho = 0.644$.}
 	\end{subfigure}
 	\begin{subfigure}{0.5\textwidth}
 		\centering
 		\includegraphics[width=\linewidth]{images/gofr_90_X}
-		\caption{The $g(r)$ averaged over numerous Monte Carlo steps. Note the minimum after the first peak is marked.} \label{fig:g(r)90X}
+		\caption{The $g(r)$ averaged over numerous Monte Carlo steps.}
+		\label{fig:gofr_crystal_b}
 	\end{subfigure}
-	\caption{A snapshot and the $g(r)$ of a liquid of cubes.}
+	\caption{A crystal of cubes with side length 1. On the left is a typical snapshot of the system. On the right the $g(r)$, averaged over many \todo[inline]{is \emph{many} too vague? or is it unimportant?} snapshots is plotted. There is a sharp peak at roughly 1.1, and at roughly $1.1 \sqrt 2 \approx 1.55$ is a peak where we expect the second-nearest neighbours. A small bump at $1.1 \sqrt 3 \approx 1.9$ is also visible, which corresponds to the third-nearest neighbours. The first minimum at roughly 1.4 is also marked, signifying where we should put our cutoff for the nearest neighbours.}
 \end{figure}
 
-As seen in Figure \ref{fig:g(r)90X}, the crystal $g(r)$ exhibits a number of clear peaks, that correspond roughly to the distances between lattice sites in the simple cubic lattice. Moreover, the first peak is much narrower, and there is a clear distinction between nearest neighbours and second nearest neighbours, unlike in the liquid case. 
+\begin{figure}[H]
+	\centering
+	\vspace{-8pt}
+\begin{subfigure}{0.3\textwidth}
+	\centering
+	\vspace{8pt}
+	\includegraphics[width=0.815\linewidth]{images/gofr_90_l_snapshot}
+	\vspace{10pt}
+	\caption{A snapshot of the system. $\rho = 0.413$.} 
+\end{subfigure}
+\begin{subfigure}{0.5\textwidth}
+	\centering
+	\includegraphics[width=\linewidth]{images/gofr_90_l}
+	\caption{The $g(r)$ averaged over numerous Monte Carlo steps.}
+\end{subfigure}
+\caption{A disordered liquid of cubes with side length 1. On the left is a typical snapshot of the system. On the right, the $g(r)$, averaged over many snapshots is plotted. We don't see a cubic crystal structure (we'd expect peaks at $1, \sqrt 2, \sqrt 3$ times the lattice spacing), but rather, we see \emph{neighbour shells}, as is typical of a fluid. We see a peak at roughly 1.2, which corresponds to the first neighbour shell. At a distance of 2.05 the minimum between the first two neighbour shells is marked.}
+\end{figure}
+From figure \ref{fig:gofr_crystal_b}, we infer that at a density of approximately 0.644, most first neighbours are within a distance of 1.4 edge lengths. A simple calculation shows \todo{maybe show this? it doesn't fit nicely on the page} that the lattice spacing of a crystal is proportional to $\rho^{-1/3}$. So, at a density of 0.45 (close to the transition between fluid and crystal for cubes \cite{van2017phase}), most first neighbours are within $1.4 \left( \frac{0.45}{0.644}\right)^{-1/3} \approx 1.58$ edge lengths. 
 
-\todo{range over angles}
-
-\subsection{Order Parameter} \label{subsec:order}
-
-In this section we will discuss and use the Steinhardt emph{bond-orientational} (or simply translational) order parameter \cite{steinhardt1983bond} which is commonly used in the detection of crystalline order \cite{steinhardt1983bond, lechner2008accurate, van2017phase, sharma2018disorder, mickel2013shortcomings}. Aside from translational order, we also consider orientational order, because we are studying cubes which have an orientation.
+\subsection{Order parameter}
+Now we have determined the distance to the closest neighbours in a crystal, we call two cubes \emph{neighbouring} or \emph{bonded} if they are within a distance of 1.55 edge lengths of each other\todo{is this a good idea/good way to word it?}\footnote{This was the preliminary value used, and since it's close enough to 1.58 (and the density should increase as a crystal forms, causing this 1.58 to decrease and come closer to 1.55), we stick to it.}. Now that we know which cubes are neighbours, we need a rigorous way of distinguishing between crystalline and fluid cubes. Fortunately, there is already a lot of work done before on this subject \cite{steinhardt1983bond, lechner2008accurate, van2017phase, sharma2018disorder, mickel2013shortcomings}. Because we consider cubes rather than spheres, our particles also have an orientation. Therefore, we shall consider two kinds of order: \emph{translational} and \emph{orientational}. The first takes into account only positions relative to each other (and is therefore called \emph{bond-orientational order} \cite{steinhardt1983bond}), and the latter one only considers the orientation of cubes. For translational order we will use the Steinhardt translational order parameter \cite{steinhardt1983bond} $q_4$, and for orientational order we use a slightly modified version we call $i_4$, just like in \cite{sharma2018disorder}. We choose the $\ell = 4$, because it is the smallest $\ell$ that still captures simple cubic order (see \cite{mickel2013shortcomings}, Table 1). Higher order would become more computationally expensive, and more sensitive to small changes in position.\todo{[citation needed]?}
 
 \subsubsection{Translational order parameter \texorpdfstring{$q_4$}{q4}}
-
-First we discuss the Steinhardt order parameter in general. For a nonnegative integer $\ell$ and integers $ -\ell \leq m \leq\ell$, we define for cube $i$ the \emph{local translational order parameter}
+In essence what this order parameter does, is doing an expansion of relative position in spherical harmonics. Following \cite{sharma2018disorder}, in general, for a nonnegative integer $\ell$ and integers $ -\ell \leq m \leq\ell$, we define for cube $i$ the \emph{local translational order parameter}
 \begin{equation}
-q_{\ell, m}(i) \coloneqq \sum_{j} Y_{\ell, m} (\theta_{i, j}, \phi_{i, j}),
+	q_{\ell, m}(i) \coloneqq \sum_{j} Y_{\ell, m} (\theta_{i, j}, \phi_{i, j}),
 \end{equation}
-where the sum is over all neighbours of cube $i$, $\theta_{i, j}$ and $\phi_{i, j}$ are the polar angle and the azimuthal angle of the vector from cube $i$'s centre to cube $j$'s centre, respectively. $Y_{\ell, m}$ are the spherical harmonics.% given by
-%\begin{equation}
-%Y_{\ell, m}(\theta, \phi) \coloneqq \sqrt{\frac{2\ell + 1}{4\pi}\frac{(\ell + m)!}{(\ell - m)!}}\ P_\ell^m(\cos(\theta)) \ \me^{im\phi},
-%\end{equation}
-%where $P_\ell^m(\cos(\theta))$ are the associated Legendre polynomials. \todo{find nice reference, define associated Legendre polynomial, maybe put this in seperate subsubsection/appendix on spherical harmonics.}
+where the sum is over all neighbours of cube $i$, $\theta_{i, j}$ and $\phi_{i, j}$ are the polar angle and the azimuthal angle of the vector from cube $i$'s centre to cube $j$'s centre, respectively. $Y_{\ell, m}$ are the spherical harmonics given by
+\begin{equation}
+	Y_{\ell, m}(\theta, \phi) \coloneqq \sqrt{\frac{2\ell + 1}{4\pi}\frac{(\ell + m)!}{(\ell - m)!}}\ P_\ell^m(\cos(\theta)) \ \me^{im\phi},
+\end{equation}
+where $P_\ell^m(\cos(\theta))$ are the associated Legendre polynomials. \todo{find nice reference, define associated Legendre polynomial, maybe put this in seperate subsubsection/appendix on spherical harmonics.}
 
 Now we have defined the local translation order, we define the translational correlation between neighbouring cubes $i$ and $j$ by taking the dot product and normalizing:
 \begin{equation}
-d_{q_\ell}(i, j) \coloneqq \frac{\sum_{m = -\ell}^\ell q_{\ell, m}(i) \cdot q^*_{\ell, m}(j)}{\sqrt{\left(\sum_{m = -\ell}^\ell \abs{q_{\ell, m}(i)}^2\right) \left(\sum_{m = -\ell}^\ell \abs{q_{\ell, m}(j)}^2\right)}}.
+	d_{q_\ell}(i, j) \coloneqq \frac{\sum_{m = -\ell}^\ell q_{\ell, m}(i) \cdot q^*_{\ell, m}(j)}{\sqrt{\left(\sum_{m = -\ell}^\ell \abs{q_{\ell, m}(i)}^2\right) \left(\sum_{m = -\ell}^\ell \abs{q_{\ell, m}(j)}^2\right)}}.
 \end{equation}
 
 Here the asterisk stands for complex conjugation. This translational correlation between two cubes will be a number between -1 and 1, which correspond to anti-ordered to perfectly ordered (with respect to the fourth spherical harmonic), respectively. We then need to choose a cutoff between what we consider ordered and what disordered. 
-This will be discussed in section \ref{subsubsec:order param cutoff}.
+This will be discussed in subsection \ref{subsec:order param cutoff}.
 
 \subsubsection{Orientational order parameter \texorpdfstring{$i_4$}{i4}} \label{subsubsec:orient order param}
 
@@ -144,21 +165,21 @@ For slanted cubes, there is a choice to make. The three vectors defined above co
 \\
 Just like with the translational order parameter, in general for a nonnegative integer $\ell$ and integers $-\ell \leq m \leq \ell$, we define for cube $i$ the \emph{local orientational order parameter}
 \begin{equation}
-i_{\ell, m}(i) \coloneqq \frac{\sum_{n = 1}^3 Y_{\ell, m}(\theta_n(i), \phi_n(i))}{\sqrt{\sum_{m = -\ell}^\ell \abs{\sum_{n = 1}^3 Y_{\ell, m}(\theta_n(i), \phi_n(i))}^2}}.
+	i_{\ell, m}(i) \coloneqq \frac{\sum_{n = 1}^3 Y_{\ell, m}(\theta_n(i), \phi_n(i))}{\sqrt{\sum_{m = -\ell}^\ell \abs{\sum_{n = 1}^3 Y_{\ell, m}(\theta_n(i), \phi_n(i))}^2}}.
 \end{equation}
 Here the sum over $n$ means the sum over the three axes defined above, $Y_{\ell, m}$ are again the spherical harmonics, and now $\theta_n(i)$ and $\phi_n(i)$ are the polar angle and the azimuthal angle of the vector $n$ of cube $i$, respectively.\\
 Now again, we define the correlation between neighbouring cubes $i$ and $j$ by taking the dot product, where normalizing has already been done in the last step, so we define
 \begin{equation}
-d_{i_\ell}(k,l) \coloneqq \sum_{m = -\ell}^\ell i_{\ell, m}(k) \cdot i^*_{\ell, m}(l).
+	d_{i_\ell}(k,l) \coloneqq \sum_{m = -\ell}^\ell i_{\ell, m}(k) \cdot i^*_{\ell, m}(l).
 \end{equation}
 
 Just like with the translational correlation, this will be a number between -1 and 1, corresponding to perfect anti-ordering and ordering respectively.
 
-\subsubsection{Order parameter cutoff} \label{subsubsec:order param cutoff}
+\subsection{Order parameter cutoff} \label{subsec:order param cutoff}
 
 Now we have a quantitative way of determining order between two cubes, we consider a two cubes to have an \emph{ordered bond} if they are bonded (i.e. their center-to-center distance is 1.55 or less), and their correlation is above a certain cutoff. To determine a good cutoff, we analyse the bond order distribution for a fluid system and a crystalline system. See figure \ref{fig:compression_cube}, in which data is shown from an $NpT$ simulation which starts in a low density fluid, but at high pressure, which causes the system to gradually become more dense. In figure \ref{fig:compression_cube_snapshots} snapshots of the system at low density as well as at high density can be seen. Because the order distribution in the liquid phase and the crystal phase overlap too much---as there are also bits of fluid which are very ordered---we also define, like in \cite{lechner2008accurate}, the average order for a cube $i$ with $N_b(i)$ number of neighbours:
 \begin{equation}
-\overline q_{\ell, m}(i) \coloneqq \frac{1}{N_b(i)} \sum_{j = 1}^{N_b(i)}q_{\ell, m}(i),
+	\overline q_{\ell, m}(i) \coloneqq \frac{1}{N_b(i)} \sum_{j = 1}^{N_b(i)}q_{\ell, m}(i),
 \end{equation}
 and likewise for the orientational order averaged per cube $\overline i_4$. Here the sum is over its $N_b(i)$ neighbours.
 
@@ -190,18 +211,18 @@ and likewise for the orientational order averaged per cube $\overline i_4$. Here
 
 \begin{figure}[h]
 	{\centering
-		\hfill
-		\begin{subfigure}{0.4\textwidth}
-			\centering
-			\includegraphics[width=0.8\linewidth]{images/compression_cube_pf040}
-			\caption{The system at a density of 0.40.}
-		\end{subfigure}\hfill
-		\begin{subfigure}{0.4\textwidth}
-			\centering
-			\includegraphics[width=0.8\linewidth]{images/compression_cube_pf055}
-			\caption{The system at a density of 0.55.}
-		\end{subfigure}
-		\hfill}
+	\hfill
+	\begin{subfigure}{0.4\textwidth}
+		\centering
+		\includegraphics[width=0.8\linewidth]{images/compression_cube_pf040}
+		\caption{The system at a density of 0.40.}
+	\end{subfigure}\hfill
+	\begin{subfigure}{0.4\textwidth}
+		\centering
+		\includegraphics[width=0.8\linewidth]{images/compression_cube_pf055}
+		\caption{The system at a density of 0.55.}
+	\end{subfigure}
+	\hfill}
 	\caption{Two snapshots of the system consisting of 8000 cubes, one at low density resulting in a fluid, and one at high density resulting in a crystal.}
 	\label{fig:compression_cube_snapshots}
 \end{figure}
@@ -212,19 +233,19 @@ Finally, we consider a cube \emph{ordered} if it has at least 4 ordered bonds. W
 %\vspace{-10pt}
 
 \begin{figure}[H]
-	\centering
-	\begin{subfigure}{0.48\textwidth}
-		\centering
-		\includegraphics[width=\linewidth]{images/clus1}
-		\caption{A sample snapshot of a 1728 cubes in a liquid phase, with some ordered clusters.}
-	\end{subfigure}\hfill
-	\begin{subfigure}{0.48\textwidth}
-		\centering
-		\includegraphics[width=\linewidth]{images/clus3}
-		\caption{The same system, but at a higher density most cubes belong to a single cluster.}
-	\end{subfigure}
-	\caption{Two examples of how our system of interest is visualized. Disordered cubes are drawn small so we can `see through them,' and ordered cubes are drawn at true size, and colored depending on which cluster they belong to.}
-	\label{fig:sample_snapshot}
+\centering
+\begin{subfigure}{0.48\textwidth}
+\centering
+\includegraphics[width=\linewidth]{images/clus1}
+\caption{A sample snapshot of a 1728 cubes in a liquid phase, with some ordered clusters.}
+\end{subfigure}\hfill
+\begin{subfigure}{0.48\textwidth}
+\centering
+\includegraphics[width=\linewidth]{images/clus3}
+\caption{The same system, but at a higher density most cubes belong to a single cluster.}
+\end{subfigure}
+\caption{Two examples of how our system of interest is visualized. Disordered cubes are drawn small so we can `see through them,' and ordered cubes are drawn at true size, and colored depending on which cluster they belong to.}
+\label{fig:sample_snapshot}
 \end{figure}
 
 %\vspace{-8pt}
@@ -258,6 +279,8 @@ In section \ref{subsubsec:orient order param}, we mentioned an ambiguity in defi
 \end{figure}
 
 To summarize this chapter, from the $g(r)$ in figure \ref{fig:gofr_crystal_b} we determined that the first neighbours are usually within 1.55 cube edge lengths, so we call two cubes \emph{neighbours} or \emph{bonded} when they are within this distance. We used the fourth order spherical harmonics as a measure of translational and rotational order, and from their distributions in figure \ref{fig:compression_cube} judged that 0.6 or 0.7 should be a good cutoff to find only crystalline cubes, so we call a bond \emph{ordered} translationally or orientationally if the correlation is larger than 0.6 or 0.7. Lastly, we consider a cube \emph{ordered} if it has four or more \emph{ordered bonds}. 
+
+%\vspace{-8pt}
 
 \end{document}
 
