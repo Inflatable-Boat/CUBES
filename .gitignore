@@ -1,5 +1,6 @@
 datafolder
 densities
+bak_densities
 times
 logs
 *.exe
@@ -18,3 +19,4 @@ pov.txt
 code/timenull.c
 start_positions
 cluster_scripts
+

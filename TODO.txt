@@ -9,7 +9,7 @@ TODO:
 ================================================================================================
 ================================================================================================
 = somehow get nice cluster size statistics from non-umbrella-sampled (slanted) cubes
-	= done in 
+	= done in v30
 
 = do umbrella sampling
 	= is v17 <- v25 <- v27 <- v28 <- v29 <- v31
@@ -264,7 +264,8 @@ v9: read all coord files from a datafolder and give orient. or transl. order dat
 Version explanation:
 ================================================================================================
 ================================================================================================
-- v34 is just v30 but no order.txt, no g.txt (i.e. just bare simulation to get snapshots + density)
+- v35 is just v34 but with g.txt
+- v34 is just v30 but no order.txt (i.e. just bare simulation to get snapshots + density)
 - v33 is just v22 but can choose order cutoff on commandline (as first argument)
 - v32 is just v16 but based on v26 (so, with g.txt)
 - v31 is just v29 but samples order.txt correctly, and only once every 100 steps

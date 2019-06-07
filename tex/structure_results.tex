@@ -9,34 +9,11 @@
 % Write the body of the chapter/section/other. You CAN NOT define preamble stuff in here (like \newcommand or \usepackage), that should be done in the preamble.tex instead (which will automatically apply to all subfiles).
 \begin{document}
 
-\newpage
+\subsection{Results}
 
+\subsubsection{Radial Distribution Function}
 
-\section{Local Structure Characterization}
-
-In this chapter we explore a number of different ways to characterize the local `crystalline' structure in the fluid. In particular in section \ref{subsec:rdf} we examine the radial distribution function, in section \ref{subsec:order} we use local bond order to determine local crystallinity, and in section
-
-\subsection{Radial Distribution Function} \label{subsec:rdf}
-
-A simple way to look at the structure in a colloidal system is to look at the \emph{radial distribution function} $g(r)$.  The $g(r)$ can be used to get an idea of characteristic distances that appear in a system, and is often used to tune the radius of first neighbour shells.  
-
-To define the radial distribution function, we start by introducing the pair correlation function, 
- $\rho^{(2)}(\bm r, \bm r')$,  which is the probability that there is a particle at position $\bm r$ and $\bm r'$ at the same time. Formally, we define the pair correlation function as 
-\begin{equation}
-\rho^{(2)}(\bm r, \bm r') = \llangle \sum_i \sum_{j \neq i} \delta(\bm r - \bm r_i) \delta(\bm r' - \bm r_j) \rrangle.
-\end{equation}
-where $\langle \cdot \rangle$ denotes the ensemble average, $\bm r_i$ is the position of particle $i$, the sums are over all pairs of particles and $\delta$ is the Dirac delta function.
-If the system is homogeneous and isotropic, then this function only depends on the distance between the particles. These simplifications lead to the radial distribution function $g(r)$:
-\begin{equation}
-\rho^{(2)}(\bm r, \bm r') = \rho^2 g(|\bm r - \bm r'|), \label{eq:gofr}
-\end{equation}
-where the density $\rho$ of particles in the system has been factored out. This is done so that $g$ is dimensionless and $g(r) \rightarrow 1$ as $r \rightarrow \infty$, so long as there is no long range order (e.g. in a liquid).
-
-Looking at Equation \ref{eq:gofr}, the radial distribution function goes to 1 in the limit of low densities. Additionally, for simple cubic crystals, like the ones formed by (slanted) cubes, we expect to see peaks in the radial distribution function at distances between simple cubic lattice sites, so at distances $a, \sqrt 2a, \sqrt 3a,\ 2a$ etc. where $a$ is the lattice constant.
-
-\subsubsection{Results}
-
-We begin our study of the structure of the fluid by examining the radial distribution function in fluid phases for cubes  for a range of densities from ? to ?\todo{todo: make ranges. Need EoS?}. A snapshot of a typical configuration of such a fluid is shown in Figure \ref{fig:g(r)90lsnap}. Moreover, the resulting radial distribution functions are shown in Figure \ref{fig:g(r)90l}.  Each g(r) was obtained via MC simulations of an $NpT$ ensemble. To simulate a liquid, a relatively low pressure of $\beta p = 5$ was used. From Figure \ref{fig:g(r)90l}, we see that the density peaks at roughly $r = 1.4\sigma$, and has a minimum at $2.1\sigma$. Note that the next peaks are at about 2 and 3 times $1.4\sigma$, indicating that there are shells of neighbours around each cube. We conclude that the first neighbour shell of cubes ends at roughly $2.1\sigma$. 
+We begin our study of the structure of the fluid by examining the radial distribution function in fluid phases for cubes  for a range of densities from 0.3 to 0.6. A snapshot of a typical configuration of such a fluid is shown in Figure \ref{fig:g(r)90lsnap}. Moreover, the resulting radial distribution functions are shown in Figure \ref{fig:g(r)90l}.  Each g(r) was obtained via MC simulations of an $NpT$ ensemble. To simulate a liquid, a relatively low pressure of $\beta p = 5$ was used. From Figure \ref{fig:g(r)90l}, we see that the density peaks at roughly $r = 1.4\sigma$, and has a minimum at $2.1\sigma$. Note that the next peaks are at about 2 and 3 times $1.4\sigma$, indicating that there are shells of neighbours around each cube. We conclude that the first neighbour shell of cubes ends at roughly $2.1\sigma$. 
 
 \begin{figure}[H]
 	\centering
@@ -113,46 +90,7 @@ As seen in Figure \ref{fig:g(r)90X}, the crystal $g(r)$ exhibits a number of cle
 
 \todo{range over angles}
 
-\subsection{Order Parameter} \label{subsec:order}
-
-In this section we will discuss and use the Steinhardt emph{bond-orientational} (or simply translational) order parameter \cite{steinhardt1983bond} which is commonly used in the detection of crystalline order \cite{steinhardt1983bond, lechner2008accurate, van2017phase, sharma2018disorder, mickel2013shortcomings}. Aside from translational order, we also consider orientational order, because we are studying cubes which have an orientation.
-
-\subsubsection{Translational order parameter \texorpdfstring{$q_4$}{q4}}
-
-First we discuss the Steinhardt order parameter in general. For a nonnegative integer $\ell$ and integers $ -\ell \leq m \leq\ell$, we define for cube $i$ the \emph{local translational order parameter}
-\begin{equation}
-q_{\ell, m}(i) \coloneqq \sum_{j} Y_{\ell, m} (\theta_{i, j}, \phi_{i, j}),
-\end{equation}
-where the sum is over all neighbours of cube $i$, $\theta_{i, j}$ and $\phi_{i, j}$ are the polar angle and the azimuthal angle of the vector from cube $i$'s centre to cube $j$'s centre, respectively. $Y_{\ell, m}$ are the spherical harmonics.% given by
-%\begin{equation}
-%Y_{\ell, m}(\theta, \phi) \coloneqq \sqrt{\frac{2\ell + 1}{4\pi}\frac{(\ell + m)!}{(\ell - m)!}}\ P_\ell^m(\cos(\theta)) \ \me^{im\phi},
-%\end{equation}
-%where $P_\ell^m(\cos(\theta))$ are the associated Legendre polynomials. \todo{find nice reference, define associated Legendre polynomial, maybe put this in seperate subsubsection/appendix on spherical harmonics.}
-
-The translational correlation between neighbouring cubes $i$ and $j$ is then defined by taking the dot product and normalizing:
-\begin{equation}
-d_{q_\ell}(i, j) \coloneqq \frac{\sum_{m = -\ell}^\ell q_{\ell, m}(i) \cdot q^*_{\ell, m}(j)}{\sqrt{\left(\sum_{m = -\ell}^\ell \abs{q_{\ell, m}(i)}^2\right) \left(\sum_{m = -\ell}^\ell \abs{q_{\ell, m}(j)}^2\right)}}.
-\end{equation}
-
-Here the asterisk stands for complex conjugation. This translational correlation between two cubes will be a number between -1 and 1, which correspond to anti-ordered to perfectly ordered (with respect to the fourth spherical harmonic), respectively. We then need to choose a cutoff between what we consider ordered and what disordered. 
-This will be discussed in section \ref{subsubsec:order param cutoff}.
-
-\subsubsection{Orientational order parameter \texorpdfstring{$i_4$}{i4}} \label{subsubsec:orient order param}
-
-For orientational order we do something similar, but we need to take into account the symmetries of the cube. To this end, we define three vectors for each cube: the three unit vectors perpendicular to one of the faces of the cube and each other. This definition is ambiguous as for each face, there are two unit vectors (i.e. one pointing inward, the other pointing outward), however because we consider only even-$\ell$ spherical harmonics, which are invariant under inversion \cite{steinhardt1983bond}, this distinction disappears.\\
-For slanted cubes, there is a choice to make. The three vectors defined above could equivalently be defined as `the edges of the cube.' If we consider cubes with a slant angle, these two definitions would differ. This difference, and an alternative definition have been studied and will be discussed in subsection \ref{subsubsec:orientation vectors}.%, but the result is that we have chosen the normals on the faces of slanted cubes.
-\\
-Just like with the translational order parameter, in general for a nonnegative integer $\ell$ and integers $-\ell \leq m \leq \ell$, we define for cube $i$ the \emph{local orientational order parameter}
-\begin{equation}
-i_{\ell, m}(i) \coloneqq \frac{\sum_{n = 1}^3 Y_{\ell, m}(\theta_n(i), \phi_n(i))}{\sqrt{\sum_{m = -\ell}^\ell \abs{\sum_{n = 1}^3 Y_{\ell, m}(\theta_n(i), \phi_n(i))}^2}}.
-\end{equation}
-Here the sum over $n$ means the sum over the three axes defined above, $Y_{\ell, m}$ are again the spherical harmonics, and now $\theta_n(i)$ and $\phi_n(i)$ are the polar angle and the azimuthal angle of the vector $n$ of cube $i$, respectively.\\
-Now again, we define the correlation between neighbouring cubes $i$ and $j$ by taking the dot product, where normalizing has already been done in the last step, so we define
-\begin{equation}
-d_{i_\ell}(k,l) \coloneqq \sum_{m = -\ell}^\ell i_{\ell, m}(k) \cdot i^*_{\ell, m}(l).
-\end{equation}
-
-Just like with the translational correlation, this will be a number between -1 and 1, corresponding to perfect anti-ordering and ordering respectively.
+\subsubsection{Order Parameter} \label{subsec:order}
 
 \subsubsection{Order parameter cutoff} \label{subsubsec:order param cutoff}
 
@@ -257,7 +195,7 @@ In section \ref{subsubsec:orient order param}, we mentioned an ambiguity in defi
 	\label{fig:orient_comparison}
 \end{figure}
 
-To summarize this chapter, from the $g(r)$ in figure \ref{fig:gofr_crystal_b} we determined that the first neighbours are usually within 1.55 cube edge lengths, so we call two cubes \emph{neighbours} or \emph{bonded} when they are within this distance. We used the fourth order spherical harmonics as a measure of translational and rotational order, and from their distributions in figure \ref{fig:compression_cube} judged that 0.6 or 0.7 should be a good cutoff to find only crystalline cubes, so we call a bond \emph{ordered} translationally or orientationally if the correlation is larger than 0.6 or 0.7. Lastly, we consider a cube \emph{ordered} if it has four or more \emph{ordered bonds}. 
+%To summarize this chapter, from the $g(r)$ in figure \ref{fig:gofr_crystal_b} we determined that the first neighbours are usually within 1.55 cube edge lengths, so we call two cubes \emph{neighbours} or \emph{bonded} when they are within this distance. We used the fourth order spherical harmonics as a measure of translational and rotational order, and from their distributions in figure \ref{fig:compression_cube} judged that 0.6 or 0.7 should be a good cutoff to find only crystalline cubes, so we call a bond \emph{ordered} translationally or orientationally if the correlation is larger than 0.6 or 0.7. Lastly, we consider a cube \emph{ordered} if it has four or more \emph{ordered bonds}. 
 
 \end{document}
 
