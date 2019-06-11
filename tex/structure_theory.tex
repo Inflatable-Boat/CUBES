@@ -61,7 +61,7 @@ Here the asterisk stands for complex conjugation. This translational correlation
 \subsubsection{Orientational order parameter \texorpdfstring{$i_4$}{i4}} \label{subsubsec:orient order param}
 
 For orientational order we do something similar to the translational order case, but we need to take into account the symmetries of the cube. To this end, we define three vectors for each cube: the three unit vectors perpendicular to one of the faces of the cube and each other. This definition is ambiguous, as for each face, there are two unit vectors (i.e. one pointing inward, the other pointing outward). However because we will consider only even-$\ell$ spherical harmonics, which are invariant under inversion \cite{steinhardt1983bond}, this distinction disappears.\\
-For slanted cubes, there is a choice to make. The three vectors defined above could equivalently be defined as `the edges of the cube.' If we consider cubes with a slant angle, these two definitions would differ. This difference, and an alternative definition have been studied and will be discussed in subsection \ref{subsubsec:orientation vectors}.%, but the result is that we have chosen the normals on the faces of slanted cubes.
+For slanted cubes, there is a choice to make. The three vectors defined above could equivalently be defined as `the edges of the cube.' If we consider cubes with a slant angle smaller than 90\degr, these two definitions would differ. This difference, and an alternative definition have been studied and will be discussed in section \ref{subsec:orientation vectors}.%, but the result is that we have chosen the normals on the faces of slanted cubes.
 \\
 Just like with the translational order parameter, in general for a nonnegative integer $\ell$ and integers $ \abs{m} \leq \ell$, we define for cube $i$ the \emph{local orientational order parameter}
 \begin{equation}
@@ -74,6 +74,11 @@ d_{i_\ell}(k,l) \coloneqq \sum_{m = -\ell}^\ell i_{\ell, m}(k) \cdot i^*_{\ell, 
 \end{equation}
 
 Just like with the translational correlation, this will be a number between -1 and 1, corresponding to perfect anti-ordering and ordering respectively.
+
+\subsubsection{Ordered Bonds, Cubes, and Clusters}
+
+For both the translational and orientational order, having defined the dimensional order parameter for each cube as well as the order correlation between two cubes, we continue in the same fashion for either type of order. We define a `cutoff radius,' so we call cubes within that radius \emph{bonded}. In section \ref{subsec:res_rdf} we will determine a proper cutoff radius. Next we will define two cubes to have an \emph{ordered bond} if they are bonded and their order correlation is above a certain cutoff. In section \ref{subsec:res_order cutoff} we will determine a proper cutoff.
+Next we define a cube to be an \emph{ordered cube} if it has at least four ordered bonds, and finally a \emph{cluster} is defined as the largest connected set of ordered cubes, where connected means if they are bonded.
 
 %To summarize this chapter, from the $g(r)$ in figure \ref{fig:gofr_crystal_b} we determined that the first neighbours are usually within 1.55 cube edge lengths, so we call two cubes \emph{neighbours} or \emph{bonded} when they are within this distance. We used the fourth order spherical harmonics as a measure of translational and rotational order, and from their distributions in figure \ref{fig:compression_cube} judged that 0.6 or 0.7 should be a good cutoff to find only crystalline cubes, so we call a bond \emph{ordered} translationally or orientationally if the correlation is larger than 0.6 or 0.7. Lastly, we consider a cube \emph{ordered} if it has four or more \emph{ordered bonds}. 
 

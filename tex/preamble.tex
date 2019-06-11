@@ -25,7 +25,7 @@
 		amsmath,		% For the AMS math styles
 		amssymb,		% The extended AMS math symbol list
 		bm,				% bold math symbols
-		amsthm,			% For use of theorems (works together with thmtools)
+%		amsthm,			% For use of theorems (works together with thmtools)
 		fancyhdr,		% For fancy headers and footers on pages
 		%gensymb,		% For easy generic symbols (uniform use in math and text mode)
 		%sidecap,		% For use of captions next to a float (figure, table, etc)
@@ -36,7 +36,7 @@
 		color,			% For handy colour definitions (used cause of styling)
 		%calc,			% To calculate stuff for the back-end
 		%mdwlist,		% For customising lists
-		thmtools,		% Lets you define your own theorem style (used for all the fancy theorems, definitions etc.)
+%		thmtools,		% Lets you define your own theorem style (used for all the fancy theorems, definitions etc.)
 		etoolbox,		% Allows adjustment of commands (used to reset the claim counter at the end of a proof).
 		xspace,			% Makes latex not eat spaces after commands
         hyperref,		% Makes links, references, the Table of Contents, etc. clickable.
@@ -75,29 +75,30 @@
 %Finally you can use sibling to let different 'theorems' count together. Hence you will get Theorem 1 Definition 2 Claim 3, instead of Theorem 1 Definition 1 Claim 1. This is a matter of taste.
 
 % Theorem definitions
-\declaretheorem[style=definition,numberwithin=subsection]{definition} %If you want your theorems to be counted per section instead of subsection, then just remove the sub from the numberwithin
-\declaretheorem[style=definition,qed=$\triangle$,sibling=definition]{example}% sibling says with what type of theorems you wan the numbering to count with.
-
-\declaretheorem[style=plain,sibling=definition]{theorem}
-\declaretheorem[style=plain,sibling=definition]{lemma}
-\declaretheorem[style=plain,sibling=definition]{proposition}
-\declaretheorem[style=plain,sibling=definition]{corollary}
-\declaretheorem[style=definition]{claim}
-\declaretheorem[style=definition,sibling=example]{remark}
-
-\AtEndEnvironment{proof}{\setcounter{claim}{0}} % Sets the claim number to 0 after ending a proof
+%\declaretheorem[style=definition,numberwithin=subsection]{definition} %If you want your theorems to be counted per section instead of subsection, then just remove the sub from the numberwithin
+%\declaretheorem[style=definition,qed=$\triangle$,sibling=definition]{example}% sibling says with what type of theorems you wan the numbering to count with.
+%
+%\declaretheorem[style=plain,sibling=definition]{theorem}
+%\declaretheorem[style=plain,sibling=definition]{lemma}
+%\declaretheorem[style=plain,sibling=definition]{proposition}
+%\declaretheorem[style=plain,sibling=definition]{corollary}
+%\declaretheorem[style=definition]{claim}
+%\declaretheorem[style=definition,sibling=example]{remark}
+%
+%\AtEndEnvironment{proof}{\setcounter{claim}{0}} % Sets the claim number to 0 after ending a proof
 
 % You can make short-hands like these. 
 
 \DeclarePairedDelimiter\abs{\lvert}{\rvert}
 \newcommand{\me}{\mathrm{e}}
-\newcommand{\thm}[2]{\begin{theorem} #1 \begin{proof} #2 \end{proof} \end{theorem}}
-\newcommand{\lm}[2]{\begin{lemma} #1 \begin{proof} #2 \end{proof} \end{lemma}}
-\newcommand{\df}[1]{\begin{definition} #1 \end{definition}}
-\newcommand{\clm}[1]{\begin{claim} #1 \end{claim}}
-
 \newcommand{\llangle}{\left\langle}
 \newcommand{\rrangle}{\right\rangle}
+\newcommand{\degr}{$^\circ$}
+
+%\newcommand{\thm}[2]{\begin{theorem} #1 \begin{proof} #2 \end{proof} \end{theorem}}
+%\newcommand{\lm}[2]{\begin{lemma} #1 \begin{proof} #2 \end{proof} \end{lemma}}
+%\newcommand{\df}[1]{\begin{definition} #1 \end{definition}}
+%\newcommand{\clm}[1]{\begin{claim} #1 \end{claim}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -8,6 +8,57 @@ Key:
 TODO:
 ================================================================================================
 ================================================================================================
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+- write
+
 = somehow get nice cluster size statistics from non-umbrella-sampled (slanted) cubes
 	= done in v30
 
@@ -18,20 +69,8 @@ TODO:
 - crystal_coords_v18_for_v(17,21,v29).c: try to make without nested function
 	- also rename + make it so we don't save while sampling, but call the save function when needed
 
-= write latex on structure of the fluid (g(r), positional and orientational order param)
-	- waiting for feedback
-- write latex on monte carlo, classical nucleation theory, umbrella sampling
-
 - somehow write transl_order and orient_order as the same function, because there is a lot of
-	duplicate code in v10 <- v11 <- v14 <- v18 <- v20 <- v22.
-
-- clean up the parse_commandline function
-	- clean up the read/create functionality
-
-##(part of do umbrella sampling)make nice fluids for pressures 6-9 (go as high as possible) and differing angles (see notes):
-	##make v3 do: stop volume moves after reaching desired pf, i.e. make it do NVT
-	= make v5 do: do one run and save inside a file at which snapshots/after how many
-	  runs we find 0.4x (for x = 0, 1, ... , 9) and 0.50
+	duplicate code in v10 <- v11 <- v14 <- v18 <- v20 <- v22 <- v33.
 
 - make readme of visualization tool, explain how h_slc_cl_read.c works?
 
@@ -41,6 +80,14 @@ TODO:
 
 DONE
 ================================================================================================
+##clean up the parse_commandline function
+	##clean up the read/create functionality
+
+##(part of do umbrella sampling)make nice fluids for pressures 6-9 (go as high as possible) and differing angles (see notes):
+	##make v3 do: stop volume moves after reaching desired pf, i.e. make it do NVT
+	= make v5 do: do one run and save inside a file at which snapshots/after how many
+	  runs we find 0.4x (for x = 0, 1, ... , 9) and 0.50
+
 = do cluster analysis on slow crush (v13)
 	##crush was too fast, increase BetaP by 1 or less each 10k steps, not 5 each 10k steps.
 = do cluster analysis on fast crush (v16)
@@ -108,6 +155,17 @@ DONE
 Which versions are being used:
 ================================================================================================
 ================================================================================================
+	Currently (2019-06-11) in use:
+v30: v26, but samples order.txt
+v31: v29, but samples order.txt correctly
+v32: v16, but optimized + doesn't break detailed balance
+v33: v22, but an extra argument: the first argument chooses the cutoff: 6 for 0.6, 7 for 0.7 etc.
+    (make order param data + extra histograms + read_per implemented + save if (!output_per)
+     histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
+     instead of making a histogram of the clustersizes.
+v34: v30, but no order.txt (for densities for eq. of state)
+v35: v34, but with g.txt
+
 	Currently (2019-05-21) in use:
 v30: v26, but samples order.txt
 v31: v29, but samples order.txt correctly
@@ -117,7 +175,6 @@ v33: v22, but an extra argument: the first argument chooses the cutoff: 6 for 0.
      histograms included: nbhist, Xnbhist, q4hist, q4avg per cube), but prints all cl sizes
      instead of making a histogram of the clustersizes.
 v34: v30, but no order.txt (for densities for eq. of state)
-
 	Currently (2019-05-10) in use:
 v30: v26, but samples order.txt
 v31: v29, but samples order.txt correctly
