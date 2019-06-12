@@ -9,11 +9,13 @@
 % Write the body of the chapter/section/other. You CAN NOT define preamble stuff in here (like \newcommand or \usepackage), that should be done in the preamble.tex instead (which will automatically apply to all subfiles).
 \begin{document}
 
-\section{Measurements of Local Structure}
+\newpage
+
+\section{Measurements of Structure}
 
 \subsection{Radial Distribution Function} \label{subsec:res_rdf}
 
-We begin our study of the structure of the fluid by examining the radial distribution function in fluid phases for cubes for a range of densities from about 0.35 to 0.45. The radial distribution functions can be seen in Figure \ref{fig:gofr_90liq}. We see that there are no cubes within a distance of $\sigma$, which is as expected, because we do not allow cubes to overlap. Furthermore, we see the shell structure typical of a liquid. %, as the density is high at around $r=1.4\sigma$, then low at $r=2.1\sigma$, then high again at $r=2.8\sigma$ etc.
+We begin our study of the structure of the fluid by examining the radial distribution function in fluid phases for cubes for a range of densities from about 0.35 to 0.45. The radial distribution functions can be seen in Figure \ref{fig:gofr_90liq}. We see that there are no cubes within a distance of $\sigma$, which is as expected, because we do not allow cubes to overlap. Furthermore, we see the shell structure typical of a liquid, as the density is high at around $r=1.4\sigma$, then low at $r=2.1\sigma$, then high again at $r=2.8\sigma$ etc.
 The first minimum after the peak signifies the end of the first shell. We also see that as the density increases, the intensity of the second and third shell increase, and the shells become slightly thinner.
 
 \begin{figure}[h]
@@ -40,7 +42,7 @@ The first minimum after the peak signifies the end of the first shell. We also s
 	\caption{The $g(r)$ of systems of $N = 1728$ cubes over a range of pressures resulting in a range of densities $\rho$ from 0.35 to 0.44. Note the minimum is marked in every plot.}\label{fig:gofr_90liq}
 \end{figure}
 
-To see how much the particle shape influences the first shell, we now examine the $g(r)$ for a range of slant angle from 84\degr\ to 66\degr. The found distribution functions can be found in Figure \ref{fig:gofr_non90liq}. As we can see, the distribution function changes only slightly. As the slant increases, the first minimum moves to slightly lower $r$, from $2.1\sigma$ at 90\degr (Figure \ref{fig:gofr_90liqp6}) to $2.0\sigma$ at 66\degr\ (see Figure \ref{fig:gofr_non90liqa66}). Furthermore, the intensity of the shells decreases, as the maximum of the $g(r)$ is 2 for cubes, but only 1.7 for cubes with a slant angle of 66\degr. It is important to note that the density also decreases, even though the pressure remains the same. This decrease in density could also partly explain the lower peaks in the density profile.
+To see how much the particle shape influences the first shell, we now examine the $g(r)$ for a range of slant angle from 84\degr\ to 66\degr. The found distribution functions can be found in Figure \ref{fig:gofr_non90liq}. As we can see, the distribution function changes only slightly. As the slant increases, the first minimum moves to slightly lower $r$, from $2.1\sigma$ at 90\degr (Figure \ref{fig:gofr_90liqp6}) to $2.0\sigma$ at 66\degr\ (see Figure \ref{fig:gofr_non90liqa66}). Furthermore, the intensity of the shells decreases, as the maximum of the $g(r)$ is almost 2 for cubes (see Figure \ref{fig:gofr_90liqp6}), but only 1.7 for cubes with a slant angle of 66\degr. It is important to note that the density also decreases, even though the pressure remains the same. This decrease in density could also partly explain the lower peaks in the density profile.
 
 \begin{figure}[H]
 	\centering
@@ -66,59 +68,7 @@ To see how much the particle shape influences the first shell, we now examine th
 	\caption{The $g(r)$ of systems of $N = 1728$ slanted cubes over a range of slant angles from $66^\circ$ to $84^\circ$. Note the minimum is marked in every plot.}\label{fig:gofr_non90liq}
 \end{figure}
 
-%A snapshot of a typical configuration of such a fluid is shown in Figure \ref{fig:g(r)90lsnap}, next to the resulting radial distribution function in Figure \ref{fig:g(r)90l}. To simulate a liquid, a relatively low pressure of $\beta p = 5$ was used. From Figure \ref{fig:g(r)90l}, we see that the density peaks at roughly $r = 1.4\sigma$, and has a minimum at $2.1\sigma$. Note that the next peaks are at about 2 and 3 times $1.4\sigma$, indicating that there are shells of neighbours around each cube. We conclude that the first neighbour shell of cubes ends at roughly $2.1\sigma$. 
-
-%\begin{figure}[H]
-%	\centering
-%	\vspace{-8pt}
-%	\begin{subfigure}{0.3\textwidth}
-%		\centering
-%%		\vspace{8pt}
-%		\includegraphics[width=0.815\linewidth]{images/gofr_90_l_snapshot}
-%		\vspace{8pt}
-%		\caption{A snapshot of the system.}  \label{fig:g(r)90lsnap}
-%	\end{subfigure}\hspace{10pt}
-%	\begin{subfigure}{0.5\textwidth}
-%		\centering
-%		\includegraphics[width=\linewidth]{images/gofr_90_l}
-%		\caption{The $g(r)$ averaged over numerous Monte Carlo steps. Note the minimum after the first peak is marked.} \label{fig:g(r)90l}
-%	\end{subfigure}
-%	\caption{A typical snapshot and the $g(r)$ of a liquid of cubes, from an $NpT$ simulation with $N = 1728$, $\beta p = 5$.}
-%\end{figure}
-
-%To see how much the particle shape influences the first shell, we now examine the $g(r)$ for a range of slant angle from 66$^\circ$ to 90$^\circ$. In Figures \ref{fig:84}, \ref{fig:72}, \ref{fig:g(r)72l}, \ref{fig:66}, the $g(r)$ of the same system but with slant angles 66$^\circ$ to 84$^\circ$ are plotted. From this we can see 
-
-%\begin{figure}[H]
-%	placeholder
-%	\caption{84 degrees} \label{fig:84}
-%\end{figure}
-%\begin{figure}[H]
-%	placeholder
-%	\caption{78 degrees} \label{fig:72}
-%\end{figure}
-%\begin{figure}[H]
-%	\centering
-%	\vspace{-8pt}
-%	\begin{subfigure}{0.3\textwidth}
-%		\centering
-%		\vspace{8pt}
-%		\includegraphics[width=0.815\linewidth]{images/gofr_72_l_snapshot}
-%		\vspace{10pt}
-%		\caption{A snapshot of the system.\\$\rho = 0.413$, $\beta p = 5$}  \label{fig:g(r)72lsnap}
-%	\end{subfigure}
-%	\begin{subfigure}{0.5\textwidth}
-%		\centering
-%		\includegraphics[width=\linewidth]{images/gofr_72_l}
-%		\caption{The $g(r)$ averaged over numerous Monte Carlo steps. Note the minimum after the first peak is marked.} \label{fig:g(r)72l}
-%	\end{subfigure}
-%	\caption{A snapshot and the $g(r)$ of a liquid of cubes.}
-%\end{figure}
-%\begin{figure}[H]
-%	placeholder
-%	\caption{66 degrees} \label{fig:66}
-%\end{figure}
-
-The first neighbour shell of the fluid and crystal is expected to vary somewhat, hence, we now explore the $g(r)$ for the crystal for cubes with a slant angle from 66\degr\ to 90\degr\ (cubes). See Figure \ref{fig:gofr_Xtal} for the radial distribution functions found for these slant angles. %See Figure \ref{fig:g(r)90Xsnap} for a typical snapshot of such a system and Figure \ref{fig:g(r)90X} for the corresponding $g(r)$. 
+The first neighbour shell of the fluid and crystal is expected to vary somewhat, hence, we now explore the $g(r)$ for the crystal for cubes with a slant angle from 66\degr\ to 90\degr\ (cubes). See Figure \ref{fig:gofr_Xtal} for the radial distribution functions found for these slant angles.
 
 \begin{figure}[H]
 	\centering
@@ -145,30 +95,10 @@ The first neighbour shell of the fluid and crystal is expected to vary somewhat,
 		\caption{Slant angle $66^\circ$ $\beta p = 15$, $\rho = 0.54$. }
 	\end{subfigure}
 	
-	\caption{The $g(r)$ of systems of $N = 1728$ slanted cubes over a range of slant angles from 66\degr\ to 90\degr\ at higher pressure. Note the minimum is marked in every plot.}\label{fig:gofr_Xtal}
+	\caption{The $g(r)$ of systems of $N = 1728$ slanted cubes over a range of slant angles from 66\degr\ to 90\degr\ at higher pressure. Note the minimum is marked in every plot. Also note that for smaller slant angles, the pressure was increased to keep the density somewhat similar.}\label{fig:gofr_Xtal}
 \end{figure}
 
 As seen in Figure \ref{fig:gofr_Xtal}, the crystal $g(r)$ exhibits a number of clear peaks, that correspond roughly to the distances between lattice sites in the simple cubic lattice\footnote{Note that except for the first peak, all other peaks are combinations of peaks from different lattice site distances.}. Moreover, the first peak is much narrower, and there is a clear distinction between nearest neighbours and second and third nearest neighbours, unlike in the liquid case. We see that as the slant increases, this distinction diminishes, as the first and second nearest neighbour distributions overlap much more. From these plots, we can infer that most first neighbours are within a distance of $1.4\sigma$, regardless of slant angle, although it must be noted that the density for each slant angle is slightly different. To find the distance of the first neighbour shell of cubes at the highest density of a liquid (0.45)\cite{van2017phase}, we use that the lattice constant scales as $a \sim \rho^{-1/3}$. Then we find that in the liquid of cubes, the first neighbours should be within a distance of $1.4\sigma (0.45/0.58)^{-1/3} \approx 1.52\sigma$. This result will be used in the next section.
-
-%\begin{figure}[H]
-%	\centering
-%%	\vspace{-8pt}
-%	\begin{subfigure}{0.3\textwidth}
-%		\centering
-%		\vspace{8pt}
-%		\includegraphics[width=0.815\linewidth]{images/gofr_90_X_snapshot}
-%		\vspace{10pt}
-%		\caption{A snapshot of the system.\\$\rho = 0.644$, $\beta p = 12$}  \label{fig:g(r)90Xsnap}
-%	\end{subfigure}
-%	\begin{subfigure}{0.5\textwidth}
-%		\centering
-%		\includegraphics[width=\linewidth]{images/gofr_90_X}
-%		\caption{The $g(r)$ averaged over numerous Monte Carlo steps. Note the minimum after the first peak is marked.} \label{fig:g(r)90X}
-%	\end{subfigure}
-%	\caption{A snapshot and the $g(r)$ of a liquid of cubes.}
-%\end{figure}
-
-
 
 \subsection{Order Parameter} \label{subsec:order}
 
@@ -177,7 +107,7 @@ In this section we will use the order parameters $q_4$ and $i_4$ to differentiat
 \subsubsection{Global order distributions}\label{subsec:res_order cutoff}
 
 In section \ref{subsec:res_rdf} we determined that the first neighbours in a simple cubic lattice at a density of 0.45 should be within a distance of $1.52\sigma$. Because this value is close to our preliminary value of $1.55\sigma$ that we used, the result justifies this value and we therefore call all cubes within a distance of $1.55\sigma$ \emph{bonded}.
-In order to determine a proper cutoff for what bonds we consider to be \emph{ordered}, we set up an $NpT$ simulation which starts in a low density disordered liquid and set the pressure very high to `crush' the system to a high density crystal. When the system reaches densities of 0.40 to 0.55 in steps of 0.01, we record the $q_4$ and $i_4$ order distributions, both the total distribution as well as the distribution of order averaged per cube. These can be found in Figure \ref{fig:compression_cube}. Typical snapshots from both liquid and crystal configurations can be Figure \ref{fig:compression_cube_snapshots}.
+In order to determine a proper cutoff for what bonds we consider to be \emph{ordered}, we set up an $NpT$ simulation with $N = 8000$ cubes which starts in a low density disordered liquid and set the pressure very high to `crush' the system to a high density crystal. When the system reaches densities of 0.40 to 0.55 in steps of 0.01, we record the $q_4$ and $i_4$ order distributions, both the total distribution as well as the distribution of order averaged per cube. These can be found in Figure \ref{fig:compression_cube}. Typical snapshots from both liquid and crystal configurations can be Figure \ref{fig:compression_cube_snapshots}.
 
 \begin{figure}[h]
 	\centering
@@ -209,7 +139,7 @@ In order to determine a proper cutoff for what bonds we consider to be \emph{ord
 In Figure \ref{fig:compression_cube} we can see a clear difference between the distribution of a low density liquid and a high density crystal. In Figures \ref{fig:compression_cubea} and \ref{fig:compression_cubec}, We can see that as the density increases, and more of the system becomes crystalline, and the distribution shifts from a broad range centered around 0.1 to 0.3 to a narrow distribution around 0.85. The distinction between these distributions is even more obvious in Figures \ref{fig:compression_cubeb} and \ref{fig:compression_cubed}, where the correlations have been averaged per cube. These last results are especially powerful for discerning crystalline cubes from liquid ones. This can be explained by the fact that in a liquid, order correlations are distributed more or less randomly. So, if we average a number of bonds, we are more likely to end up with a number closer to the center of the distribution.
 Interesting to note is that though the liquid is mostly disordered, there is a slight net positive amount of order in the liquid phase, which is more pronounced in the translational order. Also noteworthy is that for both the translational and orientational order, even for the order averaged per cube, the distribution seems to shift continuously from low order to higher order, rather than seeing the `liquid' distribution shrinking while the 'crystal' distribution grows. This indicates that as the crystal phase forms, the liquid is also becoming more ordered.
 
-From Figures \ref{fig:compression_cubeb} and \ref{fig:compression_cubed} we can infer that in the liquid phase (densities < 0.45), almost no cubes have an average translational bond correlation with their neighbours of more than 0.6, and no average orientational bond correlation of more than 0.5. With these results we can set the bond order parameter cutoff to 0.6. Any correlation larger than 0.6 will be considered an ordered bond.
+From Figures \ref{fig:compression_cubeb} and \ref{fig:compression_cubed} we can infer that in the liquid phase (densities $< 0.45$), almost no cubes have an average translational bond correlation with their neighbours of more than 0.6, and no average orientational bond correlation of more than 0.5. With these results we can set the bond order parameter cutoff to 0.6. Any correlation larger than 0.6 will be considered an ordered bond.
 
 \begin{figure}[h]
 	{\centering
@@ -229,29 +159,12 @@ From Figures \ref{fig:compression_cubeb} and \ref{fig:compression_cubed} we can 
 	\label{fig:compression_cube_snapshots}
 \end{figure}
 
-%\begin{figure}[H]
-%	\centering
-%	\begin{subfigure}{0.48\textwidth}
-%		\centering
-%		\includegraphics[width=\linewidth]{images/clus1}
-%		\caption{A sample snapshot of a 1728 cubes in a liquid phase, with some ordered clusters.}
-%	\end{subfigure}\hfill
-%	\begin{subfigure}{0.48\textwidth}
-%		\centering
-%		\includegraphics[width=\linewidth]{images/clus3}
-%		\caption{The same system, but at a higher density most cubes belong to a single cluster.}
-%	\end{subfigure}
-%	\caption{Two examples of how our system of interest is visualized. Disordered cubes are drawn small so we can `see through them,' and ordered cubes are drawn at true size, and colored depending on which cluster they belong to.}
-%	\label{fig:sample_snapshot}
-%\end{figure}
-
-
-
-%\subsubsection{Order Cutoff}\label{subsec:res_order cutoff}
+\newpage
 
 \subsubsection{Ambiguity in Orientational Order Parameter}\label{subsec:orientation vectors}
 
-In section \ref{subsubsec:orient order param}, we mentioned an ambiguity in defining the orientational order axes used to calculate the orientational order. For a given cube, we defined three axes: the normal vectors on each face of the cube. These coincide with the edges of the cube. For cubes with a slant angle of less than 90\degr\ however, these two definitions will give different vectors (actually the one set of vectors is just a rotated version of the other)\todo{maybe this is already enough to conclude there shouldn't be a difference, since the order parameter we use is rotationally invariant, right?}. When measuring and comparing the order distributions of both examples, we found the difference to be negligible, see figure \ref{fig:orient_comparison}.
+In section \ref{subsubsec:orient order param}, we mentioned an ambiguity in defining the orientational order axes used to calculate the orientational order. For a given cube, we defined three axes: the normal vectors on each face of the cube. These coincide with the edges of the cube. For cubes with a slant angle of less than 90\degr\ however, these two definitions will give different vectors (actually the one set of vectors is just a rotated version of the other)\todo{isn't this already enough to conclude there shouldn't be a difference, since the order parameter we use is rotationally invariant?}. In order to investigate any differences, we do the same simulation as in the previous section, but with slanted cubes with a slant angle of 72\degr. That is, we ran an $NpT$ simulation with $N = 8000$ slanted cubes which start in a low density disordered liquid and set the pressure very high to `crush' the system to a high density crystal. When the system reaches densities of 0.40 to 0.55 in steps of 0.01, we record the $i_4$ order distributions, calculated using both the slanted cube face normals and the edges. These can be found in Figure \ref{fig:orient_comparison}.
+From these figures we can see that though there are small differences between the two calculated orientations, these are negligible compared to the statistical fluctuations. We thus conclude that the difference between calculation orientational order from the different sets of three vectors does not matter.
 
 \begin{figure}[H]
 	\centering
@@ -275,67 +188,10 @@ In section \ref{subsubsec:orient order param}, we mentioned an ambiguity in defi
 		\includegraphics[width=\linewidth,height=10\baselineskip]{images/compression_72_e_ibar.pdf}
 		\caption{$\overline i_4$ distribution using edges.}
 	\end{subfigure}
-	\caption{The two different sets of vectors used to calculate order, on the same system: 8000 cubes with a slant angle of 72 degrees. The setup was the same as in figure \ref{fig:compression_cube}, start at low density and record when the density hits 0.4, 0.41. etc. There are slight differences, but the overall trends don't change.}
+	\caption{The orientational order distribution of a system of $N = 8000$ slanted cubes with a slant angle of 72\degr\ over a density from 0.4 to 0.55. In (a) and (b) the order was calculated using the slanted cube face normals, and in (c) and (d) using the edges of the slanted cubes.}
 	\label{fig:orient_comparison}
 \end{figure}
 
-%\subsubsection{Order parameter cutoff} \label{subsubsec:order param cutoff}
-%
-%Now we have a quantitative way of determining order between two cubes, we consider a two cubes to have an \emph{ordered bond} if they are bonded (i.e. their center-to-center distance is 1.55 or less), and their correlation is above a certain cutoff. To determine a good cutoff, we analyse the bond order distribution for a fluid system and a crystalline system. See figure \ref{fig:compression_cube}, in which data is shown from an $NpT$ simulation which starts in a low density fluid, but at high pressure, which causes the system to gradually become more dense. In figure \ref{fig:compression_cube_snapshots} snapshots of the system at low density as well as at high density can be seen. Because the order distribution in the liquid phase and the crystal phase overlap too much---as there are also bits of fluid which are very ordered---we also define, like in \cite{lechner2008accurate}, the average order for a cube $i$ with $N_b(i)$ number of neighbours:
-%\begin{equation}
-%\overline q_{\ell, m}(i) \coloneqq \frac{1}{N_b(i)} \sum_{j = 1}^{N_b(i)}q_{\ell, m}(i),
-%\end{equation}
-%and likewise for the orientational order averaged per cube $\overline i_4$. Here the sum is over its $N_b(i)$ neighbours.
-%
-%\begin{figure}[h]
-%	\centering
-%	\begin{subfigure}{0.48\textwidth}
-%		\centering
-%		\includegraphics[width=0.80\linewidth,height=10\baselineskip]{images/compression_cube_q_}
-%		\caption{Translational order distribution $q_4$.}
-%	\end{subfigure}
-%	\begin{subfigure}{0.51\textwidth}
-%		\centering
-%		\includegraphics[width=\linewidth,height=10\baselineskip]{images/compression_cube_qbar}
-%		\caption{Translational order averaged per cube distribution $\overline q_4$.}
-%	\end{subfigure}\\\vspace{10pt}
-%	\begin{subfigure}{0.48\textwidth}
-%		\centering
-%		\includegraphics[width=0.80\linewidth,height=10\baselineskip]{images/compression_cube_i_}
-%		\caption{Orientational order distribution $i_4$.}
-%	\end{subfigure}
-%	\begin{subfigure}{0.51\textwidth}
-%		\centering
-%		\includegraphics[width=\linewidth,height=10\baselineskip]{images/compression_cube_ibar}
-%		\caption{Orientational order averaged per cube distribution $\overline i_4$.}
-%	\end{subfigure}
-%	\caption{The translational as well as orientational order distribution ranging from a low density fluid to a high density crystal. See figure \ref{fig:compression_cube_snapshots} for snapshots of the low density and high densities. An $NpT$ simulation of 8000 cubes starting at a density of 0.1 was run at a very high (dimensionless) pressure of $\beta p \sigma^3 = 10000$. This is done so the system melts into a liquid, and as the density increases as fast as possible, it can form a crystal. Then, when the density reaches 0.4, 0.41, etc., the translational and orientational order is calculated for all bonds. On the left the total distribution is plotted, on the right we take the average order for each cube, and plot this distribution.  Interesting to note is that though the liquid is mostly disordered, there is a slight positive amount of order in the liquid phase, which is more pronounced in the translational order.}
-%	\label{fig:compression_cube}
-%\end{figure}
-%
-%\begin{figure}[h]
-%	{\centering
-%		\hfill
-%		\begin{subfigure}{0.4\textwidth}
-%			\centering
-%			\includegraphics[width=0.8\linewidth]{images/compression_cube_pf040}
-%			\caption{The system at a density of 0.40.}
-%		\end{subfigure}\hfill
-%		\begin{subfigure}{0.4\textwidth}
-%			\centering
-%			\includegraphics[width=0.8\linewidth]{images/compression_cube_pf055}
-%			\caption{The system at a density of 0.55.}
-%		\end{subfigure}
-%		\hfill}
-%	\caption{Two snapshots of the system consisting of 8000 cubes, one at low density resulting in a fluid, and one at high density resulting in a crystal.}
-%	\label{fig:compression_cube_snapshots}
-%\end{figure}
-%
-%%\vspace{-8pt}
-%From figure \ref{fig:compression_cube} we can see a much more well defined difference between the fluid and crystal phase in the averaged per cube distributions, as there is much less overlap between the two phases. By eye, we can judge that cubes with an average order (be it translational or orientational) of 0.6 or higher are very probably crystalline, as these amounts of order are very rare in the liquid phase. Therefore, we choose every bond with a correlation above 0.6 to be an \emph{ordered bond}. However, what is also clear from the figure is that as the system progresses from liquid to crystalline, is that rather than just the `liquid peak' shrinking and the `crystalline peak' growing, we see the order distributions `move.' This means that, as we approach the crystal phase, we will see more and more of the liquid having higher order. For this reason we will also consider a stronger order cutoff of 0.7, as the system will become more ordered as it transitions from the liquid to the crystalline phase.
-%Finally, we consider a cube \emph{ordered} if it has at least 4 ordered bonds. We can then group ordered cubes together on the criterium that all neighbouring ordered cubes are considered to be part of the same cluster. We can visualize the crystallization process by making liquid (i.e. not ordered) cubes small, and giving each cluster a different colour. See figure \ref{fig:sample_snapshot}.
-%%\vspace{-10pt}
-%
 %\begin{figure}[H]
 %	\centering
 %	\begin{subfigure}{0.48\textwidth}
@@ -351,38 +207,6 @@ In section \ref{subsubsec:orient order param}, we mentioned an ambiguity in defi
 %	\caption{Two examples of how our system of interest is visualized. Disordered cubes are drawn small so we can `see through them,' and ordered cubes are drawn at true size, and colored depending on which cluster they belong to.}
 %	\label{fig:sample_snapshot}
 %\end{figure}
-%
-%%\vspace{-8pt}
-%\subsubsection{Ambiguity in orientational order parameter definition.}\label{subsubsec:orientation vectors}
-%In section \ref{subsubsec:orient order param}, we mentioned an ambiguity in defining the orientational order axes used to calculate the orientational order. We defined three axes: the normal vectors on each face of the cube. These coincide with the edges of the cube. If we look at slanted cubes however, these two definitions will give different vectors (actually the one set of vectors is just a rotated version of the other)\todo{maybe this is already enough to conclude there shouldn't be a difference, since the order parameter we use is rotationally invariant, right?}. When measuring and comparing the order distributions of both examples, we found the difference to be negligible, see figure \ref{fig:orient_comparison}.
-%
-%\begin{figure}[H]
-%	\centering
-%	\begin{subfigure}{0.48\textwidth}
-%		\centering
-%		\includegraphics[width=0.80\linewidth,height=10\baselineskip]{images/compression_72_sl_i_.pdf}
-%		\caption{$i_4$ distribution using face normals.}
-%	\end{subfigure}
-%	\begin{subfigure}{0.51\textwidth}
-%		\centering
-%		\includegraphics[width=\linewidth,height=10\baselineskip]{images/compression_72_sl_ibar.pdf}
-%		\caption{$\overline i_4$ distribution using face normals.}
-%	\end{subfigure}\\\vspace{10pt}
-%	\begin{subfigure}{0.48\textwidth}
-%		\centering
-%		\includegraphics[width=0.80\linewidth,height=10\baselineskip]{images/compression_72_e_i_.pdf}
-%		\caption{$i_4$ distribution using edges.}
-%	\end{subfigure}
-%	\begin{subfigure}{0.51\textwidth}
-%		\centering
-%		\includegraphics[width=\linewidth,height=10\baselineskip]{images/compression_72_e_ibar.pdf}
-%		\caption{$\overline i_4$ distribution using edges.}
-%	\end{subfigure}
-%	\caption{The two different sets of vectors used to calculate order, on the same system: 8000 cubes with a slant angle of 72 degrees. The setup was the same as in figure \ref{fig:compression_cube}, start at low density and record when the density hits 0.4, 0.41. etc. There are slight differences, but the overall trends don't change.}
-%	\label{fig:orient_comparison}
-%\end{figure}
-
-%To summarize this chapter, from the $g(r)$ in figure \ref{fig:gofr_crystal_b} we determined that the first neighbours are usually within 1.55 cube edge lengths, so we call two cubes \emph{neighbours} or \emph{bonded} when they are within this distance. We used the fourth order spherical harmonics as a measure of translational and rotational order, and from their distributions in figure \ref{fig:compression_cube} judged that 0.6 or 0.7 should be a good cutoff to find only crystalline cubes, so we call a bond \emph{ordered} translationally or orientationally if the correlation is larger than 0.6 or 0.7. Lastly, we consider a cube \emph{ordered} if it has four or more \emph{ordered bonds}. 
 
 \end{document}
 

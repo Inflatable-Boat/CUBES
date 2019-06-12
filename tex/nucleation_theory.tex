@@ -6,11 +6,13 @@
 
 \section{Nucleation Theory}
 
+In this section we will discuss 
 Before we dive into the simulations, we'll first discuss a simple approach to crystal nucleation, and then how we make a simulation which gives us nucleation in a reasonable time frame, using umbrella sampling.
 
-\subsection{Classical Nucleation Theory}
+\subsection{Classical Nucleation Theory}\label{subsec:cnt}
 
-The simplest model of nucleation is well known, and goes by the name of classical nucleation theory (CNT). The theory applies when we have a system in a \emph{metastable} state. Heuristically it is as follows. The entire system is in state $A$ with a chemical potential $\mu_A$, but under current conditions (due to e.g. pressure, density) the Gibbs free energy of the system would be lower in state $B$, with a chemical potential $\mu_B < \mu_A$. However, by changing a droplet in the system from state $A$ to state $B$, we create an interface with surface tension $\gamma > 0$ between state $A$ and state $B$. CNT asserts that a droplet is spherical (which makes sense, as this gives the most volume for the least area), so the energy change from a droplet at a radius $r$ will be	
+\begin{comment} % this is now in introduction.tex
+The simplest model of nucleation is well known, and goes by the name of classical nucleation theory (CNT). The theory applies when we have a system in a \emph{metastable} state. Heuristically it is as follows. The entire system of interest is in state $A$ with a chemical potential $\mu_A$, but under current conditions (due to e.g. pressure, density) the Gibbs free energy of the system would be lower in state $B$, with a chemical potential $\mu_B < \mu_A$. However, by changing a droplet in the system from state $A$ to state $B$, we create an interface with surface tension $\gamma > 0$ between state $A$ and state $B$. CNT asserts that a droplet is spherical (which makes sense, as this gives the most volume for the least area), so the energy change from a droplet at a radius $r$ will be	
 \begin{equation}
 	\Delta G(r) = 4\pi r^2 \gamma - \frac{4\pi r^3 \Delta\mu}{3},
 \end{equation}
@@ -24,30 +26,11 @@ This results in an energy barrier of
 %	\Delta G^* = 
 	\Delta G (r^*) = \frac{16 \pi \gamma^3}{3 \Delta\mu^2}.
 \end{equation}
-
-
-\subsection{Monte Carlo Simulation}
-
-To study nucleation of hard cubes, the system we will be using is a system of $N$ hard cubes at a pressure $p$ and temperature $T$. Because we are not interested in surface effects, we simulate the bulk by using periodic boundary conditions. With hard cubes we mean that cubes have no attraction or repulsion, except for an infinite energy cost for overlap, essentially forbidding this. In formula form, the energy $U_{\textrm{pair}}(i,j)$ from a pair of cubes $i$ and $j$ is
-\begin{equation}
-	U_{\textrm{pair}}(i,j) = 
-	\begin{cases}
-		\infty & \text{if}\ i \text{ and } j \text{ overlap,}\\
-		0 & \text{otherwise.}
-	\end{cases}
-\end{equation}
-In order to find properties of the system, say e.g. an equation of state relating the pressure $p$ to the density of the system $\rho$, we want to find
-
-We know from statistical physics\todo{find nice reference} that in order to measure some observable $A$, we can in principle calculate this by integrating over all possible 
-
-, we consider an $NpT$ ensemble of hard cubes.  
-
-
-\subsubsection{Separating Axis Theorem}
+\end{comment}
+\subsubsection{Nucleation Rate}
 
 
 
-\subsection{Umbrella Sampling}
 
 \end{document}
 

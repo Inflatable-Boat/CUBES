@@ -4,7 +4,99 @@
 
 \begin{document}
 
-\section{Results}
+\section{Measurements on Nucleation}
+
+In this section we finally examine the nucleation of cubes. In particular, in section \ref{subsec:eos} we discuss the equation of state for a range of slant angles, in \ref{subsec:clsz distr} we discuss the structure of the supersaturated fluid and in \ref{subsec:E bar} we construct the energy barriers from the cluster size distributions found using umbrella sampling.
+
+\subsection{Equation of State}\label{subsec:eos}
+
+One way to describe the properties of the system we study is by finding an \emph{equation of state}. By running multiple $NpT$ ensembles for differing pressures $p$, and finding the equilibrium density $\rho$ for each $p$, we can find the equation of state. This has been done before for both cubes and slanted cubes\cite{van2017phase}, and we will compare our results to previously done research to see if the simulation is working as intended. Note that because we are looking at hard particles, the energy potential is either zero or infinite, regardless of temperature. This means our simulation is effectively independent of temperature, which reduces the amount of variables by one already.\\
+
+For slant angles ranging from 90\degr\ (cubes) to 66\degr, two runs have been done per pressure: a compression run, starting at a relatively low density of 0.4 (i.e. in the fluid phase), and a melting run, starting in a relatively high density of 0.6 (i.e. in the crystal phase). Both runs start on a simple cubic lattice, but in the compression run this crystal melts immediately because of the low density. The results are shown in Figures \ref{fig:eos90}-\ref{fig:eos66}. 
+
+\begin{figure}[h]
+	\begin{subfigure}[t]{0.475\textwidth}
+		\includegraphics[width=\textwidth]{images/v21_eos_90all}
+		\caption{A plot of all data points.}
+		\label{fig:eos90-a}
+	\end{subfigure}\hfill
+	\begin{subfigure}[t]{0.475\textwidth}
+		\includegraphics[width=\textwidth]{images/v21_eos_90zoom}
+		\caption{A close-up of the interesting transition region.}
+		\label{fig:eos90-b}
+	\end{subfigure}
+	\caption{The equation of state of hard cubes.}
+	\label{fig:eos90}
+\end{figure}
+
+From the equation of state of cubes (Fig. \ref{fig:eos90-b}), we see that a phase transition occurs somewhere between a dimensionless pressure of $\beta p \sigma^3 = 5.9$ and $\beta p \sigma^3 = 6.2$. This is consistent with the earlier result from \cite{smallenburg2012vacancy} that finds a coexistence pressure of $\beta p \sigma^3 = 6.16$. The turning point from the low density liquid phase to the higher density crystal phase is different in the melting and compression runs, because in the compression runs the cubes start in a fluid, and the system needs to overcome the energy barrier discussed in section \ref{subsec:cnt}, which we will attempt to construct in section \ref{subsec:E bar}.
+
+\begin{figure}[h]
+	\begin{subfigure}[t]{0.475\textwidth}
+		\includegraphics[width=\textwidth]{images/v21_eos_84all}
+		\caption{A plot of all data points.}
+		\label{fig:eos84-a}
+	\end{subfigure}\hfill
+	\begin{subfigure}[t]{0.475\textwidth}
+		\includegraphics[width=\textwidth]{images/v21_eos_84zoom}
+		\caption{A close-up of the interesting transition region.}
+		\label{fig:eos84-b}
+	\end{subfigure}
+	\caption{The equation of state of hard cubes with a slant angle of 84\degr.}
+	\label{fig:eos84}
+\end{figure}
+
+\begin{figure}[h]
+	\begin{subfigure}[t]{0.475\textwidth}
+		\includegraphics[width=\textwidth]{images/v21_eos_78all}
+		\caption{A plot of all data points.}
+		\label{fig:eos78-a}
+	\end{subfigure}\hfill
+	\begin{subfigure}[t]{0.475\textwidth}
+		\includegraphics[width=\textwidth]{images/v21_eos_78zoom}
+		\caption{A close-up of the interesting transition region.}
+		\label{fig:eos78-b}
+	\end{subfigure}
+	\caption{The equation of state of hard cubes with a slant angle of 78\degr.}
+	\label{fig:eos78}
+\end{figure}
+
+\begin{figure}[h]
+	\begin{subfigure}[t]{0.475\textwidth}
+		\includegraphics[width=\textwidth]{images/v21_eos_72all}
+		\caption{A plot of all data points.}
+		\label{fig:eos72-a}
+	\end{subfigure}\hfill
+	\begin{subfigure}[t]{0.475\textwidth}
+		\includegraphics[width=\textwidth]{images/v21_eos_72zoom}
+		\caption{A close-up of the interesting transition region.}
+		\label{fig:eos72-b}
+	\end{subfigure}
+	\caption{The equation of state of hard cubes with a slant angle of 72\degr.}
+	\label{fig:eos72}
+\end{figure}
+
+\begin{figure}[h]
+	\begin{subfigure}[t]{0.475\textwidth}
+		\includegraphics[width=\textwidth]{images/v21_eos_66all}
+		\caption{A plot of all data points.}
+		\label{fig:eos66-a}
+	\end{subfigure}\hfill
+	\begin{subfigure}[t]{0.475\textwidth}
+		\includegraphics[width=\textwidth]{images/v21_eos_66zoom}
+		\caption{A close-up of the interesting transition region.}
+		\label{fig:eos66-b}
+	\end{subfigure}
+	\caption{The equation of state of hard cubes with a slant angle of 66\degr.}
+	\label{fig:eos66}
+\end{figure}
+
+When we compare the equation of state of hard cubes (Fig. \ref{fig:eos90}) to that of other slant angles (Fig. \ref{fig:eos84}-\ref{fig:eos66}), we notice two trends: Firstly, as the slant angle decreases, the pressures at which the system forms a crystal rises. Secondly, as the slant angle decreases, the hysteresis observed from the difference between the compression run and the melting run increases.
+The first trend can be interpreted as that cubes with a smaller slant angle are harder to push together into a crystal. This makes sense, as the more slanted a cube is, the less nicely 
+
+\subsection{Cluster size distribution}\label{subsec:clsz distr}
+
+\subsection{Energy Barriers}\label{subsec:E bar}
 
 \end{document}
 

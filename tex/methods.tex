@@ -1,0 +1,42 @@
+% Credit: TeXniCie A-eskwadraat
+
+\documentclass[thesis]{subfiles}
+
+\begin{document}
+
+\section{Methods}
+
+\subsection{Monte Carlo Simulation}
+
+To study nucleation of hard cubes, the system we will be using is a system of $N$ hard cubes at a pressure $p$ and temperature $T$. Because we are not interested in surface effects, we simulate the bulk by using periodic boundary conditions. With hard cubes we mean that cubes have no attraction or repulsion, except for an infinite energy cost for overlap, essentially forbidding this. In formula form, the energy $U_{\textrm{pair}}(i,j)$ from a pair of cubes $i$ and $j$ is
+\begin{equation}
+U_{\textrm{pair}}(i,j) = 
+\begin{cases}
+\infty & \text{if}\ i \text{ and } j \text{ overlap,}\\
+0 & \text{otherwise.}
+\end{cases}
+\end{equation}
+In order to find properties of the system, say e.g. an equation of state relating the pressure $p$ to the density of the system $\rho$, we want to find
+
+We know from statistical physics \todo{find nice reference} that in order to measure some observable $A$, we can in principle calculate this by integrating over all possible microstates. In practice however, this is very hard due to the large numbers of degrees of freedom (3 positional and 2 rotational for every particle) and interactions between all the particles. As is now standard in condensed matter theory, we approach this problem by making a \emph{Monte Carlo simulation}, which is effectively a random walk through the phase space of the system. If we make enough measurements of a variable of interest, we hope to get a representative sample of states our system should be in, and with that a good measurement of the average value. 
+
+\subsubsection{Separating Axis Theorem}
+
+\subsection{Umbrella Sampling}
+
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+

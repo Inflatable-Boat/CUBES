@@ -7,5 +7,22 @@
 
 \section{Introduction}
 
+\subsection{Classical Nucleation Theory}\label{subsec:cnt}
+
+The simplest model of nucleation is well known, and goes by the name of classical nucleation theory (CNT). The theory applies when we have a system in a \emph{metastable} state. Heuristically it is as follows. The entire system of interest is in state $A$ with a chemical potential $\mu_A$, but under current conditions (due to e.g. pressure, density) the Gibbs free energy of the system would be lower in state $B$, with a chemical potential $\mu_B < \mu_A$. However, by changing a droplet in the system from state $A$ to state $B$, we create an interface with surface tension $\gamma > 0$ between state $A$ and state $B$. CNT asserts that a droplet is spherical (which makes sense, as this gives the most volume for the least area), so the energy change from a droplet at a radius $r$ will be	
+\begin{equation}
+\Delta G(r) = 4\pi r^2 \gamma - \frac{4\pi r^3 \Delta\mu}{3},
+\end{equation}
+where $\Delta\mu = \mu_A - \mu_B > 0$. Naturally, if making the droplet larger makes this energy cost is greater, i.e. if $\frac{d\Delta G(r)}{dr} > 0$, %than the energy gain from changing the state, 
+then the system will, in order to minimize the Gibbs free energy, make the droplet smaller. However, because $r^3$ grows faster than $r^2$, at sufficiently high $r$ the bulk energy gain will overtake the surface energy cost. This can be easily calculated by setting the derivative to zero, and we find the critical droplet radius
+\begin{equation}
+r^* = \frac{2\gamma}{\Delta\mu}.
+\end{equation}
+This results in an energy barrier of 
+\begin{equation}
+%	\Delta G^* = 
+\Delta G (r^*) = \frac{16 \pi \gamma^3}{3 \Delta\mu^2}.
+\end{equation}
+
 \end{document}
 
