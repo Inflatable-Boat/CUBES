@@ -45,11 +45,12 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%\usepackage[utf8]{inputenc} % utf8 source
+\usepackage[utf8]{inputenc} % utf8 source
 \usepackage[british]{babel} % Correct language setting, 'british', 'american'='english' or 'dutch'.
 \usepackage[autostyle]{csquotes} % Fixes quotes to correspond to the babel language.
 % Note the difference between ``quotes'' and ''quotes'' when using different languages.
-
+%\usepackage{chngcntr}
+%\counterwithout{equation}{section} % remove the chapter number
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -95,6 +96,7 @@
 \newcommand{\llangle}{\left\langle}
 \newcommand{\rrangle}{\right\rangle}
 \newcommand{\degr}{$^\circ$}
+\newcommand{\argr}{(\bm r^N)}
 
 %\newcommand{\thm}[2]{\begin{theorem} #1 \begin{proof} #2 \end{proof} \end{theorem}}
 %\newcommand{\lm}[2]{\begin{lemma} #1 \begin{proof} #2 \end{proof} \end{lemma}}

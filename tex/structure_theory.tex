@@ -8,7 +8,7 @@
 
 \section{Local Structure Characterization}
 
-In this chapter we explore a number of different ways to characterize the local `crystalline' structure in the fluid. In particular in section \ref{subsec:rdf} we examine the radial distribution function, and in section \ref{subsec:order} we use the local translational as well as local orientational bond order to determine local crystallinity.
+In this chapter we explore a number of different ways to characterize the local `crystalline' structure in the fluid. In particular in Section \ref{subsec:rdf} we examine the radial distribution function, and in Section \ref{subsec:order} we use the local translational as well as local orientational bond order to determine local crystallinity.
 
 \subsection{Radial Distribution Function} \label{subsec:rdf}
 
@@ -30,15 +30,15 @@ Looking at Equation \ref{eq:gofr}, the radial distribution function goes to 1 in
 
 \subsection{Order Parameter} \label{subsec:order}
 
-In this section we will discuss and use the Steinhardt \emph{bond-orientational} (or simply translational) order parameter which is commonly used in the detection of crystalline order \cite{steinhardt1983bond, lechner2008accurate, van2017phase, sharma2018disorder, mickel2013shortcomings}. Aside from translational order, we also consider orientational order, because we are studying cubes which have an orientation.
+In this Section we will discuss and use the Steinhardt \emph{bond-orientational} (or simply translational) order parameter which is commonly used in the detection of crystalline order \cite{steinhardt1983bond, lechner2008accurate, van2017phase, sharma2018disorder, mickel2013shortcomings}. Aside from translational order, we also consider orientational order, because we are studying cubes which have an orientation.
 
-\subsubsection{Translational order parameter \texorpdfstring{$q_4$}{q4}}
+\subsubsection{Translational order parameter}
 
 First we discuss the Steinhardt order parameter in general. For a nonnegative integer $\ell$ and integers $\abs{m} \leq\ell$, we define for cube $i$ the \emph{local translational order parameter}
 \begin{equation}
 q_{\ell, m}(i) = \sum_{j} Y_{\ell, m} (\theta_{i, j}, \phi_{i, j}),
 \end{equation}
-where the sum is over all neighbours of cube $i$, $\theta_{i, j}$ and $\phi_{i, j}$ are the polar angle and the azimuthal angle of the vector from cube $i$'s centre to cube $j$'s centre, respectively. $Y_{\ell, m}$ are the spherical harmonics.% given by
+where the sum is over all neighbours of cube $i$, $\theta_{i, j}$ and $\phi_{i, j}$ are the polar angle and the azimuthal angle of the vector from cube $i$'s centre to cube $j$'s centre, respectively, and $Y_{\ell, m}$ are the spherical harmonics.% given by
 %\begin{equation}
 %Y_{\ell, m}(\theta, \phi) = \sqrt{\frac{2\ell + 1}{4\pi}\frac{(\ell + m)!}{(\ell - m)!}}\ P_\ell^m(\cos(\theta)) \ \me^{im\phi},
 %\end{equation}
@@ -49,12 +49,12 @@ The translational correlation between neighbouring cubes $i$ and $j$ is then def
 d_{q_\ell}(i, j) = \frac{\sum_{m = -\ell}^\ell q_{\ell, m}(i) \cdot q^*_{\ell, m}(j)}{\sqrt{\left(\sum_{m = -\ell}^\ell \abs{q_{\ell, m}(i)}^2\right) \left(\sum_{m = -\ell}^\ell \abs{q_{\ell, m}(j)}^2\right)}}.
 \end{equation}
 
-Here the asterisk stands for complex conjugation. This translational correlation between two cubes will be a number between -1 and 1, which correspond to perfect anti-ordering and ordering (with respect to the fourth spherical harmonic), respectively.
+Here the asterisk stands for complex conjugation. This translational correlation between two cubes will be a number between -1 and 1, which correspond to perfect anti-ordering and ordering respectively. Because the systems we will be studying form a simple cubic crystal, we choose to restrict our attention to the $\ell = 4$ case, as it has been observed that $q_4$ captures simple cubic order well \cite{steinhardt1983bond,mickel2013shortcomings}.
 
-\subsubsection{Orientational order parameter \texorpdfstring{$i_4$}{i4}} \label{subsubsec:orient order param}
+\subsubsection{Orientational order parameter} \label{subsubsec:orient order param}
 
 For orientational order we do something similar to the translational order case, but we need to take into account the symmetries of the cube. To this end, we define three vectors for each cube: the three unit vectors perpendicular to one of the faces of the cube and each other. This definition is ambiguous, as for each face, there are two unit vectors (i.e. one pointing inward, the other pointing outward). However because we will consider only even-$\ell$ spherical harmonics, which are invariant under inversion \cite{steinhardt1983bond}, this distinction disappears.\\
-For slanted cubes, there is a choice to make. The three vectors defined above could equivalently be defined as `the edges of the cube.' If we consider cubes with a slant angle smaller than 90\degr, these two definitions would differ. This difference, and an alternative definition have been studied and will be discussed in section \ref{subsec:orientation vectors}.
+For slanted cubes, there is a choice to make. The three vectors defined above could equivalently be defined as `the edges of the cube.' If we consider cubes with a slant angle smaller than 90\degr, these two definitions would differ. This difference, and an alternative definition have been studied and will be discussed in Section \ref{subsec:orientation vectors}.
 \\
 Just like with the translational order parameter, in general for a nonnegative integer $\ell$ and integers $ \abs{m} \leq \ell$, we define for cube $i$ the \emph{local orientational order parameter}
 \begin{equation}
@@ -66,13 +66,16 @@ Now again, we define the correlation between neighbouring cubes $i$ and $j$ by t
 d_{i_\ell}(k,l) = \sum_{m = -\ell}^\ell i_{\ell, m}(k) \cdot i^*_{\ell, m}(l).
 \end{equation}
 
-Just like with the translational correlation, this will be a number between -1 and 1, corresponding to perfect anti-ordering and ordering respectively.
+Just like with the translational correlation, this will be a number between -1 and 1, corresponding to perfect anti-ordering and ordering respectively. As with the translational order case, because the systems we will be studying form a simple cubic crystal, we will restrict our attention to the $\ell = 4$ case, as we expect that orientational order will also be captured well by $i_4$.
 
 \subsubsection{Ordered Bonds, Cubes, and Clusters}
 
-For both the translational and orientational order, having defined the order parameter for each cube as well as the order correlation between two cubes, we continue in the same fashion for either type of order. We define a `cutoff radius,' so we call cubes within that radius \emph{bonded}. In section \ref{subsec:res_rdf} we will determine a proper cutoff radius. Next we will define two cubes to have an \emph{ordered bond} if they are bonded and their order correlation is above a certain cutoff. In section \ref{subsec:res_order cutoff} we will determine a proper cutoff.
-Next we define a cube to be an \emph{ordered cube} if it has at least four ordered bonds, and finally a \emph{cluster} is defined as the largest connected set of ordered cubes (with the condition that there are at least 3 cubes in the cluster), where connected means if they are bonded.
-\\
+For both types of order, having defined the order parameter for each cube as well as the order correlation between two cubes, we define a few terms which we will be using throughout this thesis.
+We define a `cutoff radius,' so we say that two cubes within that cutoff radius have a \emph{bond}. If the order correlation of two bonded cubes is above an `order cutoff,' we say that two cubes have an \emph{ordered bond}. Next we define a cube to be an \emph{ordered cube} if it has at least four ordered bonds, and finally a \emph{cluster} is a collection of at least three ordered cubes which are connected in the sense that they share ordered bonds.\\
+
+%For both the translational and orientational order, having defined the order parameter for each cube as well as the order correlation between two cubes, we continue in the same fashion for either type of order. We define a `cutoff radius,' so we call cubes within that radius \emph{bonded}. In Section \ref{subsec:res_rdf} we will determine a proper cutoff radius. Next we will define two cubes to have an \emph{ordered bond} if they are bonded and their order correlation is above a certain cutoff. In Section \ref{subsec:res_order cutoff} we will determine a proper cutoff.
+%Next we define a cube to be an \emph{ordered cube} if it has at least four ordered bonds, and finally a \emph{cluster} is defined as the largest connected set of ordered cubes (with the condition that there are at least 3 cubes in the cluster), where connected means if they are bonded.
+
 \begin{wrapfigure}{r}{0.5\textwidth}
 	\vspace{-20pt}
 	\centering
@@ -81,9 +84,9 @@ Next we define a cube to be an \emph{ordered cube} if it has at least four order
 	\caption{A typical snapshot of a liquid of cubes, with different clusters colored differently, and all non-crystalline cubes drawn small.} \label{fig:ex.}
 	\vspace{-15pt}
 \end{wrapfigure}
-\vspace{-10pt}
+%\vspace{-10pt}
 
-From a visualization perspective, a nice trick to visualizing clusters is by showing particles which belong to a cluster in their true size, while showing all non-ordered cubes at only a fraction of their true size, so we can `see through' them. An example of what a fluid filled with some clusters of crystallinity might look like can be seen in Figure \ref{fig:ex.}. We will always colour different  different clusters in a different colour, unless there are too many different clusters.
+From a visualization perspective, a nice trick to visualizing clusters is by showing particles which belong to a cluster in their true size, while showing all non-ordered cubes at only a fraction of their true size, so we can `see through' them. An example of what a fluid filled with some clusters of crystallinity might look like can be seen in Figure \ref{fig:ex.}. We will always colour different clusters in a different colour, unless there are too many different clusters.
 
 %From a visualization perspective, a nice trick to visualizing clusters is by showing particles which belong to a cluster in their true size, while showing all non-ordered cubes at only a fraction of their true size, so we can `see through' them. An example of what a fluid filled with some clusters of crystallinity might look like can be seen in Figure \ref{fig:ex.}. We will always colour different  different clusters in a different colour, unless there are too many different clusters.
 %

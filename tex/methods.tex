@@ -6,9 +6,11 @@
 
 \section{Methods}
 
-\subsection{Monte Carlo Simulation}
+In this section we will cover the basics of Monte Carlo simulation in Section \ref{subsec:MCsim}, explain how we detect overlap between cubes using the separating axis theorem in Section \ref{subsec:sep ax thm}, and explore the theory behind umbrella sampling as a way to force crystallization on a reasonable timescale in Section \ref{subsec:US}.
 
-To study nucleation of hard cubes, the system we will be using is a system of $N$ hard cubes at a pressure $p$ and temperature $T$. Because we are not interested in surface effects, we simulate the bulk by using periodic boundary conditions. With hard cubes we mean that cubes have no attraction or repulsion, except for an infinite energy cost for overlap, essentially forbidding this. In formula form, the energy $U_{\textrm{pair}}(i,j)$ from a pair of cubes $i$ and $j$ is
+\subsection{Monte Carlo Simulation}\label{subsec:MCsim}
+
+To study nucleation of hard cubes, the system we will be using is a system of $N$ hard cubes at a pressure $p$ and temperature $T$. Because we are not interested in surface effects, we simulate the bulk by using periodic boundary conditions. With hard cubes we mean that cubes have no attraction or repulsion, except for an infinite energy cost for overlap, essentially forbidding this. That is, the interaction energy $U_{\textrm{pair}}(i,j)$ from a pair of cubes $i$ and $j$ is given by
 \begin{equation}
 U_{\textrm{pair}}(i,j) = 
 \begin{cases}
@@ -16,14 +18,68 @@ U_{\textrm{pair}}(i,j) =
 0 & \text{otherwise.}
 \end{cases}
 \end{equation}
-In order to find properties of the system, say e.g. an equation of state relating the pressure $p$ to the density of the system $\rho$, we want to find
+
+In order to find properties of the system, we simulate as many different microstates of the system as possible. As we know from statistical physics, in order to measure some
+the average value of observables, e.g. the density state, we need to simulate a 
+we simulate as many different microstates of our system as follows. 
 
 We know from statistical physics \todo{find nice reference} that in order to measure some observable $A$, we can in principle calculate this by integrating over all possible microstates. In practice however, this is very hard due to the large numbers of degrees of freedom (3 positional and 2 rotational for every particle) and interactions between all the particles. As is now standard in condensed matter theory, we approach this problem by making a \emph{Monte Carlo simulation}, which is effectively a random walk through the phase space of the system. If we make enough measurements of a variable of interest, we hope to get a representative sample of states our system should be in, and with that a good measurement of the average value. 
 
-\subsubsection{Separating Axis Theorem}
+\subsubsection{Separating Axis Theorem}\label{subsec:sep ax thm}
 
-\subsection{Umbrella Sampling}
+In order to check for overlap between cubes in order to determine whether a move should be accepted, we use the separating axis theorem, which can be applied in general to determine whether any two convex polyhedra are separated. Heuristically it is as follows. Given two objects in 3D space, whenever we can find a plane that separates the two objects, we are sure that the two objects do not overlap. If on the other hand, there exists no such plane, then given the two objects are convex, we must conclude the objects overlap. We can efficiently check that two objects are separated by a plane by projecting the objects on an axis normal to the plane. The plane separates the objects if and only if the projected images do not overlap on the axis. Hence the name \emph{separating axis}. \\
 
+Finding a separating axis is sufficient for concluding the two objects don't overlap, but how many, and which axes must we check before we can conclude the two objects must overlap? It is proved in \todo{can't find paper} (S. Gottschalk , Separating axis theorem. Technical Report TR96-024) that axes defined by the following vectors are sufficient to conclude that the objects must overlap:
+\begin{itemize}
+	\item The normal vectors of each face of the first object,
+	\item The normal vectors of each face of the second object,
+	\item All cross products $a \times b$ where $a$ is an edge\footnote{Strictly speaking, an edge has no direction, so an edge defines two vectors. However we don't care about the direction since we use this vector to define an axis.} of the first object and $b$ is an edge of the second object.
+\end{itemize}
+
+In the for this thesis relevant case of slanted cubes, we can take advantage of symmetry to reduce computation time. A slanted cube only has three differently oriented faces, and also only three differently oriented edges. This means that, to check for overlap between two slanted cubes, we only need to check the six normals on the faces of the cubes, and take every combination of cross products between one edge from the one cube and one edge from the other. This amounts to $6 + 3 \times 3 = 15$ axes we need to check. If and only if all axes fail to show separation, we can conclude that the cubes overlap.
+
+\subsection{Umbrella Sampling}\label{subsec:US}
+
+In order for a crystal to grow, we need to wait for a density fluctuation large enough to overcome the energy barrier from classical nucleation theory. Because we want to study nucleation rates close to the critical point, it will take a long time before a density fluctuation creates a cluster larger than the critical cluster size, above which nucleation of the entire system will occur. As a back-of-the-envelope calculation done in \cite{kalikmanov2013classical} shows, a typical nucleation barrier is of energy $\sim 40-60 k_BT$. This means that the probability of a thermal fluctuation causing this is $\me^{-50}\approx 2\times 10^{-22}$. In other words, in order to reasonably quickly see a thermal fluctuation large enough to go over the energy barrier we would need to simulate about $5\times 10^{21}$ particles. With current computation power this is effectively impossible. One way to combat this is by using \emph{umbrella sampling} or \emph{multistage sampling}, introduced by Torrie and Valleau in 1974 \cite{torrie1974monte}.\\
+
+Following \cite{allen2004introduction}, the basic idea is that we put a weight function $W(\bm r^N)$ on top of the normal interaction potential, in order to bias the system towards a particular region in phase space that we are interested in. That is, we will accept moves with a probability proportional to
+\begin{equation}
+	\pi\argr = \exp [-\beta U\argr + W\argr].
+\end{equation}\label{eq:pi}
+
+Because this distorts the behaviour of the system, in order to get the expectation value of a measurable $X$ from the actual system, we have to `unbias' the measured results. This can be done relatively simply, as per the following calculations.
+
+\begin{align}
+	\llangle X \rrangle &= \frac{
+		\int d\bm r^N X\argr \exp[-\beta U\argr]
+	}{
+		\int d\bm r^N \exp[-\beta U\argr]
+	}\\
+	&= \frac{
+		\int d\bm r^N X\argr \exp[-W\argr] \argr \exp[-\beta U\argr + W\argr]
+	}{
+		\int d\bm r^N \exp[-W\argr] \exp[-\beta U\argr + W\argr]
+	}\\
+	&= \frac{
+		\frac{
+			\int d\bm r^N X\argr \exp[-W\argr] \argr \exp[-\beta U\argr + W\argr]
+		}{
+			\int d\bm r^N \exp[-\beta U\argr + W\argr]
+		}
+	}{
+		\frac{
+			\int d\bm r^N \exp[-W\argr] \exp[-\beta U\argr + W\argr]
+		}{
+			\int d\bm r^N \exp[-\beta U\argr + W\argr]
+		}
+	}\\
+	&= \frac{
+		\llangle X \exp[-W] \rrangle_\pi
+	}{
+		\llangle \exp[-W] \rrangle_\pi
+	},
+\end{align}
+where $\llangle \cdot \rrangle_\pi$ denotes sampling in the system according to Equation \ref{eq:pi}. 
 
 
 \end{document}
