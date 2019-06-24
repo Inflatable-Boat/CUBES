@@ -4,33 +4,93 @@
 
 \begin{document}
 
-\section{Nucleation Theory}
+\part{Nucleation of Hard Cubes}
 
-In this Section we will discuss 
-Before we dive into the simulations, we'll first discuss a simple approach to crystal nucleation, and then how we make a simulation which gives us nucleation in a reasonable time frame, using umbrella sampling.
+\section{Theory}
+
+In this section we will discuss the simplest model for nucleation, classical nucleation theory in Section \ref{subsec:cnt}, where we will delve into nucleation barriers, which can used to determine for example the nucleation rate, which we will derive in Section \ref{subsec:nucl rate}
 
 \subsection{Classical Nucleation Theory}\label{subsec:cnt}
 
-\begin{comment} % this is now in introduction.tex
-The simplest model of nucleation is well known, and goes by the name of classical nucleation theory (CNT). The theory applies when we have a system in a \emph{metastable} state. Heuristically it is as follows. The entire system of interest is in state $A$ with a chemical potential $\mu_A$, but under current conditions (due to e.g. pressure, density) the Gibbs free energy of the system would be lower in state $B$, with a chemical potential $\mu_B < \mu_A$. However, by changing a droplet in the system from state $A$ to state $B$, we create an interface with surface tension $\gamma > 0$ between state $A$ and state $B$. CNT asserts that a droplet is spherical (which makes sense, as this gives the most volume for the least area), so the energy change from a droplet at a radius $r$ will be	
+\begin{wrapfigure}{r}{0.3\textwidth}
+	\centering
+	\vspace{-10pt}
+	\includegraphics[width=0.9\linewidth]{images/CNT}
+	\caption{A cartoon of the system described by CNT.}\label{fig:cnt}
+	\vspace{-10pt}
+\end{wrapfigure}
+
+The simplest model of nucleation is well known, and goes by the name of classical nucleation theory (CNT). The theory applies when we have a system in a \emph{metastable} state. The idea is as follows. See Figure \ref{fig:cnt} for a sketch of the system. The entire system of interest is in state $A$ with a chemical potential $\mu_A$, but under current conditions (due to e.g. pressure, density) the Gibbs free energy of the system would be lower in state $B$, with a chemical potential $\mu_B < \mu_A$. However, by changing a droplet in the system from state $A$ to state $B$, we create an interface between state $A$ and state $B$ with surface tension $\gamma > 0$. CNT generally asserts that a droplet is spherical (which makes sense, as this gives the most volume for the least area), so the energy change from a droplet with radius $r$ will be	
 \begin{equation}
 	\Delta G(r) = 4\pi r^2 \gamma - \frac{4\pi r^3 \Delta\mu}{3},
 \end{equation}
-where $\Delta\mu = \mu_A - \mu_B > 0$. Naturally, if making the droplet larger makes this energy cost is greater, i.e. if $\frac{d\Delta G(r)}{dr} > 0$, %than the energy gain from changing the state, 
+where $\Delta\mu = \mu_A - \mu_B > 0$ is the supersaturation. Naturally, if making the droplet larger makes this energy cost is greater, i.e. if $\frac{d\Delta G(r)}{dr} > 0$, %than the energy gain from changing the state, 
 then the system will, in order to minimize the Gibbs free energy, make the droplet smaller. However, because $r^3$ grows faster than $r^2$, at sufficiently high $r$ the bulk energy gain will overtake the surface energy cost. This can be easily calculated by setting the derivative to zero, and we find the critical droplet radius
 \begin{equation}
 	r^* = \frac{2\gamma}{\Delta\mu}.
 \end{equation}
+
 This results in an energy barrier of 
+
 \begin{equation}
-%	\Delta G^* = 
 	\Delta G (r^*) = \frac{16 \pi \gamma^3}{3 \Delta\mu^2}.
 \end{equation}
-\end{comment}
-\subsubsection{Nucleation Rate}
 
+\subsection{Nucleation Rate} \label{subsec:nucl rate}
 
+To obtain the nucleation rate from classical nucleation theory, we follow \cite{valeriani2007numerical}. Under CNT we assume that the clusters of phase $B$ grow and shrink by attaching and removing a single particle respectively\footnote{This  approximation was originally made for dilute systems\cite{katz1992homogeneous}, where collisions between relatively rare larger clusters are rather rare. This assumption will prove to be wrong for the nucleation of cubes, as we will see in the next Section.}. %That is, for each cluster size $n$ there is a corresponding rate of both attachment $k_{+, n}$ and detachment $k_{-, n}$ to a cluster of size $n$. Then, we can set up a master equation governing the cluster size distribution $N_n(t)$:
+%\begin{equation}
+%	\frac{d N_n(t)}{d t} = N_{n-1}(t)k_{+, n - 1} - N_n(t) \left( k_{-, n} + k_{+, n} \right) + N_{n+1}(t) k_{-, n + 1},
+%\end{equation}
+%where each term is more or less self-explanatory: the first term represents clusters of size $n-1$ growing to size $n$, the last term represents clusters of the size $n+1$ shrinking back to size $n$, and the middle term represents clusters of size $n$ gaining or losing a particle. This can be solved to obtain the cluster size distribution $N_n(t)$. 
+The nucleation rate $R_n$, i.e. the flux of clusters growing to size $n$, can be expressed as (ignoring for sake of simplicity the time-dependence)
+\begin{equation}
+	R_n = N_n k_{+, n} - N_{n + 1} k_{-, n + 1},
+\end{equation}
+where $N_n$ is the number of clusters of size $n$ and $k_{\pm, n}$ are the attachment ($+$) and detachment ($-$) rate of a single particle to a cluster of size $n$. Given the cluster size distribution $N_n$, which can be calculated as Volmer and Weber did in 1926\cite{volmer1926keimbildung}\todo{note: can't actually find the paper}, and also requiring a few more simplifications, we can approximate the nucleation rate $R = R_{n^*}$, with $n^*$ the critical nucleus size. The simplifications are that for $n > n^*$, the cluster does not get smaller. The second simplification is that for $n \leq n^*$, the cluster size distribution $N_n$ is the equilibrium distribution.
 
+\subsection{Umbrella Sampling}\label{subsec:US}
+
+In order for a crystal to grow, we need to wait for a density fluctuation large enough to overcome the free-energy barrier from classical nucleation theory. Because we want to study nucleation rates close to the critical point, it will take a long time before a density fluctuation creates a cluster larger than the critical cluster size, above which nucleation of the entire system will occur.  With current computation power it is effectively impossible to simply set up the simulation and wait for nucleation to happen. One way to combat this is by using \emph{umbrella sampling} or \emph{multistage sampling}, introduced by Torrie and Valleau in 1974 \cite{torrie1974monte}.\\
+
+Following \cite{allen2004introduction}, the basic idea is that we put a weight function $W(\bm r^N)$ on top of the normal interaction potential, in order to bias the system towards a particular region in phase space that we are interested in. That is, we will accept moves with a probability proportional to
+\begin{equation}
+\pi\argr = \exp [-\beta U\argr + W\argr].
+\end{equation}\label{eq:pi}
+
+Because this distorts the behaviour of the system, in order to get the expectation value of a measurable $X$ from the actual system, we have to `unbias' the measured results. This can be done relatively simply, as per the following calculation.
+
+\begin{align}
+	\llangle X \rrangle &= \frac{
+		\int d\bm r^N X\argr \exp[-\beta U\argr]
+	}{
+		\int d\bm r^N \exp[-\beta U\argr]
+	}\\
+	&= \frac{
+		\int d\bm r^N X\argr \exp[-W\argr] \argr \exp[-\beta U\argr + W\argr]
+	}{
+		\int d\bm r^N \exp[-W\argr] \exp[-\beta U\argr + W\argr]
+	}\\
+	&= \frac{
+		\frac{
+			\int d\bm r^N X\argr \exp[-W\argr] \argr \exp[-\beta U\argr + W\argr]
+		}{
+			\int d\bm r^N \exp[-\beta U\argr + W\argr]
+		}
+	}{
+		\frac{
+			\int d\bm r^N \exp[-W\argr] \exp[-\beta U\argr + W\argr]
+		}{
+			\int d\bm r^N \exp[-\beta U\argr + W\argr]
+		}
+	}\\
+	&= \frac{
+		\llangle X \exp[-W] \rrangle_\pi
+	}{
+		\llangle \exp[-W] \rrangle_\pi
+	},
+\end{align}
+where $\llangle \cdot \rrangle_\pi$ denotes sampling in the system according to Equation \ref{eq:pi}. 
 
 \end{document}
 

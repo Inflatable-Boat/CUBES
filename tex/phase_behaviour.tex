@@ -4,15 +4,9 @@
 
 \begin{document}
 
-\section{Measurements}
+\section{Phase behaviour}\label{subsec:eos}
 
-In this Section we finally examine the nucleation of cubes. In \ref{subsec:clsz distr} we discuss the structure of the supersaturated fluid and in \ref{subsec:E bar} we construct the energy barriers from the cluster size distributions found using umbrella sampling.
-
-\begin{comment} % this is now in phase_behaviour.tex
-
-\subsection{Equation of State}\label{subsec:eos}
-
-One way to describe the properties of the system we study is by finding an \emph{equation of state}. By running multiple $NpT$ ensembles for differing pressures $p$, and finding the equilibrium density $\rho$ for each $p$, we can find the equation of state. This has been done before for both cubes and slanted cubes\cite{van2017phase}, and we will compare our results to previously done research to see if the simulation is working as intended.\\
+In this Section we examine equation of state for a range of slant angles and compare them to literature to see if our simulation is working as intended. By running multiple $NpT$ ensembles for differing pressures $p$, and finding the equilibrium density $\rho$ for each $p$, we can find the equation of state. This has been done before for both cubes and slanted cubes\cite{van2017phase}, and we will compare our results to previously done research to see if the simulation is working as intended.\\
 
 For slant angles ranging from 90\degr\ (cubes) to 66\degr, two runs have been done per pressure: a compression run, starting at a relatively low density of 0.4 (i.e. in the fluid phase), and a melting run, starting in a relatively high density of 0.6 (i.e. in the crystal phase). Both runs start on a simple cubic lattice, but in the compression run this crystal melts immediately because of the low density. The results are shown in Figures \ref{fig:eos90}-\ref{fig:eos66}, where in each case on the left the equation of state on a larger range of pressures is shown, and on the right a more detailed look at the interesting region around the 
 
@@ -95,58 +89,6 @@ From the equation of state of cubes (Fig. \ref{fig:eos90-b}), we see that a phas
 
 When we compare the equation of state of hard cubes (Fig. \ref{fig:eos90}) to that of other slant angles (Fig. \ref{fig:eos84}-\ref{fig:eos66}), we notice two trends: Firstly, as the slant angle decreases, the pressures at which the system forms a crystal rises. Secondly, as the slant angle decreases, the hysteresis observed from the difference between the compression run and the melting run increases.
 The first trend can be interpreted as that cubes with a smaller slant angle are harder to push together into a crystal. This makes sense, as the more slanted a cube is, the less nicely it fits in a cubic box, which is the space that a particle in a simple cubic crystal effectively has. The second trend tells us that the energy barrier between the liquid and crystalline phases is higher for smaller slant angles, which can be due to a higher surface tension between the two phases, a lower bulk energy gain from the crystal phase, or the shape of the particles somehow impedes the crystal phase growth.
-
-\end{comment}
-
-
-
-\subsection{Cluster size distribution}\label{subsec:clsz distr}
-
-
-
-\subsection{Energy Barriers}\label{subsec:E bar}
-
-In this section we discuss the energy barriers found for cubes, using the umbrella sampling method described in Section \ref{subsec:US}. Smallenburg et al. found that the coexistence pressure for the fluid and crystal phase of cubes is $\beta p^* \sigma^3 = 6.16$ \cite{smallenburg2012vacancy}. Initially we were confident we could find energy barriers for pressures only slightly higher than this coexistence pressure, so we tried to build the energy barrier with $\beta p \sigma^3 = 6.17, 6.18$. See Figures \ref{barp17c6l1, barp18c6l1}. We ran with target cluster sizes from 30 to about 700, in steps of 20. We chose, after some experimentation, the potential bias coupling parameter at $\lambda = 0.005$, and from Section \ref{subsec:res_order cutoff} we chose the order cutoff for being a crystalline bond at 0.6. 
-
-\begin{figure}[h]
-	\centering
-	\begin{subfigure}[t]{0.9\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{{images/v31_p6.17c0.6l0.005_extra}.pdf}
-		\caption{Left: the umbrella of largest cluster size distributions, for every target cluster size. Right: The unbiased pieces of the free-energy barriers.}
-		\label{fig:barp17c6l1e}
-	\end{subfigure}
-	\centering
-	\begin{subfigure}[t]{0.8\textwidth}
-		\centering
-		\includegraphics[width=.9\textwidth]{{images/v31_p6.17c0.6l0.005_barrier}.pdf}
-		\caption{The free-energy barrier obtained by stitching together every piece.}
-		\label{fig:barp17c6l1b}
-	\end{subfigure}
-	\caption{The equation of state of hard cubes with a slant angle of 66\degr.}
-	\label{fig:barp17c6l1}
-\end{figure}
-
-\begin{figure}[h]
-	\centering
-	\begin{subfigure}[t]{0.9\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{{images/v31_p6.18c0.6l0.005_extra}.pdf}
-		\caption{Left: the umbrella of largest cluster size distributions, for every target cluster size. Right: The unbiased pieces of the free-energy barriers.}
-		\label{fig:barp18c6l1e}
-	\end{subfigure}
-	\centering
-	\begin{subfigure}[t]{0.8\textwidth}
-		\centering
-		\includegraphics[width=.9\textwidth]{{images/v31_p6.18c0.6l0.005_barrier}.pdf}
-		\caption{The free-energy barrier obtained by stitching together every piece.}
-		\label{fig:barp18c6l1b}
-	\end{subfigure}
-	\caption{The equation of state of hard cubes with a slant angle of 66\degr.}
-	\label{fig:barp18c6l1}
-\end{figure}
-
-for a variety of biasing potential coupling parameters $\lambda$
 
 \end{document}
 

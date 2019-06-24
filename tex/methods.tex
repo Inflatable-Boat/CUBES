@@ -4,13 +4,23 @@
 
 \begin{document}
 
-\section{Methods}
+\section{Hard `Slanted' Cubes Model and Basic Simulation Details}
 
-In this section we will cover the basics of Monte Carlo simulation in Section \ref{subsec:MCsim}, explain how we detect overlap between cubes using the separating axis theorem in Section \ref{subsec:sep ax thm}, and explore the theory behind umbrella sampling as a way to force crystallization on a reasonable timescale in Section \ref{subsec:US}.
+In this section we will first introduce the model in Section \ref{subsec:model}, then cover the basics of Monte Carlo simulation in Section \ref{subsec:MCsim}, explain how we detect overlap between cubes using the separating axis theorem in Section \ref{subsec:sep ax thm}, and explore the theory behind umbrella sampling as a way to force crystallization on a reasonable timescale in Section \ref{subsec:US}.
 
-\subsection{Monte Carlo Simulation}\label{subsec:MCsim}
+\subsection{Model}\label{subsec:model}
 
-To study nucleation of hard cubes, the system we will be using is a system of $N$ hard cubes at a pressure $p$ and temperature $T$. Because we are not interested in surface effects, we simulate the bulk by using periodic boundary conditions. With hard cubes we mean that cubes have no attraction or repulsion, except for an infinite energy cost for overlap, essentially forbidding this. That is, the interaction energy $U_{\textrm{pair}}(i,j)$ from a pair of cubes $i$ and $j$ is given by
+\begin{wrapfigure}{r}{0.3\textwidth}
+	\centering
+	\vspace{-10pt}
+	\includegraphics[width=0.9\linewidth]{images/slantedcube}
+	\caption{A cube with a slant angle $\phi$.}\label{fig:slantedcube}
+	\vspace{-15pt}
+\end{wrapfigure}
+
+Our model of hard cubes will be cubes of edge length $\sigma$. We will also consider \emph{slanted} cubes, formally called \emph{right rhombic prisms}, but we will always refer to them as slanted cubes. See Figure \ref{fig:slantedcube}. Every side length in a slanted cube is also equal to $\sigma$.
+%To study nucleation of hard cubes, the system we will be using is a system of $N$ hard cubes at a pressure $p$ and temperature $T$. Because we are not interested in surface effects, we simulate the bulk by using periodic boundary conditions.
+With `hard' we mean that (slanted) cubes have no attraction or repulsion, except for an infinite energy cost for overlap, effectively forbidding this according to the Boltzmann distribution. That is, the interaction energy $U_{\textrm{pair}}(i,j)$ from a pair of cubes $i$ and $j$ is given by
 \begin{equation}
 U_{\textrm{pair}}(i,j) = 
 \begin{cases}
@@ -18,36 +28,66 @@ U_{\textrm{pair}}(i,j) =
 0 & \text{otherwise.}
 \end{cases}
 \end{equation}
-
-In order to find properties of the system, we simulate as many different microstates of the system as possible. As we know from statistical physics, in order to measure some
-the average value of observables, e.g. the density state, we need to simulate a 
-we simulate as many different microstates of our system as follows. 
-
-We know from statistical physics \todo{find nice reference} that in order to measure some observable $A$, we can in principle calculate this by integrating over all possible microstates. In practice however, this is very hard due to the large numbers of degrees of freedom (3 positional and 2 rotational for every particle) and interactions between all the particles. As is now standard in condensed matter theory, we approach this problem by making a \emph{Monte Carlo simulation}, which is effectively a random walk through the phase space of the system. If we make enough measurements of a variable of interest, we hope to get a representative sample of states our system should be in, and with that a good measurement of the average value. 
-
 \subsubsection{Separating Axis Theorem}\label{subsec:sep ax thm}
 
-In order to check for overlap between cubes in order to determine whether a move should be accepted, we use the separating axis theorem, which can be applied in general to determine whether any two convex polyhedra are separated. Heuristically it is as follows. Given two objects in 3D space, whenever we can find a plane that separates the two objects, we are sure that the two objects do not overlap. If on the other hand, there exists no such plane, then given the two objects are convex, we must conclude the objects overlap. We can efficiently check that two objects are separated by a plane by projecting the objects on an axis normal to the plane. The plane separates the objects if and only if the projected images do not overlap on the axis. Hence the name \emph{separating axis}. \\
+In order to check for overlap between cubes, we use the separating axis theorem, which can be applied in general to determine whether any two convex polyhedra are separated. The idea is as follows. Given two objects in 3D space, whenever we can find a plane that separates the two objects, we are sure that the two objects do not overlap. On the other hand, if there exists no such plane, then given that the two objects are convex, we must conclude the objects overlap. We can efficiently check that two objects are separated by a plane by projecting the objects on an axis normal to the plane. The plane separates the objects if and only if the projected images do not overlap on the axis. Hence the name \emph{separating axis}. \\
 
-Finding a separating axis is sufficient for concluding the two objects don't overlap, but how many, and which axes must we check before we can conclude the two objects must overlap? It is proved in \todo{can't find paper} (S. Gottschalk , Separating axis theorem. Technical Report TR96-024) that axes defined by the following vectors are sufficient to conclude that the objects must overlap:
+Finding a separating axis is sufficient for concluding the two objects do not overlap, but how many, and which axes must we check before we can conclude the two objects must overlap? It is proven in \todo{can't find paper} (S. Gottschalk , Separating axis theorem. Technical Report TR96-024) that the axes defined by the following vectors are sufficient to conclude that the objects must overlap:
 \begin{itemize}
 	\item The normal vectors of each face of the first object,
 	\item The normal vectors of each face of the second object,
-	\item All cross products $a \times b$ where $a$ is an edge\footnote{Strictly speaking, an edge has no direction, so an edge defines two vectors. However we don't care about the direction since we use this vector to define an axis.} of the first object and $b$ is an edge of the second object.
+	\item All cross products $a \times b$ where $a$ is an edge\footnote{Strictly speaking, an edge has no direction, so an edge defines two vectors. However we do not care about the direction since we use this vector to define an axis.} of the first object and $b$ is an edge of the second object.
 \end{itemize}
 
-In the for this thesis relevant case of slanted cubes, we can take advantage of symmetry to reduce computation time. A slanted cube only has three differently oriented faces, and also only three differently oriented edges. This means that, to check for overlap between two slanted cubes, we only need to check the six normals on the faces of the cubes, and take every combination of cross products between one edge from the one cube and one edge from the other. This amounts to $6 + 3 \times 3 = 15$ axes we need to check. If and only if all axes fail to show separation, we can conclude that the cubes overlap.
+In the case of slanted cubes, we can take advantage of symmetry to reduce computation time. A slanted cube only has three differently oriented faces, and also only three differently oriented edges. This means that, to check for overlap between two slanted cubes, we only need to check the six normals on the faces of the cubes, and take every combination of cross products between one edge from the one cube and one edge from the other. This amounts to $6 + 3 \times 3 = 15$ axes we need to check. If and only if all axes fail to show separation, we can conclude that the cubes overlap.
+
+\subsection{Monte Carlo Simulation}\label{subsec:MCsim}
+
+The main goal of a Monte Carlo simulation is to approximate ensemble averages such as\todo{how to cite course notes?}
+\begin{equation}
+	\llangle A \rrangle = \frac{\int d\bm r^N A\argr \exp[-\beta U\argr]}{\int d\bm r^N \exp[-\beta U\argr]}
+\end{equation}
+if $A$ only depends only on the positions of particles and where $U$ is the total potential. In principle we could calculate this by numerically integrating this expression over all of phase space (in this case all possible positions of all $N$ particles), however it becomes quickly apparent that when we have any reasonable number of particles in our system, the phase space becomes simply too large to sum over. Instead, if we could sample states $\{\bm r^N_1, \bm r^N_2, \ldots \}$ according to a desired distribution, in this case the Boltzmann distribution $\me^{-\beta U\argr}$, then after $M$ samples our estimate of the ensemble average reduces to simply
+\begin{equation}
+	\llangle A \rrangle = \frac{1}{M}\sum_{i=1}^M A(\bm r^N_i),
+\end{equation}
+the average of our measurements. This method of sampling is known as \emph{Metropolis} sampling. In order to obtain accurate ensemble averages, we want to create as many configurations as possible with probabilities according to the Boltzmann distribution. The standard way of doing this is by using a \emph{Markov process}\cite{newman1999monte}. The idea is that we only generate one initial configuration, and use this configuration to generate a new one, and use this to generate the next, etc. so we get a \emph{Markov chain} of states. We do this using a special process chosen such that in the end, we generate states with probabilities according to the Boltzmann distribution. We also place two further restrictions on our Markov process. First, the condition of \emph{ergodicity}, that is, we require that in principle we could each any state of the system from any other state, given we simulate for long enough. We do this since we do not want to arbitrarily cut off portions of phase space by starting in a certain configuration. The second condition is that of \emph{detailed balance}, which ensures that we get the Boltzmann distribution at equilibrium. In essence the condition is the defining characterstic of equilibrium: the rate of going in and out of any state must be equal. But for reasons described in Ref. \cite{newman1999monte} the condition is a little stonger: for any two states $\mu$ and $\nu$, $$ p_\mu P(\mu \to \nu) = p_\nu P(\nu \to \mu), $$ where $p_\mu$ is the probability of the system being in state $\mu$, and $P(\mu \to \nu)$ is the probability that the Markov chain chooses to go to state $\nu$ from state $\mu$. 
+
+
+
+%find properties of the system, we simulate as many different microstates of the system as possible. As we know from statistical physics, in order to measure some
+%the average value of observables, e.g. the density state, we need to simulate a 
+%we simulate as many different microstates of our system as follows. 
+%
+%We know from statistical physics \todo{find nice reference} that in order to measure some observable $A$, we can in principle calculate this by integrating over all possible microstates. In practice however, this is very hard due to the large numbers of degrees of freedom (3 positional and 2 rotational for every particle) and interactions between all the particles. As is now standard in condensed matter theory, we approach this problem by making a \emph{Monte Carlo simulation}, which is effectively a random walk through the phase space of the system. If we make enough measurements of a variable of interest, we hope to get a representative sample of states our system should be in, and with that a good measurement of the average value. 
+
+
+
+\subsubsection{Cell Lists}
+
+\begin{wrapfigure}{r}{0.4\textwidth}
+	\vspace{-15pt}
+	\centering
+	\includegraphics[width=.9\linewidth]{images/celllist}
+%	\vspace{-20pt}
+	\caption{The advantage of using a cell list. When the red cube makes a move, it only needs to check for overlap with cubes in the same and neighbouring cells, shaded in grey.} \label{fig:celllist}
+	\vspace{-15pt}
+\end{wrapfigure}
+
+In order to speed up simulations, especially those with a large number of cubes, we employ \emph{cell lists}. After moving or rotating a cube, we need to check for overlap. Naively we can do this by simply checking for overlap with each other cube. However, in a system with thousands of cubes, most of the cubes are very far away and do not need to be checked. In order to not have to check every cube, but check only neighbouring cubes, we divide the system up into a grid of cells as shown in Figure \ref{fig:celllist}. We keep track of which cells the cubes are in, and update the cell list when a cube moves to another cell. If we keep the cells large enough (that is, with a side length larger than the circumscribed sphere of our particles), we only need to check for overlap with cubes in the cube's own and neighbouring cells. This scales well with system size, as the number of cubes needed to check collision with stays constant as the number of cubes increases.
+
+\begin{comment} % this is now in nucleation_theory.tex
 
 \subsection{Umbrella Sampling}\label{subsec:US}
 
-In order for a crystal to grow, we need to wait for a density fluctuation large enough to overcome the energy barrier from classical nucleation theory. Because we want to study nucleation rates close to the critical point, it will take a long time before a density fluctuation creates a cluster larger than the critical cluster size, above which nucleation of the entire system will occur. As a back-of-the-envelope calculation done in \cite{kalikmanov2013classical} shows, a typical nucleation barrier is of energy $\sim 40-60 k_BT$. This means that the probability of a thermal fluctuation causing this is $\me^{-50}\approx 2\times 10^{-22}$. In other words, in order to reasonably quickly see a thermal fluctuation large enough to go over the energy barrier we would need to simulate about $5\times 10^{21}$ particles. With current computation power this is effectively impossible. One way to combat this is by using \emph{umbrella sampling} or \emph{multistage sampling}, introduced by Torrie and Valleau in 1974 \cite{torrie1974monte}.\\
+In order for a crystal to grow, we need to wait for a density fluctuation large enough to overcome the free-energy barrier from classical nucleation theory. Because we want to study nucleation rates close to the critical point, it will take a long time before a density fluctuation creates a cluster larger than the critical cluster size, above which nucleation of the entire system will occur.  With current computation power it is effectively impossible to simply set up the simulation and wait for nucleation to happen. One way to combat this is by using \emph{umbrella sampling} or \emph{multistage sampling}, introduced by Torrie and Valleau in 1974 \cite{torrie1974monte}.\\
 
 Following \cite{allen2004introduction}, the basic idea is that we put a weight function $W(\bm r^N)$ on top of the normal interaction potential, in order to bias the system towards a particular region in phase space that we are interested in. That is, we will accept moves with a probability proportional to
 \begin{equation}
 	\pi\argr = \exp [-\beta U\argr + W\argr].
 \end{equation}\label{eq:pi}
 
-Because this distorts the behaviour of the system, in order to get the expectation value of a measurable $X$ from the actual system, we have to `unbias' the measured results. This can be done relatively simply, as per the following calculations.
+Because this distorts the behaviour of the system, in order to get the expectation value of a measurable $X$ from the actual system, we have to `unbias' the measured results. This can be done relatively simply, as per the following calculation.
 
 \begin{align}
 	\llangle X \rrangle &= \frac{
@@ -81,6 +121,7 @@ Because this distorts the behaviour of the system, in order to get the expectati
 \end{align}
 where $\llangle \cdot \rrangle_\pi$ denotes sampling in the system according to Equation \ref{eq:pi}. 
 
+\end{comment}
 
 \end{document}
 
