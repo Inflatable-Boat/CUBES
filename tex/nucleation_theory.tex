@@ -8,7 +8,7 @@
 
 \section{Theory}
 
-In this section we will discuss the simplest model for nucleation, classical nucleation theory in Section \ref{subsec:cnt}, where we will delve into nucleation barriers, which can used to determine for example the nucleation rate, which we will derive in Section \ref{subsec:nucl rate}
+In this section we will discuss the simplest model for nucleation, called classical nucleation theory in Section \ref{subsec:cnt}. There we will delve into nucleation barriers, which can used to determine for example the nucleation rate, which we will derive in Section \ref{subsec:nucl rate}. We will then discuss how to study rare-event nucleation using umbrella sampling in Section \ref{subsec:US}.
 
 \subsection{Classical Nucleation Theory}\label{subsec:cnt}
 
@@ -38,20 +38,44 @@ This results in an energy barrier of
 
 \subsection{Nucleation Rate} \label{subsec:nucl rate}
 
-To obtain the nucleation rate from classical nucleation theory, we follow \cite{valeriani2007numerical}. Under CNT we assume that the clusters of phase $B$ grow and shrink by attaching and removing a single particle respectively\footnote{This  approximation was originally made for dilute systems\cite{katz1992homogeneous}, where collisions between relatively rare larger clusters are rather rare. This assumption will prove to be wrong for the nucleation of cubes, as we will see in the next Section.}. %That is, for each cluster size $n$ there is a corresponding rate of both attachment $k_{+, n}$ and detachment $k_{-, n}$ to a cluster of size $n$. Then, we can set up a master equation governing the cluster size distribution $N_n(t)$:
-%\begin{equation}
-%	\frac{d N_n(t)}{d t} = N_{n-1}(t)k_{+, n - 1} - N_n(t) \left( k_{-, n} + k_{+, n} \right) + N_{n+1}(t) k_{-, n + 1},
-%\end{equation}
-%where each term is more or less self-explanatory: the first term represents clusters of size $n-1$ growing to size $n$, the last term represents clusters of the size $n+1$ shrinking back to size $n$, and the middle term represents clusters of size $n$ gaining or losing a particle. This can be solved to obtain the cluster size distribution $N_n(t)$. 
-The nucleation rate $R_n$, i.e. the flux of clusters growing to size $n$, can be expressed as (ignoring for sake of simplicity the time-dependence)
-\begin{equation}
+To obtain the nucleation rate in terms of the energy barrier from classical nucleation theory, we follow Ref. \cite{valeriani2007numerical} and Ref. \cite{auer2004quantitative}. Under CNT we assume that the clusters of phase $B$ grow and shrink by attaching and removing a single particle respectively\footnote{This  approximation was originally made for dilute systems\cite{katz1992homogeneous}, where collisions between relatively rare larger clusters are rather rare. This will prove to be a rather poor assumption for the nucleation of cubes, as we will see in the next Section.}. %That is, for 
+We define the flux of nuclei going from size $n$ to $n+1$ as \cite{valeriani2007numerical} 
+\begin{equation}\label{eq:flux}
 	R_n = N_n k_{+, n} - N_{n + 1} k_{-, n + 1},
 \end{equation}
-where $N_n$ is the number of clusters of size $n$ and $k_{\pm, n}$ are the attachment ($+$) and detachment ($-$) rate of a single particle to a cluster of size $n$. Given the cluster size distribution $N_n$, which can be calculated as Volmer and Weber did in 1926\cite{volmer1926keimbildung}\todo{note: can't actually find the paper}, and also requiring a few more simplifications, we can approximate the nucleation rate $R = R_{n^*}$, with $n^*$ the critical nucleus size. The simplifications are that for $n > n^*$, the cluster does not get smaller. The second simplification is that for $n \leq n^*$, the cluster size distribution $N_n$ is the equilibrium distribution.
+where $N_n$ is the number of clusters of size $n$ and $k_{\pm, n}$ are the attachment ($+$) and detachment ($-$) rate of a single particle to a cluster of size $n$. %Given the cluster size distribution $N_n$, which can be calculated as Volmer and Weber did in 1926\cite{volmer1926keimbildung}\todo{note: can't actually find the paper}, and also requiring a few more simplifications, we can approximate the nucleation rate $R = R_{n^*}$, with $n^*$ the critical nucleus size. The simplifications are that for $n > n^*$, the cluster does not get smaller. The second simplification is that for $n \leq n^*$, the cluster size distribution $N_n$ is the equilibrium distribution. %Note that in the steady state, this flux is constant for every size. We then make some assumptions
+In equilibrium, there is no net flux. We can use this to eliminate $k_{-, n}$ from Eq. \ref{eq:flux}, to get
+\begin{equation} \label{eq:eqflux}
+	R = k_{+, n} N_n^\textrm{eq} \left( \frac{N_n}{N_n^\textrm{eq}} - \frac{N_{n + 1}}{N_{n + 1}^\textrm{eq}} \right),
+\end{equation}
+where $R$ is the steady-state nucleation rate which is equal for all cluster sizes\todo{Question: I read this in the Refs. but then how can $N_n \neq N_{n'}$?}, and $N_n^\textrm{eq}$ is the equilibrium cluster size distribution, for which we will make some assumptions: for cluster sizes smaller than the critical nucleus size (i.e. $n \ll n^*$), the steady state distribution is approximately equal to the equilibrium distribution, so $N_n^\textrm{eq} \approx N_n$. Secondly, for $n \gg n^*$, the steady state distribution will go to zero while the equilibrium distribution does not, so $N_n^\textrm{eq} \ll N_n$. We now use these assumptions in Eq. \ref{eq:eqflux} after dividing by $k_{+, n} N_n^\textrm{eq}$ and sum over cluster sizes from $L \ll n^*$ to $H \gg n^*$. We get
+\begin{equation} \label{eq:telscopflux}
+	R\sum_{n=L}^H \frac{1}{k_{+, n} N_n^\textrm{eq}} = \sum_{n=L}^H \left( \frac{N_n}{N_n^\textrm{eq}} - \frac{N_{n + 1}}{N_{n + 1}^\textrm{eq}} \right) =  \frac{N_L}{N_L^\textrm{eq}} - \frac{N_{H + 1}}{N_{H + 1}^\textrm{eq}},
+\end{equation}
+where we used the telescoping quality of the last sum. Now using the assumptions, we notice that ${N_L}/{N_L^\textrm{eq}} \to 1$ and ${N_{H + 1}}/{N_{H + 1}^\textrm{eq}} \to 0$, simplifying Eq. \ref{eq:telscopflux} to
+\begin{equation}
+	R = \left( \sum_{n=L}^H \frac{1}{k_{+, n} N_n^\textrm{eq}} \right)^{-1}.
+\end{equation}
+Now we use that $N_n^\textrm{eq} = N_1 \exp[-\beta\Delta G(n)]$ as derived in Ref. \cite{valeriani2007numerical}, and make a few more approximations to calculate the sum. First, the sum is dominated by terms with $n \approx n^*$, as $N_n^\textrm{eq}$ is smallest there. Second, we then Taylor expand $\Delta G$ to second order around $n = n^*$. Third, we can then approximate $k_{+, n} \approx k_{+, n^*}$. Lastly, we turn the sum into a continuous integral and let the lower and upper bounds go to $-\infty$ and $\infty$ respectively. We can then calculate the nucleation rate. First we apply all but the last approximation:
+\begin{align}
+	R &\approx \left( \sum_{n=L}^H \frac{1}{k_{+, n^*} N_1 \exp[-\beta \left( \Delta G(n^*) + \frac12  \Delta G'' (n^*) n^2 \right) ] }\right)^{-1} \nonumber\\
+	&= N_1 k_{+, n^*} \me^{-\beta \Delta G(n^*) } \left( \sum_{n=L}^H  \exp[-\beta \frac12  \Delta G'' (n^*) n^2 ] \right)^{-1}, \nonumber
+\end{align}
+Then, turning the sum into an integral from $-\infty$ to $\infty$ we recognize the Gaussian integral and obtain
+\begin{equation} \label{eq:nuclrate1}
+	R 
+	\approx N_1 k_{+, n^*} \me^{-\beta \Delta G(n^*) } \left( \int_{-\infty}^\infty  \me^{-\beta \frac{1}{2}  \Delta G'' (n^*) n^2 } \right)^{-1} 
+	= N_1 k_{+, n^*} \sqrt{\frac{\beta\Delta G'' (n^*)}{2\pi}} \me^{-\beta \Delta G(n^*) },
+\end{equation}
+where the factor $Z = \sqrt{\frac{\beta\Delta G'' (n^*)}{2\pi}}$ is known as the \emph{Zeldovitch} factor. We can also write Eq. \ref{eq:nuclrate1} as 
+\begin{equation} \label{eq:nuclrate2}
+	R = \kappa \me^{- \beta \Delta G^*},
+\end{equation}
+where $\kappa = N_1 k_{+, n^*} Z$ is the \emph{kinetic pre-factor}, and $\Delta G^* = \Delta G(n^*)$ is shorthand for the free-energy barrier. Because of the exponential dependence of this nucleation rate on the barrier height, we know a great deal about the nucleation rate if we can determine the barrier height. This is what will do using umbrella sampling.
 
 \subsection{Umbrella Sampling}\label{subsec:US}
 
-In order for a crystal to grow, we need to wait for a density fluctuation large enough to overcome the free-energy barrier from classical nucleation theory. Because we want to study nucleation rates close to the critical point, it will take a long time before a density fluctuation creates a cluster larger than the critical cluster size, above which nucleation of the entire system will occur.  With current computation power it is effectively impossible to simply set up the simulation and wait for nucleation to happen. One way to combat this is by using \emph{umbrella sampling} or \emph{multistage sampling}, introduced by Torrie and Valleau in 1974 \cite{torrie1974monte}.\\
+In order for a crystal to grow, we need to wait for a density fluctuation large enough to overcome the free-energy barrier from classical nucleation theory. Because we want to study nucleation rates close to the critical point i.e. with low supersaturation, the barrier will be high and it will take a long time before a density fluctuation creates a cluster larger than the critical cluster size, above which nucleation of the entire system will occur.  With current computation power it is effectively impossible to simply set up the simulation and wait for nucleation to happen. One way to combat this is by using \emph{umbrella sampling} or \emph{multistage sampling}, introduced by Torrie and Valleau in 1974 \cite{torrie1974monte}.\\
 
 Following \cite{allen2004introduction}, the basic idea is that we put a weight function $W(\bm r^N)$ on top of the normal interaction potential, in order to bias the system towards a particular region in phase space that we are interested in. That is, we will accept moves with a probability proportional to
 \begin{equation}

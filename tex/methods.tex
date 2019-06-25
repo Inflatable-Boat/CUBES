@@ -6,7 +6,7 @@
 
 \section{Hard `Slanted' Cubes Model and Basic Simulation Details}
 
-In this section we will first introduce the model in Section \ref{subsec:model}, then cover the basics of Monte Carlo simulation in Section \ref{subsec:MCsim}, explain how we detect overlap between cubes using the separating axis theorem in Section \ref{subsec:sep ax thm}, and explore the theory behind umbrella sampling as a way to force crystallization on a reasonable timescale in Section \ref{subsec:US}.
+In this section we will first introduce the model in Section \ref{subsec:model}, and explain how we detect overlap between cubes using the separating axis theorem in Section \ref{subsec:sep ax thm}. We will also cover the basics of Monte Carlo simulation in Section \ref{subsec:MCsim}.
 
 \subsection{Model}\label{subsec:model}
 
@@ -14,13 +14,11 @@ In this section we will first introduce the model in Section \ref{subsec:model},
 	\centering
 	\vspace{-10pt}
 	\includegraphics[width=0.9\linewidth]{images/slantedcube}
-	\caption{A cube with a slant angle $\phi$.}\label{fig:slantedcube}
+	\caption{A slanted cube with a slant angle $\phi$.}\label{fig:slantedcube}
 	\vspace{-15pt}
 \end{wrapfigure}
 
-Our model of hard cubes will be cubes of edge length $\sigma$. We will also consider \emph{slanted} cubes, formally called \emph{right rhombic prisms}, but we will always refer to them as slanted cubes. See Figure \ref{fig:slantedcube}. Every side length in a slanted cube is also equal to $\sigma$.
-%To study nucleation of hard cubes, the system we will be using is a system of $N$ hard cubes at a pressure $p$ and temperature $T$. Because we are not interested in surface effects, we simulate the bulk by using periodic boundary conditions.
-With `hard' we mean that (slanted) cubes have no attraction or repulsion, except for an infinite energy cost for overlap, effectively forbidding this according to the Boltzmann distribution. That is, the interaction energy $U_{\textrm{pair}}(i,j)$ from a pair of cubes $i$ and $j$ is given by
+Our model of hard cubes will be cubes of edge length $\sigma$. We will also consider cubes with a \emph{slant angle} $\phi$, formally called \emph{right rhombic prisms}, but we will always refer to them as `slanted cubes,' see Figure \ref{fig:slantedcube}. We will consider angles $\phi = 90$\degr\ (cubes) to $\phi = 66$\degr, as in Ref. \cite{van2017phase}. For smaller angles, the slanted cubes may form layers of random hexagonal tiling\cite{van2016phase} \todo{Question: can I cite a master theses?}, which is not what we want to investigate. Every side length in a slanted cube is also equal to $\sigma$. With `hard' interaction we mean that (slanted) cubes have no attraction or repulsion, except for an infinite energy cost for overlap, effectively forbidding this according to the Boltzmann distribution. That is, the interaction energy $U_{\textrm{pair}}(i,j)$ from a pair of cubes $i$ and $j$ is given by
 \begin{equation}
 U_{\textrm{pair}}(i,j) = 
 \begin{cases}
@@ -28,22 +26,35 @@ U_{\textrm{pair}}(i,j) =
 0 & \text{otherwise.}
 \end{cases}
 \end{equation}
+
+This model has been studied extensively before, see e.g. Refs. \cite{van2017phase, smallenburg2012vacancy, sharma2018disorder} and we know that at low density the system forms a liquid which is both disordered translationally as well as orientationally. For both cubes and slanted cubes at sufficiently high density, the system exhibits a simple cubic crystal structure with the appropriate orientational order. For slanted cubes, there is a phase at even higher density, known as the \emph{rhombic crystal}. In this phase the cubic orientation symmetry is also lost and all slanted cubes have the same orientation.  We will, however, not investigate the rhombic crystal phase. In Ref. \cite{smallenburg2012vacancy} it was shown that cubes form a crystal with ample vacancies, much more than in e.g. a system of hard spheres. Later it was also found that the same vacancies are found in systems of slanted cubes, regardless of slant angle \cite{van2017phase}. We will not investigate these vacancies either.
+
 \subsubsection{Separating Axis Theorem}\label{subsec:sep ax thm}
 
-In order to check for overlap between cubes, we use the separating axis theorem, which can be applied in general to determine whether any two convex polyhedra are separated. The idea is as follows. Given two objects in 3D space, whenever we can find a plane that separates the two objects, we are sure that the two objects do not overlap. On the other hand, if there exists no such plane, then given that the two objects are convex, we must conclude the objects overlap. We can efficiently check that two objects are separated by a plane by projecting the objects on an axis normal to the plane. The plane separates the objects if and only if the projected images do not overlap on the axis. Hence the name \emph{separating axis}. \\
+\begin{wrapfigure}{r}{0.35\textwidth}
+	\centering
+	\vspace{-10pt}	\includegraphics[width=0.9\linewidth]{images/satsep}
+	\caption{A separating axis for the blue and orange square.}\label{fig:satsep}\smallskip
+	\includegraphics[width=0.75\linewidth]{images/satcoll}
+	\caption{Overlapping objects have no separating axis.}\label{fig:satcoll}
+	\vspace{-50pt}
+\end{wrapfigure}
 
-Finding a separating axis is sufficient for concluding the two objects do not overlap, but how many, and which axes must we check before we can conclude the two objects must overlap? It is proven in \todo{can't find paper} (S. Gottschalk , Separating axis theorem. Technical Report TR96-024) that the axes defined by the following vectors are sufficient to conclude that the objects must overlap:
+In order to check for overlap between cubes, we use the \emph{separating axis theorem} \cite{gottschalk1996separating}, which can be applied in general to determine whether any two convex polyhedra are separated. The idea is as follows. Given two objects in 3D space, whenever we can find a plane that separates the two objects, we are sure that the two objects do not overlap. On the other hand, if there exists no such plane, then given that the two objects are convex, we must conclude the objects overlap. We can efficiently check that two objects are separated by a plane by projecting the objects on an axis normal to the plane. If the objects overlap on every axis, the objects must overlap, like in Figure \ref{fig:satcoll}. If however we can find a \emph{separating axis} (hence the name) such as in Figure \ref{fig:satsep}, i.e. an axis on which the objects do not overlap, we can conclude the objects cannot overlap.
+\\
+Finding a separating axis is sufficient for concluding the two objects do not overlap, but how many, and which axes must we check before we can conclude the two objects must overlap? It is proven in Ref. \cite{gottschalk1996separating} \todo{can't actually find the paper} that the axes defined by the following vectors are sufficient to conclude that the objects must overlap:
 \begin{itemize}
 	\item The normal vectors of each face of the first object,
 	\item The normal vectors of each face of the second object,
 	\item All cross products $a \times b$ where $a$ is an edge\footnote{Strictly speaking, an edge has no direction, so an edge defines two vectors. However we do not care about the direction since we use this vector to define an axis.} of the first object and $b$ is an edge of the second object.
 \end{itemize}
 
-In the case of slanted cubes, we can take advantage of symmetry to reduce computation time. A slanted cube only has three differently oriented faces, and also only three differently oriented edges. This means that, to check for overlap between two slanted cubes, we only need to check the six normals on the faces of the cubes, and take every combination of cross products between one edge from the one cube and one edge from the other. This amounts to $6 + 3 \times 3 = 15$ axes we need to check. If and only if all axes fail to show separation, we can conclude that the cubes overlap.
+In the case of slanted cubes, we can take advantage of symmetry to reduce computation time. A slanted cube only has three differently oriented faces, and also only three differently oriented edges. This means that, to check for overlap between two slanted cubes, we only need to check the six normals on the faces of the cubes, and take every combination of cross products between one edge from the one cube and one edge from the other. As a result, we need to check $6 + 3 \times 3 = 15$ axes. If and only if all axes fail to show separation, we can conclude that the cubes overlap.
 
 \subsection{Monte Carlo Simulation}\label{subsec:MCsim}
 
-The main goal of a Monte Carlo simulation is to approximate ensemble averages such as\todo{how to cite course notes?}
+We now give a very brief overview of Monte Carlo simulations following Ref. \cite{dijkstra2018modsim}.
+The main goal of a Monte Carlo simulation is to approximate ensemble averages such as
 \begin{equation}
 	\llangle A \rrangle = \frac{\int d\bm r^N A\argr \exp[-\beta U\argr]}{\int d\bm r^N \exp[-\beta U\argr]}
 \end{equation}
@@ -51,7 +62,7 @@ if $A$ only depends only on the positions of particles and where $U$ is the tota
 \begin{equation}
 	\llangle A \rrangle = \frac{1}{M}\sum_{i=1}^M A(\bm r^N_i),
 \end{equation}
-the average of our measurements. This method of sampling is known as \emph{Metropolis} sampling. In order to obtain accurate ensemble averages, we want to create as many configurations as possible with probabilities according to the Boltzmann distribution. The standard way of doing this is by using a \emph{Markov process}\cite{newman1999monte}. The idea is that we only generate one initial configuration, and use this configuration to generate a new one, and use this to generate the next, etc. so we get a \emph{Markov chain} of states. We do this using a special process chosen such that in the end, we generate states with probabilities according to the Boltzmann distribution. We also place two further restrictions on our Markov process. First, the condition of \emph{ergodicity}, that is, we require that in principle we could each any state of the system from any other state, given we simulate for long enough. We do this since we do not want to arbitrarily cut off portions of phase space by starting in a certain configuration. The second condition is that of \emph{detailed balance}, which ensures that we get the Boltzmann distribution at equilibrium. In essence the condition is the defining characterstic of equilibrium: the rate of going in and out of any state must be equal. But for reasons described in Ref. \cite{newman1999monte} the condition is a little stonger: for any two states $\mu$ and $\nu$, $$ p_\mu P(\mu \to \nu) = p_\nu P(\nu \to \mu), $$ where $p_\mu$ is the probability of the system being in state $\mu$, and $P(\mu \to \nu)$ is the probability that the Markov chain chooses to go to state $\nu$ from state $\mu$. 
+the average of our measurements. This method of sampling is known as \emph{Metropolis} sampling. In order to obtain accurate ensemble averages, we want to create as many configurations as possible with probabilities according to the Boltzmann distribution. The standard way of doing this is by using a \emph{Markov process}. We follow Ref. \cite{newman1999monte}. The idea is that we only generate one initial configuration, and use this configuration to generate a new one, and use this to generate the next, etc. so we get a \emph{Markov chain} of states. We do this using a special process chosen such that in the end, we generate states with probabilities according to the Boltzmann distribution. We also place two further restrictions on our Markov process. First, the condition of \emph{ergodicity}, that is, we require that in principle we could each any state of the system from any other state, given we simulate for long enough. We do this since we do not want to arbitrarily cut off portions of phase space by starting in a certain configuration. The second condition is that of \emph{detailed balance}, which ensures that we get the Boltzmann distribution at equilibrium. In essence the condition is the defining characterstic of equilibrium: the rate of going in and out of any state must be equal. But for reasons described in Ref. \cite{newman1999monte} the condition is a little stonger: for any two states $\mu$ and $\nu$, $$ p_\mu P(\mu \to \nu) = p_\nu P(\nu \to \mu), $$ where $p_\mu$ is the probability of the system being in state $\mu$, and $P(\mu \to \nu)$ is the probability that the Markov chain chooses to go to state $\nu$ from state $\mu$. 
 
 
 

@@ -15,27 +15,27 @@ In this chapter we explore a number of different ways to characterize the local 
 
 A simple way to look at the structure in a colloidal system is to look at the \emph{radial distribution function} $g(r)$.  The $g(r)$ can be used to get an idea of characteristic distances that appear in a system, and is often used to find the nearest neighbours, often referred to as the first neighbour shell. 
 
-To define the radial distribution function, we start by introducing the pair correlation function, 
- $\rho^{(2)}(\bm r, \bm r')$,  which is the probability that there is a particle at position $\bm r$ and $\bm r'$ at the same time. Formally, we define the pair correlation function as 
+To define the radial distribution function, we start by introducing the pair correlation function 
+$\rho^{(2)}(\bm r, \bm r')$,  which is the probability that there is a particle at position $\bm r$ and $\bm r'$ at the same time. Formally, the pair correlation function is defined as \cite{dijkstra2018modsim}
 \begin{equation}
 \rho^{(2)}(\bm r, \bm r') = \llangle \sum_i \sum_{j \neq i} \delta(\bm r - \bm r_i) \delta(\bm r' - \bm r_j) \rrangle.
 \end{equation}
 where $\langle \cdot \rangle$ denotes the ensemble average, $\bm r_i$ is the position of particle $i$, the sums are over all pairs of particles and $\delta$ is the Dirac delta function.
-If the system is homogeneous and isotropic, then this function only depends on the distance between the particles. These simplifications lead to the radial distribution function $g(r)$:
+If the system is homogeneous and isotropic, then this function only depends on the distance between the particles. These simplifications lead to the radial distribution function $g(r)$ \cite{dijkstra2018modsim}
 \begin{equation}
 \rho^{(2)}(\bm r, \bm r') = \rho^2 g(|\bm r - \bm r'|), \label{eq:gofr}
 \end{equation}
 where the density $\rho$ of particles in the system has been factored out. This is done so that $g$ is dimensionless and $g(r) \rightarrow 1$ as $r \rightarrow \infty$, so long as there is no long range order (e.g. in a liquid).
 
-Looking at Equation \ref{eq:gofr}, the radial distribution function goes to 1 in the limit of low densities. Additionally, for simple cubic crystals, like the ones formed by (slanted) cubes, we expect to see peaks in the radial distribution function at distances between simple cubic lattice sites, so at distances $a, \sqrt 2a, \sqrt 3a,\ 2a$ etc. where $a$ is the lattice constant.
+Looking at Equation \ref{eq:gofr}, the radial distribution function goes to 1 in the limit of low densities. Additionally, for simple cubic crystals, like the ones formed by (slanted) cubes, we expect to see peaks in the radial distribution function at distances between simple cubic lattice sites, so at distances $a, \sqrt 2a, \sqrt 3a,\ 2a$ et cetera where $a$ is the lattice constant.
 
 \subsection{Order Parameter} \label{subsec:order}
 
-In this Section we will discuss and use the Steinhardt \emph{bond-orientational} (or simply translational) order parameter which is commonly used in the detection of crystalline order \cite{steinhardt1983bond, lechner2008accurate, van2017phase, sharma2018disorder, mickel2013shortcomings}. Aside from translational order, we also consider orientational order, because we are studying cubes which have an orientation.
+In this Section we will discuss the Steinhardt \emph{bond-orientational} (or simply translational) order parameter which is commonly used in the detection of crystalline order \cite{steinhardt1983bond, lechner2008accurate, van2017phase, sharma2018disorder, mickel2013shortcomings}. Aside from translational order, we also consider orientational order, because we are studying cubes which have an orientation.
 
 \subsubsection{Translational order parameter}
 
-First we discuss the Steinhardt order parameter in general. For a nonnegative integer $\ell$ and integers $\abs{m} \leq\ell$, we define for cube $i$ the \emph{local translational order parameter}
+First we discuss the Steinhardt order parameter in general. For a nonnegative integer $\ell$ and integers $\abs{m} \leq\ell$, we define for cube $i$ the \emph{local translational order parameter} \cite{steinhardt1983bond}
 \begin{equation}
 q_{\ell, m}(i) = \sum_{j} Y_{\ell, m} (\theta_{i, j}, \phi_{i, j}),
 \end{equation}
@@ -45,7 +45,7 @@ where the sum is over all neighbours of cube $i$, $\theta_{i, j}$ and $\phi_{i, 
 %\end{equation}
 %where $P_\ell^m(\cos(\theta))$ are the associated Legendre polynomials. \todo{find nice reference, define associated Legendre polynomial, maybe put this in seperate subsubsection/appendix on spherical harmonics.}
 
-The translational correlation between neighbouring cubes $i$ and $j$ is then defined by taking the dot product and normalizing:
+The translational correlation between neighbouring cubes $i$ and $j$ is then defined by taking the dot product and normalizing \cite{sharma2018disorder}:
 \begin{equation}
 d_{q_\ell}(i, j) = \frac{\sum_{m = -\ell}^\ell q_{\ell, m}(i) \cdot q^*_{\ell, m}(j)}{\sqrt{\left(\sum_{m = -\ell}^\ell \abs{q_{\ell, m}(i)}^2\right) \left(\sum_{m = -\ell}^\ell \abs{q_{\ell, m}(j)}^2\right)}}.
 \end{equation}
@@ -57,12 +57,12 @@ Here the asterisk stands for complex conjugation. This translational correlation
 For orientational order we do something similar to the translational order case, but we need to take into account the symmetries of the cube. To this end, we define three vectors for each cube: the three unit vectors perpendicular to one of the faces of the cube and each other. This definition is ambiguous, as for each face, there are two unit vectors (i.e. one pointing inward, the other pointing outward). However because we will consider only even-$\ell$ spherical harmonics, which are invariant under inversion \cite{steinhardt1983bond}, this distinction disappears.\\
 For slanted cubes, there is a choice to make. The three vectors defined above could equivalently be defined as `the edges of the cube.' If we consider cubes with a slant angle smaller than 90\degr, these two definitions would differ. This difference, and an alternative definition have been studied and will be discussed in Section \ref{subsec:orientation vectors}.
 \\
-Just like with the translational order parameter, in general for a nonnegative integer $\ell$ and integers $ \abs{m} \leq \ell$, we define for cube $i$ the \emph{local orientational order parameter}
+Just like with the translational order parameter, in general for a nonnegative integer $\ell$ and integers $ \abs{m} \leq \ell$, we define for cube $i$ the \emph{local orientational order parameter} \cite{escobedo2016effect}
 \begin{equation}
 i_{\ell, m}(i) = \frac{\sum_{n = 1}^3 Y_{\ell, m}(\theta_n(i), \phi_n(i))}{\sqrt{\sum_{m = -\ell}^\ell \abs{\sum_{n = 1}^3 Y_{\ell, m}(\theta_n(i), \phi_n(i))}^2}}.
 \end{equation}
 Here the sum over $n$ means the sum over the three axes defined above, $Y_{\ell, m}$ are again the spherical harmonics, and now $\theta_n(i)$ and $\phi_n(i)$ are the polar angle and the azimuthal angle of the vector $n$ of cube $i$, respectively.\\
-Now again, we define the correlation between neighbouring cubes $i$ and $j$ by taking the dot product, where normalizing has already been done in the last step, so we define
+Now again, we define the correlation between neighbouring cubes $i$ and $j$ by taking the dot product, where normalizing has already been done in the last step, so we define \cite{sharma2018disorder}
 \begin{equation}
 d_{i_\ell}(k,l) = \sum_{m = -\ell}^\ell i_{\ell, m}(k) \cdot i^*_{\ell, m}(l).
 \end{equation}
