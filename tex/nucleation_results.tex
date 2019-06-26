@@ -6,140 +6,93 @@
 
 \section{Measurements}
 
-In this Section we finally examine the nucleation of cubes. In \ref{subsec:clsz distr} we discuss the structure of the supersaturated fluid and in \ref{subsec:E bar} we construct the energy barriers from the cluster size distributions found using umbrella sampling.
+In this Section we finally examine the nucleation of cubes. In Section \ref{subsec:supsatliq} we explain how we created a metastable liquid necessary to investigate nucleation. In Section \ref{subsec:E bar} we then use this metastable liquid to go from a cluster size distribution to a piece of the energy barrier, and then put the pieces together to construct the complete free-energy barrier. We then explore how different parameters affect the barrier.
 
-\begin{comment} % this is now in phase_behaviour.tex
+\subsection{Creating a Metastable Liquid}\label{subsec:supsatliq}
 
-\subsection{Equation of State}\label{subsec:eos}
+In order to study nucleation we need a metastable liquid, that is, a liquid at a pressure where the free energy would be lower in the crystal phase. Because we don't want to investigate finite-size effects, we will be studying a relatively large system of $N = 8000$ cubes.\\
 
-One way to describe the properties of the system we study is by finding an \emph{equation of state}. By running multiple $NpT$ ensembles for differing pressures $p$, and finding the equilibrium density $\rho$ for each $p$, we can find the equation of state. This has been done before for both cubes and slanted cubes\cite{van2017phase}, and we will compare our results to previously done research to see if the simulation is working as intended.\\
+The first step to creating a metastable liquid is creating a good liquid. We make this by starting the system out on a simple cubic lattice at a density of $\rho \sigma^3 = 0.1$, at a low pressure of $\beta p \sigma^3 = 1$. The crystal immediately melts and after ten thousand Monte Carlo cycles the system is sufficiently disordered, and we start to `crush' the system by setting a very high pressure of $\beta p \sigma^3 = 10000$. This effectively makes the system only try volume moves which shrink the system, hence we call this step `crushing.' By driving the density up as fast as possible, we try to retain the disordered liquid structure for the highest densities possible. We record when the system hits a density of $\rho \sigma^3 = 0.40, 0.41, \ldots , 0.55$, and look at the translational and orientational order correlation distributions at each density, see Figure \ref{fig:compression_cube}. From Ref. \cite{smallenburg2012vacancy} we know that the coexistence density of a liquid with a crystal in this system is at $\rho \sigma^3 = 0.45$, so we investigate this density.\\
+The second step is to check that we haven't made any unphysical order in the system by subjecting it to an extreme pressure, so we take the system at density $\rho \sigma^3 = 0.45$ and keep it at this density (i.e. by turning the system into an $NVT$ ensemble starting from this configuration) for a million Monte Carlo cycles. We observed no crystal formation as expected.\\
+The third and final step is to now equilibrate the system at varying pressures. Smallenburg et al. found that the coexistence pressure is at $\beta p^* \sigma^3 = 6.16$ \cite{smallenburg2012vacancy}. Initially we were confident the system would nucleate quickly and we would find small free-energy barriers, so we made systems at pressures $\beta p \sigma^3 = 6.17, 6.18, 6.19, 6.20$. As we will see in the next Section however, due to complications we needed to try higher pressures $\beta p \sigma^3 = 6.25, 6.3, 6.4$ to find a good free-energy barrier as well. We equilibrated these systems by letting them run at the desired pressure (i.e. now we turn the system back into an $NpT$ ensemble) for five hundred thousand Monte Carlo cycles. The last step of each of these runs is now a metastable liquid at the desired pressure.\\
 
-For slant angles ranging from 90\degr\ (cubes) to 66\degr, two runs have been done per pressure: a compression run, starting at a relatively low density of 0.4 (i.e. in the fluid phase), and a melting run, starting in a relatively high density of 0.6 (i.e. in the crystal phase). Both runs start on a simple cubic lattice, but in the compression run this crystal melts immediately because of the low density. The results are shown in Figures \ref{fig:eos90}-\ref{fig:eos66}, where in each case on the left the equation of state on a larger range of pressures is shown, and on the right a more detailed look at the interesting region around the 
-
-\begin{figure}[h]
-	\begin{subfigure}[t]{0.475\textwidth}
-		\includegraphics[width=\textwidth]{images/v21_eos_90all}
-		\caption{A plot of all data points.}
-		\label{fig:eos90-a}
-	\end{subfigure}\hfill
-	\begin{subfigure}[t]{0.475\textwidth}
-		\includegraphics[width=\textwidth]{images/v21_eos_90zoom}
-		\caption{A close-up of the interesting transition region.}
-		\label{fig:eos90-b}
-	\end{subfigure}
-	\caption{The equation of state of hard cubes.}
-	\label{fig:eos90}
-\end{figure}
-
-From the equation of state of cubes (Fig. \ref{fig:eos90-b}), we see that a phase transition occurs somewhere between a dimensionless pressure of $\beta p \sigma^3 = 5.9$ and $\beta p \sigma^3 = 6.2$. This is consistent with the earlier result from \cite{smallenburg2012vacancy} that finds a coexistence pressure of $\beta p \sigma^3 = 6.16$. The turning point from the low density liquid phase to the higher density crystal phase is different in the melting and compression runs, because in the compression runs the cubes start in a fluid, and the system needs to overcome the energy barrier discussed in Section \ref{subsec:cnt}, which we will attempt to construct in Section \ref{subsec:E bar}. This difference between turning points from the liquid to crystalline phase and backwards is typical of first order phase transitions and is referred to as \emph{hysteresis}.\\
-
-\begin{figure}[h]
-	\begin{subfigure}[t]{0.475\textwidth}
-		\includegraphics[width=\textwidth]{images/v21_eos_84all}
-		\caption{A plot of all data points.}
-		\label{fig:eos84-a}
-	\end{subfigure}\hfill
-	\begin{subfigure}[t]{0.475\textwidth}
-		\includegraphics[width=\textwidth]{images/v21_eos_84zoom}
-		\caption{A close-up of the interesting transition region.}
-		\label{fig:eos84-b}
-	\end{subfigure}
-	\caption{The equation of state of hard cubes with a slant angle of 84\degr.}
-	\label{fig:eos84}
-\end{figure}
-
-\begin{figure}[h]
-	\begin{subfigure}[t]{0.475\textwidth}
-		\includegraphics[width=\textwidth]{images/v21_eos_78all}
-		\caption{A plot of all data points.}
-		\label{fig:eos78-a}
-	\end{subfigure}\hfill
-	\begin{subfigure}[t]{0.475\textwidth}
-		\includegraphics[width=\textwidth]{images/v21_eos_78zoom}
-		\caption{A close-up of the interesting transition region.}
-		\label{fig:eos78-b}
-	\end{subfigure}
-	\caption{The equation of state of hard cubes with a slant angle of 78\degr.}
-	\label{fig:eos78}
-\end{figure}
-
-\begin{figure}[h]
-	\begin{subfigure}[t]{0.475\textwidth}
-		\includegraphics[width=\textwidth]{images/v21_eos_72all}
-		\caption{A plot of all data points.}
-		\label{fig:eos72-a}
-	\end{subfigure}\hfill
-	\begin{subfigure}[t]{0.475\textwidth}
-		\includegraphics[width=\textwidth]{images/v21_eos_72zoom}
-		\caption{A close-up of the interesting transition region.}
-		\label{fig:eos72-b}
-	\end{subfigure}
-	\caption{The equation of state of hard cubes with a slant angle of 72\degr.}
-	\label{fig:eos72}
-\end{figure}
-
-\begin{figure}[h]
-	\begin{subfigure}[t]{0.475\textwidth}
-		\includegraphics[width=\textwidth]{images/v21_eos_66all}
-		\caption{A plot of all data points.}
-		\label{fig:eos66-a}
-	\end{subfigure}\hfill
-	\begin{subfigure}[t]{0.475\textwidth}
-		\includegraphics[width=\textwidth]{images/v21_eos_66zoom}
-		\caption{A close-up of the interesting transition region.}
-		\label{fig:eos66-b}
-	\end{subfigure}
-	\caption{The equation of state of hard cubes with a slant angle of 66\degr.}
-	\label{fig:eos66}
-\end{figure}
-
-When we compare the equation of state of hard cubes (Fig. \ref{fig:eos90}) to that of other slant angles (Fig. \ref{fig:eos84}-\ref{fig:eos66}), we notice two trends: Firstly, as the slant angle decreases, the pressures at which the system forms a crystal rises. Secondly, as the slant angle decreases, the hysteresis observed from the difference between the compression run and the melting run increases.
-The first trend can be interpreted as that cubes with a smaller slant angle are harder to push together into a crystal. This makes sense, as the more slanted a cube is, the less nicely it fits in a cubic box, which is the space that a particle in a simple cubic crystal effectively has. The second trend tells us that the energy barrier between the liquid and crystalline phases is higher for smaller slant angles, which can be due to a higher surface tension between the two phases, a lower bulk energy gain from the crystal phase, or the shape of the particles somehow impedes the crystal phase growth.
-
-\end{comment}
-
-
-
-\subsection{Cluster size distribution}\label{subsec:clsz distr}
-
-
+An important matter that we need to point out is that in the process of `crushing' the system to high density, we found that translational order was picked up earlier than orientational order at the same order cutoff of $d_{q_4}, d_{i_4} = 0.6$. This is probably because as discussed in Section \ref{subsec:res_order cutoff}, the orientational order in the liquid phase is slightly lower, and so we could set the cutoff for crystallinity according to orientational order lower than for translational order. In any case, we decided to continue investigating only translational order as a first start. That is, we will only look at crystallinity according to translational order. The procedure is, however, exactly the same for orientational order.
 
 \subsection{Energy Barriers}\label{subsec:E bar}
 
-In this section we discuss the energy barriers found for cubes, using the umbrella sampling method described in Section \ref{subsec:US}. Smallenburg et al. found that the coexistence pressure for the fluid and crystal phase of cubes is $\beta p^* \sigma^3 = 6.16$ \cite{smallenburg2012vacancy}. Initially we were confident we could find energy barriers for pressures only slightly higher than this coexistence pressure, so we tried to build the energy barrier with $\beta p \sigma^3 = 6.17, 6.18$. See Figures \ref{barp17c6l1, barp18c6l1}. We ran with target cluster sizes from 30 to about 700, in steps of 20. We chose, after some experimentation, the potential bias coupling parameter at $\lambda = 0.005$, and from Section \ref{subsec:res_order cutoff} we chose the order cutoff for being a crystalline bond at 0.6. 
+In this section we discuss the energy barriers found for cubes, using the umbrella sampling method described in Section \ref{subsec:US}. First we explain the step-by-step process of creating the energy barriers in Section \ref{subsubsec:stepbystep} and then we go over the all our results we got for different parameters in Section \ref{subsubsec:results}.
+
+\subsubsection{From Cluster Sizes to Free-Energy Barrier} \label{subsubsec:stepbystep}
+
+\begin{wrapfigure}{r}{0.4\textwidth}
+	\centering
+	\vspace{-20pt}
+	\includegraphics[width=\linewidth]{images/v21_preumbr_lcs2.pdf}
+	\caption{A log plot of the LCS distribution.}\label{fig:lcs_prebias}
+	\vspace{-15pt}
+\end{wrapfigure}
+
+We start from a metastable liquid discussed in Section \ref{subsec:supsatliq}, at pressure $\beta p \sigma^3 = 6.17$, which slightly above the coexistence pressure between the liquid and crystal phase for cubes which is at $\beta p^* \sigma^3 = 6.16$ \cite{smallenburg2012vacancy}. We record the largest cluster size (LCS) every 50 Monte Carlo cycles and obtain the distribution found to the side here in Figure \ref{fig:lcs_prebias}. We see that it is very rare that a cluster larger than 20 cubes forms, so we start the first step of umbrella sampling with a target of $N_\textrm{target} = 30$. As was discussed in Section \ref{subsec:res_order cutoff}, we chose the order cutoff at $d_{q_4} = 0.6$. After some experimentation, we chose a coupling parameter of $\lambda = 0.005$. Now we let the system run for a million Monte Carlo cycles and record the size of the largest cluster every 50 cycles. The resulting distribution and the piece of the barrier obtained from it can be seen in Figure \ref{fig:step1}. 
 
 \begin{figure}[h]
 	\centering
-	\begin{subfigure}[t]{0.9\textwidth}
+	\begin{subfigure}[t]{0.45\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{{images/v31_p6.17c0.6l0.005_extra}.pdf}
-		\caption{Left: the umbrella of largest cluster size distributions, for every target cluster size. Right: The unbiased pieces of the free-energy barriers.}
-		\label{fig:barp17c6l1e}
+		\includegraphics[width=\linewidth]{images/v29_umbr_t030lcs_biased}
+		\caption{The LCS distribution. The target $N_\textrm{target} = 30$ has been marked with a grey dashed line.}
+		\label{fig:step1distr}
+	\end{subfigure}\hfill
+	\begin{subfigure}[t]{0.45\textwidth}
+		\centering
+		\includegraphics[width=.95\linewidth]{images/v29_umbr_t030barrier.pdf}
+		\caption{The piece of the free-energy barrier obtained from the LCS distribution.}
+		\label{fig:step1bar}
 	\end{subfigure}
+	\caption{The LCS distribution and corresponding free-energy barrier piece at $N_\textrm{target} = 30$.}
+	\label{fig:step1}
+\end{figure}
+
+As we can see from Figure \ref{fig:step1distr}, the LCS distribution is slightly skewed because we cannot have clusters smaller than 1, and it becomes exceedingly likely to find (many) other clusters which are larger. Because of this, the left side of the free-energy barrier seen in Figure \ref{fig:step1bar} goes up. As a more pedagogical example, see Figure \ref{fig:step2} for the same process but at target $N_\textrm{target} = 90$. Here we see a much nicer Gaussian distribution of cluster sizes. Note that in both cases, the distribution is clearly peaked \emph{left} of the target. This is because even though we impose a biasing potential to keep the LCS around a certain $N_\textrm{target}$, the system itself is biased towards smaller cluster sizes, and will more often than not attempt a move which shrinks the cluster. This can be interpreted as being `left' of the free-energy barrier from CNT, or in other words, it is (free-)energetically favourable to shrink the cluster.
+
+\begin{figure}[h]
 	\centering
-	\begin{subfigure}[t]{0.8\textwidth}
+	\begin{subfigure}[t]{0.45\textwidth}
 		\centering
-		\includegraphics[width=.9\textwidth]{{images/v31_p6.17c0.6l0.005_barrier}.pdf}
-		\caption{The free-energy barrier obtained by stitching together every piece.}
-		\label{fig:barp17c6l1b}
+		\includegraphics[width=\linewidth]{images/v29_umbr_t090lcs_biased}
+		\caption{The LCS distribution. The target $N_\textrm{target} = 90$ has been marked with a grey dashed line.}
+		\label{fig:step2distr}
+	\end{subfigure}\hfill
+	\begin{subfigure}[t]{0.45\textwidth}
+		\centering
+		\includegraphics[width=.95\linewidth]{images/v29_umbr_t090barrier.pdf}
+		\caption{The piece of the free-energy barrier obtained from the LCS distribution.}
+		\label{fig:step2bar}
 	\end{subfigure}
-	\caption{The equation of state of hard cubes with a slant angle of 66\degr.}
+	\caption{The LCS distribution and corresponding free-energy barrier piece at $N_\textrm{target} = 90$.}
+	\label{fig:step2}
+\end{figure}
+
+From here the process is clear. We obtain a LCS distribution around $N_\textrm{target}$, and after some number of Monte Carlo cycles\footnote{The number varies but if we waited a hundred thousand cycles we had no problems in the next step. If we don't wait long enough for many `umbrella steps' however, we can get into a situation where the target cluster size is so much larger than the actual cluster size that the system gets `stuck' in a very unstable cluster, causing very poor statistics.} the system is in equilibrium (with respect to the biasing potential). We then start the second `umbrella step,' a new simulation that starts with a configuration from the previous step's equilibrium, and with a new $N_\textrm{target} = 50$. When this system is equilibrated we can start the third `umbrella step' with $N_\textrm{target} = 70$ et cetera. We continue until either we find the top of the barrier, or the target cluster size becomes too large with respect to the system. For this combination of parameters ($\beta p \sigma^3 = 6.17,\ \lambda = 0.005,$ cutoff 0.6) the latter was the case, and we stopped at $N_\textrm{target} = 800$, which is 10\% of the system size. We will discuss problems that arise from such relatively large cluster sizes in the next Section. In any case, from each step we obtain the LCS distribution and find the corresponding piece of the free-energy barrier. All distributions, as well as all pieces of the barrier are shown in Figure \ref{fig:barp17c6l1e}. We see that the pieces of the free-energy barrier don't line up. We can shift every piece of the barrier by a constant, which would be the constant from Eq. \todo{ref the Eq.}. If we do this in a nice way, we obtain the free-energy barrier, see Figure \ref{fig:barp17c6l1}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\textwidth]{{images/v31_p6.17c0.6l0.005_extra}.pdf}
+	\caption{Left: the umbrella of largest cluster size distributions, for every target cluster size. Right: The unbiased pieces of the free-energy barriers.}
+	\label{fig:barp17c6l1e}
+\end{figure}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=.5\textwidth]{{images/v31_p6.17c0.6l0.005_sbarrier}.pdf}
+	\caption{The free-energy barrier obtained by stitching together every piece.}
 	\label{fig:barp17c6l1}
 \end{figure}
 
-\begin{figure}[h]
-	\centering
-	\begin{subfigure}[t]{0.8\textwidth}
-		\centering
-		\includegraphics[width=.9\textwidth]{{images/v31_p6.18c0.6l0.005_barrier}.pdf}
-		\caption{The free-energy barrier obtained by stitching together every piece.}
-		\label{fig:barp18c6l1b}
-	\end{subfigure}
-	\caption{The equation of state of hard cubes with a slant angle of 66\degr.}
-	\label{fig:barp18c6l1}
-\end{figure}
+We see that we have not found the top of the barrier for this combination of parameters. A possible reason for this could be that the supersaturation is too low (i.e. we need higher pressure), so as a result the free-energy barrier is simply too high. In any case, we will now try other pressures, coupling parameters, and order cutoffs, and discuss our findings.
 
-for a variety of biasing potential coupling parameters $\lambda$
+\subsubsection{Results} \label{subsubsec:results}
+
+
 
 \end{document}
 
